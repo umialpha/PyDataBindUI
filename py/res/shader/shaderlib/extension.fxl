@@ -1,0 +1,229 @@
+/*
+所有可扩展的部分和default定义部分
+当有shader编辑器时，能编辑的就是本文件中的函数
+
+*/
+
+
+//可自定义部分：
+float3 GetDiffuseMtl(PS_GENERAL ps_general);	
+float3 GetSpecularMtl(PS_GENERAL ps_general);
+float3 GetEmissiveMtl(PS_GENERAL ps_general);
+float GetOpacity(PS_GENERAL ps_general);
+int GetSpecularPower();	//为了兼容gourand着色，所以这里还是用常数或者变量算了, 不用general作为参数
+float3 GetLightMapColor(PS_GENERAL ps_general);
+float3 GetNormalOffset(PS_GENERAL ps_general);
+float3 GetTransmissionColor(PS_GENERAL ps_general);
+float3 GetTransmissionMask(PS_GENERAL ps_general);
+void GetCustomLighting(PS_GENERAL ps_general, out float3 color_ambient_diffuse, out float3 color_specular);
+float GetCustomAlphaValue(PS_GENERAL ps_general);
+float GetCustomAlphaValue(PS_GENERAL ps_general);
+float3 CustomFogBlend(PS_GENERAL ps_general, float3 screen_clr); //屏幕颜色和雾效混合的结果
+void AddDeferedLighting(in PS_GENERAL ps_general, inout float3 light_diffuse_clr, inout float3 light_spec_clr);
+float3 GetWorldPositionOffset(in VS_GENERAL vs_general);
+float3 GetWVPOffset(in VS_GENERAL vs_general);
+float GetTransmissionFacotor(in VS_GENERAL vs_general);
+
+#ifndef CUSTOM_WVP_OFFSET
+float3 GetWVPOffset(in VS_GENERAL vs_general)
+{
+	return 0;
+}
+#endif
+
+
+
+#ifndef CUSTOM_WORLD_POSITION_OFFSET
+float3 GetWorldPositionOffset(in VS_GENERAL vs_general)
+{
+	return 0;
+}
+#endif
+
+#ifndef CUSTOM_FOG_BLEND
+float3 CustomFogBlend(PS_GENERAL ps_general, float3 screen_clr) //屏幕颜色和雾效混合的结果
+{
+	ps_general.FogFactor *= ps_general.FogColor.a;
+	float3 result = screen_clr *(1- ps_general.FogFactor) + FogColor.xyz* ps_general.FogFactor;//和雾混合
+	return result;
+}
+#endif
+
+#ifndef CUSTOM_TRANSMISSION_COLOR
+	float3 GetTransmissionColor(PS_GENERAL ps_general)
+	{
+		return 0;
+	}
+#endif
+
+#ifndef CUSTOM_TRANSMISSION_FACTOR
+	float3 GetTransmissionMask(PS_GENERAL ps_general)
+	{
+		return float3(1,1,1);
+	}
+#endif
+
+
+#ifndef CUSTOM_NORMAL_OFFSET
+	#if NORMAL_MAP_ENABLE
+		#define NEED_NORMAL_MAP
+		#include "vardefination.fxl"	
+		sampler sampleNORMAL = sampler_state
+		{
+			Texture = (NormalMap);
+			MagFilter = LINEAR;
+			MinFilter = LINEAR;
+			MipFilter = LINEAR;
+		};
+
+		float3 GetNormalOffset(PS_GENERAL ps_general)
+		{
+			float3 f3Offset = tex2D( sampleNORMAL, ps_general.TexCoord0).xyz * 2 - 1 ; //[0,1] ->[-1, 1]
+			return f3Offset;
+		}
+	#endif
+#endif
+
+
+#if LIGHT_MAP_ENABLE
+	#ifndef CUSTOM_LIGHTMAP_CACULATE
+		#if EQUAL(NEOX_DEBUG_DEFERED_STATIC_LIGHT, TRUE)
+			float3 GetLightMapColor(PS_GENERAL ps_general)
+			{
+				return 0;
+			}
+	
+		#else
+			#define NEED_LIGHT_MAP
+			#include "vardefination.fxl"
+			sampler sample_lightmap :register(s7)= sampler_state
+			{
+				Texture = (TexLightmap);
+				MagFilter = LINEAR;
+				MinFilter = LINEAR;
+				MipFilter = LINEAR;
+			};
+	
+			float3 GetLightMapColor(PS_GENERAL ps_general)
+			{
+				float2 uv = ps_general.TexCoord1.xy;
+				float4 org_color =  tex2D(sample_lightmap, uv);
+				//if(ps_general.LightMapScale.x == 0)	
+				//	return DecodeHDR_RGBE8_RGB(org_color);//默认取第一层uv，如果需要其他uv，或者控制则需要自己定义了	
+				//else	
+				return org_color.xyz * ps_general.LightMapScale.yzw;
+			}
+		#endif
+	#endif
+#endif
+
+#if EQUAL(NEOX_DEBUG_DEFERED_STATIC_LIGHT, TRUE)
+			#define NEOX_DEFERED_LIGHTING_ENABLE TRUE
+#endif
+			
+#if EQUAL(NEOX_DEFERED_LIGHTING_ENABLE, TRUE)
+float4 GLBufferSize: GLBufferSize ;	
+texture TexLightBuffer:LightBuffer;
+sampler sampler_lightbuffer :register(s9)= sampler_state
+{
+	Texture = (TexLightBuffer);
+	MagFilter = LINEAR;
+	MinFilter = LINEAR;
+	MipFilter = LINEAR;
+};
+		
+	
+void AddDeferedLighting(in PS_GENERAL ps_general, inout float3 light_ambient_clr, inout float3 light_spec_clr)
+{
+	float2 light_buffer_uv = ps_general.PosScreen.xy * 0.5 + 0.5;
+	light_buffer_uv.y = 1.0 - light_buffer_uv.y;
+	
+	float2 lightbuffer_bias = 0.5f/GLBufferSize.zw;
+	light_buffer_uv += lightbuffer_bias;
+	float4 light_buffer_color = tex2D(sampler_lightbuffer, light_buffer_uv);
+
+	light_ambient_clr += light_buffer_color.xyz;
+	//light_spec_clr  += light_buffer_color.a;
+}
+
+#endif
+
+#ifndef CUSTOM_EMISSIVE_MTL
+	#ifdef DEFALT_EMISSIVE_MTL
+		#define NEED_EMISSIVE_MTL
+		#include "vardefination.fxl"
+		float3 GetEmissiveMtl(PS_GENERAL ps_general)
+		{
+			return EmissiveMtl.xyz;
+		}
+	#else
+		float3 GetEmissiveMtl(PS_GENERAL ps_general)
+		{
+			return 0;
+		}
+	#endif
+#endif
+
+#ifndef CUSTOM_OPACITY
+	#ifdef DEFALT_OPACITY_MTL
+		#define NEED_OPACITY_MTL
+		#include "vardefination.fxl"
+		float GetOpacity(PS_GENERAL ps_general)
+		{
+			return OpacityMtl;
+		}
+	#else
+		float GetOpacity(PS_GENERAL ps_general)
+		{
+			return 1;
+		}
+	#endif
+#endif
+
+#ifndef CUSTOM_DIFFUSE_MTL
+	#ifdef DEFAULT_DIFFUSE_MTL
+		#define NEED_DIFFUSE_MTL
+		#include "vardefination.fxl"
+		float3 GetDiffuseMtl(PS_GENERAL ps_general)
+		{
+			return DiffuseMtl.xyz;
+		}
+	#else
+		float3 GetDiffuseMtl(PS_GENERAL ps_general)
+		{
+			return 0;
+		}
+	#endif
+#endif
+
+#ifndef CUSTOM_SPECULAR_MTL
+	#ifdef DEFAULT_SPECULAR_MTL
+		#define NEED_SPECULAR_MTL
+		#include "vardefination.fxl"
+		float3 GetSpecularMtl(PS_GENERAL ps_general)
+		{
+			return SpecularMtl.xyz;
+		}
+	#else
+		float3 GetSpecularMtl(PS_GENERAL ps_general)
+		{
+			return 0;
+		}
+	#endif
+#endif
+
+#ifndef CUSTOM_SPECULAR_POWER
+int GetSpecularPower()
+{
+	return 32;
+}
+#endif
+
+#ifndef CUSTOM_ALPHA_CACULATE
+float GetCustomAlphaValue(PS_GENERAL ps_general)
+{
+	return ps_general.AlphaMtl * GetOpacity(ps_general);
+}
+#endif
+
+

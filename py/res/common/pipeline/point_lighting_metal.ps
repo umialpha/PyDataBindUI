@@ -1,0 +1,66 @@
+using namespace metal;
+
+
+// VARYING
+struct VertexOutput
+{
+	float4 Pos [[position]];
+	float3 HPos;
+	float3 PosView;
+	float4 LightAttrs;
+	float4 LightColor;
+};
+
+
+struct PSConstants
+{
+	float4 geometry_map_size;
+	float2 CameraZPlanes;
+};
+
+
+
+static float4 point_lighting(float4 light_attr, float4 light_color, float3 p, float3 n)
+{
+	float3 l = light_attr.xyz - p;  // light vector
+
+	// attenuation
+	float att  = saturate(1 - dot(l/light_attr.w, l/light_attr.w)); 
+	att = pow(att, light_color.a);
+		
+	l = normalize(l);
+
+	// diffuse and specular terms
+	float normal_dot_light = saturate(dot(l, n));
+	float3 angle_fac = normal_dot_light;
+	float3 diff = angle_fac * light_color.xyz;
+
+	// final color
+	return att * float4(diff, 1);
+}
+
+
+fragment float4 metal_main (
+	VertexOutput in [[stage_in]]
+	, constant PSConstants &constants[[buffer(0)]]
+	, texture2d<float> tex_geometry [[texture(0)]]
+	, texture2d<float> tex_depth [[texture(1)]]
+	)
+{	
+	constexpr sampler tex_sampler(coord::normalized, filter::linear, address::clamp_to_edge);
+
+	float2 uv = in.HPos.xy / in.HPos.z * 0.5 + 0.5;
+	uv.y = 1 - uv.y;
+	float2 geometry_map_bias = 0.5f / constants.geometry_map_size.xy;
+	float4 geometry = tex_geometry.sample(tex_sampler, uv + geometry_map_bias);
+	float3 normal = float3((geometry.xy - 0.5) * 2, 0);
+	normal.z = -sqrt(saturate(1 - normal.x * normal.x - normal.y * normal.y));
+	
+	float depth = tex_depth.sample(tex_sampler, uv + geometry_map_bias).x;
+
+	float3 pos;
+	pos.z = constants.CameraZPlanes.y / (depth + constants.CameraZPlanes.x);
+	pos.xy = in.PosView.xy / in.PosView.z * pos.z;
+	
+	return point_lighting(in.LightAttrs, in.LightColor, pos, normal); 
+}

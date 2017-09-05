@@ -1,0 +1,55 @@
+precision highp float;
+precision highp int;
+
+varying mediump vec2 TexCoord0;
+varying mediump vec2 TexCoord1;
+varying mediump vec2 TexCoord2;
+
+uniform highp sampler2D tex0;
+uniform highp sampler2D tex1; 
+uniform highp sampler2D tex2; 
+
+
+uniform float time_fac;
+uniform float noise_scale;
+uniform float noise_intensity_r;
+uniform float noise_intensity_g;
+uniform float noise_intensity_b;
+uniform float FrameTime;
+
+void PSMain()
+{
+	//原图
+	vec4 org_clr = texture2D(tex0, TexCoord0.xy);
+	
+	vec4 illum = org_clr * vec4(0.299, 0.587, 0.114, 1.0) * 1.2;
+
+	// vec4 sepiaColor = vec4(0.549, 0.396, 0.071, 0.0);
+	vec4 sepiaColor = vec4(0.651, 0.395, 0.206, 0.0)* 0.6;
+
+	//噪声图
+	//随机uv
+	float time_val = FrameTime * time_fac;
+	float time_intenger = floor(time_val);
+	
+	// 颜色抖动
+	illum += mix(sepiaColor, sepiaColor + vec4(0.1, 0.1, 0.1, 0.0), time_val - time_intenger);
+
+	//划痕
+	vec2 noise_bias = vec2(time_intenger * 1.37, time_intenger * 1.79); 
+	vec4 noise_clr = texture2D(tex1, TexCoord0.xy * noise_scale + noise_bias);
+		
+	//混合
+	vec4 blend_clr = illum +  vec4(dot(noise_clr.rgb,vec3(noise_intensity_r,noise_intensity_g,noise_intensity_b))) ;
+
+	// 暗角
+	float offsetY = (abs(0.5 - TexCoord0.y)*2.0) * 0.7 + 0.3;
+	float offsetX = (abs(0.5 - TexCoord0.x)*2.0) * 0.7 + 0.3;
+	float clampX = clamp(1.0 -(abs(0.5 - TexCoord0.x) - 0.45)* offsetY * 20.0, 0.0, 1.0);
+	float clampY = clamp(1.0 -(abs(0.5 - TexCoord0.y) - 0.45)* offsetX * 20.0, 0.0, 1.0);
+	blend_clr = blend_clr * clampX;
+	blend_clr = blend_clr * clampY;
+
+	gl_FragColor = blend_clr;
+	gl_FragColor.a = 1.0;
+}

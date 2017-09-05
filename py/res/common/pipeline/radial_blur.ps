@@ -1,0 +1,66 @@
+//原来图
+sampler2D TexSampler = sampler_state
+{
+    MipFilter = LINEAR;
+    MinFilter = LINEAR;
+    MagFilter = LINEAR;
+	AddressU = CLAMP;
+	AddressV = CLAMP;
+	AddressW = CLAMP;
+};
+
+// some const, tweak for best look   
+float fSampleDist;  
+float fSampleStrength;   
+float radial_center_u;
+float radial_center_v;
+  
+// some sample positions   
+static const float samples[10] =   
+{  
+   -0.08,  
+   -0.05,  
+   -0.03,  
+   -0.02,  
+   -0.01,  
+   0.01,  
+   0.02,  
+   0.03,  
+   0.05,  
+   0.08  
+};  
+  
+  
+float4 ps_main( float2 texCoord  : TEXCOORD0 ) : COLOR  
+{  
+   // 0.5,0.5 is the center of the screen   
+   // so substracting uv from it will result in   
+   // a vector pointing to the middle of the screen   
+   float2 dir = float2(radial_center_u, radial_center_v) - texCoord;  
+   // calculate the distance to the center of the screen   
+   float dist = length(dir);  
+   // normalize the direction (reuse the distance)   
+   dir /= dist;  
+     
+   // this is the original colour of this pixel   
+   // using only this would result in a nonblurred version   
+   float4 color = tex2D(TexSampler, texCoord);  
+     
+   float4 sum = color;  
+   // take 10 additional blur samples in the direction towards   
+   // the center of the screen   
+   for (int i = 0; i < 10; ++i)  
+   {  
+      sum += tex2D(TexSampler, texCoord + dir * samples[i] * fSampleDist);  
+   }  
+  
+   // we have taken eleven samples   
+   sum /= 11.0;  
+     
+   // weighten the blur effect with the distance to the   
+   // center of the screen ( further out is blurred more)   
+   float t = saturate(dist * fSampleStrength);  
+     
+   //Blend the original color with the averaged pixels   
+   return lerp(color, sum, t);  
+}  

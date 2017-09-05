@@ -1,0 +1,75 @@
+float4 dynamicRT:DynamicResolutionRT;
+
+texture	TexScratch
+<
+	string TextureFile = "common\\textures\\scratch.dds"; 
+>;
+
+texture TexOldFilm
+<
+	string TextureFile = "common\\textures\\old_film.png"; 
+>;
+
+
+float time_fac
+<
+	string SasUiLabel = "播放速度";
+	string SasUiControl = "FloatPicker";
+	float SasUiMin = 0.0f;
+	float SasUiMax = 15.0f;
+	float SasUiSteps = 0.1f;
+> = 4.0f;
+
+float noise_scale
+<
+	string SasUiLabel = "尺度缩放";
+	string SasUiControl = "FloatPicker";
+	float SasUiMin = 0.0f;
+	float SasUiMax = 4.0f;
+	float SasUiSteps = 0.1f;
+> = 1.0f;
+
+
+float noise_intensity_r
+<
+	string SasUiLabel = "刮痕强度";
+	string SasUiControl = "FloatPicker";
+	float SasUiMin = 0.0f;
+	float SasUiMax = 1.0f;
+	float SasUiSteps = 0.1f;
+> = 0.5f;
+
+float noise_intensity_g
+<
+	string SasUiLabel = "折痕强度";
+	string SasUiControl = "FloatPicker";
+	float SasUiMin = 0.0f;
+	float SasUiMax = 1.0f;
+	float SasUiSteps = 0.1f;
+> = 0.3f;
+
+float noise_intensity_b
+<
+	string SasUiLabel = "噪声强度";
+	string SasUiControl = "FloatPicker";
+	float SasUiMin = 0.0f;
+	float SasUiMax = 1.0f;
+	float SasUiSteps = 0.1f;
+> = 0.3f;
+
+
+float FrameTime: FrameTime;
+
+
+SamplerTexture[1] = TexScratch;
+SamplerTexture[2] = TexOldFilm;
+
+
+technique OldFilm
+{
+	pass T0
+	{
+		VertexShader = "old_film.vs" vs_2_0 VSMain;
+		PixelShader = "old_film.ps" ps_2_0 PSMain;
+	}
+}

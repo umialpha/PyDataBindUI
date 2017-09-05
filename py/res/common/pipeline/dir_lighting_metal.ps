@@ -1,0 +1,60 @@
+using namespace metal;
+
+
+// VARYING
+struct VertexOutput
+{
+	float4 position [[position]];
+	float2 Tex0;
+	float2 View;
+	float2 View2;
+};
+
+struct PSConstants
+{
+	float3 LightDir;
+	float3 LightColor;
+	float2 CameraZPlanes;
+};
+
+
+static float4 dir_lighting(const float3 p, const float3 n, constant PSConstants &constants)
+{
+	float3 l = -constants.LightDir;
+
+	// diffuse and specular terms
+	float normal_dot_light = saturate(dot(l, n));
+	float3 normal_att = normal_dot_light;
+	
+	float3 diff = normal_att * constants.LightColor;	
+	
+	// final color
+	return float4(diff, 1);
+}
+
+
+fragment float4 metal_main (
+	VertexOutput in [[stage_in]]
+	, constant PSConstants &constants[[buffer(0)]]
+	, texture2d<float> tex_geometry [[texture(0)]]
+	, texture2d<float> tex_depth [[texture(1)]]
+	)
+{
+	constexpr sampler tex_sampler(coord::normalized, filter::linear, address::clamp_to_edge);
+
+	float4 output;
+	float4 geometry = tex_geometry.sample(tex_sampler, in.Tex0);
+	float3 normal = float3((geometry.xy - 0.5) * 2, 0);
+	normal.z = -sqrt(saturate(1 - normal.x * normal.x - normal.y * normal.y));
+
+	float depth = tex_depth.sample(tex_sampler, in.Tex0).x;
+	depth = 2.0 * depth - 1.0;
+
+	float3 pos;
+	pos.z = constants.CameraZPlanes.y / (constants.CameraZPlanes.x + depth);
+	pos.xy = in.View.xy / in.View2.x * pos.z;
+
+	output = dir_lighting(pos, normal, constants);
+	return output;
+}
+

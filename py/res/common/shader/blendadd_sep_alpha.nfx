@@ -1,0 +1,153 @@
+#define SEPARATE_ALPHA_TEX TRUE
+
+matrix4 wvp : WorldViewProjection;
+matrix4 texTrans0: TexTransform0;
+
+float4 blend_color = (1,1,1,1);
+float4 texuv_clamp
+<
+	string SasUiLabel = "UV范围，超出范围变为透明"; 
+> = (0,0,1,1);
+
+float4 tFactor: TFactor;
+
+technique TOneTexAlphaBlend
+{
+	pass P0
+	{
+		VertexShader = "blendadd.vs" vs_2_0 VS_OneTex;
+		PixelShader = "blendadd.ps" ps_2_0 PS_OneTex1x; 
+	}
+}
+
+technique TTwoTexAlphaBlend
+{
+	pass P0
+	{
+		VertexShader = "blendadd.vs" vs_2_0 VS_TwoTex;
+		PixelShader = "blendadd.ps" ps_2_0 PS_TwoTex1x; 
+	}
+}
+
+technique TOneTexColorBlend
+{
+	pass P0
+	{
+		VertexShader = "blendadd.vs" vs_2_0 VS_OneTex;
+		PixelShader = "blendadd.ps" ps_2_0 PS_OneTex1x; 
+	}
+}
+technique TTwoTexColorBlend
+{
+	pass P0
+	{
+		VertexShader = "blendadd.vs" vs_2_0 VS_TwoTex;
+		PixelShader = "blendadd.ps" ps_2_0 PS_TwoTex1x; 
+	}
+}
+
+technique TOneTex1X
+{
+	pass P0
+	{
+		VertexShader = "blendadd.vs" vs_2_0 VS_OneTex;
+		PixelShader = "blendadd.ps" ps_2_0 PS_OneTex1x; 
+	}
+}
+technique TTwoTex1X
+{
+	pass P0
+	{
+		VertexShader = "blendadd.vs" vs_2_0 VS_TwoTex;
+		PixelShader = "blendadd.ps" ps_2_0 PS_TwoTex1x; 
+	}
+}
+
+technique TOneTexModulate
+{
+	pass P0
+	{
+		VertexShader = "blendadd.vs" vs_2_0 VS_OneTex;
+		PixelShader = "blendadd.ps" ps_2_0 PS_OneTexModulate; 
+	}
+}
+technique TTwoTexModulate
+{
+	pass P0
+	{
+		VertexShader = "blendadd.vs" vs_2_0 VS_TwoTex;
+		PixelShader = "blendadd.ps" ps_2_0 PS_TwoTexModulate; 
+	}
+}
+
+technique TOneTex4X
+{
+	pass p0
+	{
+		VertexShader = "blendadd.vs" vs_2_0 VS_OneTex;
+		PixelShader = "blendadd.ps" ps_2_0 PS_OneTex4x;
+	}
+}
+
+technique TOneTex2X
+{
+	pass p0
+	{
+		VertexShader = "blendadd.vs" vs_2_0 VS_OneTex;
+		PixelShader = "blendadd.ps" ps_2_0 PS_OneTex2x;
+	}
+}
+
+technique TTwoTex4X
+{
+	pass p0
+	{
+		VertexShader = "blendadd.vs" vs_2_0 VS_TwoTex;
+		PixelShader = "blendadd.ps" ps_2_0 PS_TwoTex4x;
+	}
+}
+
+technique TDecalOneTexAlphaBlend
+{
+	pass p0
+	{
+		VertexShader = "blendadd.vs" vs_2_0 VS_OneTexDecal;
+		PixelShader = "blendadd.ps" ps_2_0 PS_DecalOneTex1x;
+	}
+}
+
+technique TDecalOneTexColorBlend
+{
+	pass p0
+	{
+		VertexShader = "blendadd.vs" vs_2_0 VS_OneTexDecal;
+		PixelShader = "blendadd.ps" ps_2_0 PS_DecalOneTex1x;
+	}
+}
+
+technique TDecalOneTex1X
+{
+	pass p0
+	{
+		VertexShader = "blendadd.vs" vs_2_0 VS_OneTexDecal;
+		PixelShader = "blendadd.ps" ps_2_0 PS_DecalOneTex1x;
+	}
+}
+
+technique TDecalOneTexModulate
+{
+	pass p0
+	{
+		VertexShader = "blendadd.vs" vs_2_0 VS_OneTexDecal;
+		PixelShader = "blendadd.ps" ps_2_0 PS_DecalOneTexModulate;
+	}
+}
+
+technique TDecalOneTex4X
+{
+	pass p0
+	{
+		VertexShader = "blendadd.vs" vs_2_0 VS_OneTexDecal;
+		PixelShader = "blendadd.ps" ps_2_0 PS_DecalOneTex4x;
+	}
+}

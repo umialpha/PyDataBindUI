@@ -1,0 +1,19 @@
+#if LIT_ENABLE
+#if NEOX_DEFERED_LIGHTING_ENABLE
+
+float3 AddDeferedLighting(const float4 pos, const float4 GLBufferSize, texture2d<float> texture_light)
+{
+	float2 light_buffer_uv = pos.xy / GLBufferSize.zw;
+	
+	float2 lightbuffer_bias = 0.5 / GLBufferSize.zw;
+	light_buffer_uv += lightbuffer_bias;
+
+	constexpr sampler light_sampler(coord::normalized, filter::linear, address::clamp_to_edge);
+
+	float4 light_buffer_color = texture_light.sample(light_sampler, light_buffer_uv);
+
+	return light_buffer_color.xyz;
+}
+
+#endif
+#endif 	//litenable

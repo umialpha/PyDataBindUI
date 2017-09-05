@@ -1,0 +1,17 @@
+uniform sampler2D SamplerDiffuse0;
+uniform lowp float alpha;
+varying mediump vec4 UV0;
+
+#if SEPARATE_ALPHA_TEX
+uniform sampler2D SamplerSepAlphaTex7;
+#endif
+
+void main ()
+{
+	mediump vec4 tmp = texture2D(SamplerDiffuse0,UV0.xy);
+    gl_FragColor.xyz =  tmp.xyz;
+#if SEPARATE_ALPHA_TEX
+	tmp.w = texture2D(SamplerSepAlphaTex7, UV0.xy).a;
+#endif
+    gl_FragColor.w =  tmp.w*alpha;
+}

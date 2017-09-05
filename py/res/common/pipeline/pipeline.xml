@@ -1,0 +1,277 @@
+<NeoX>
+	<Pipeline version="0,0,1,0" DefaultPipeline="Forward" DepthPrepass="False" AllowDepthTexture="True">
+		<Setup>
+			<RenderTarget id="BloomTarget2" format="ARGB8" scale="0.125" />
+			<RenderTarget id="QuaterTarget2" format="ARGB8" scale="0.25" />
+			<RenderTarget id="QuaterTarget" format="ARGB8" scale="0.25" />
+			<RenderTarget id="Distortion" format="ARGB8"  ds_format="D24S8" scale="0.125" bk_color="0,128,128,0" container="True"/>
+            <RenderTarget id="rsstencil" format="ARGB8" scale="1" share_scene_depth="True" bg_color="0,0,0,0"/>
+            
+            <RenderTarget id="HalfTarget0" format="ARGB8" scale="0.25" />
+            <RenderTarget id="HalfTarget1" format="ARGB8" scale="0.25" />
+            <RenderTarget id="outline" format="ARGB8" scale="1.0" />
+		</Setup>
+		
+		<CommandQueue>
+			<Stage id = "dynamicRT" class = "Base">
+				<Command
+					target = "[StageOutput]"
+					command = "DrawQuadVP"
+					technique = "common\pipeline\copy.fx::CopyRT" >
+					<Textures>
+						<Texture sampler="0" source="[StageInput]" />
+					</Textures>
+				</Command>
+			</Stage>
+			<Stage id = "bloom" class = "Bloom">
+				<Command
+					target = "BloomTarget2"
+					command = "DrawQuadVP"
+					technique = "common\pipeline\bloom.fx::DownSample" >
+					<Textures>
+						<Texture sampler="0" source="[StageInput]" />
+					</Textures>		
+				</Command>
+				<Command
+					target = "QuaterTarget"
+					command = "DrawQuadVP"
+					technique = "common\pipeline\bloom.fx::HorzBlur" >
+					<Textures>
+						<Texture sampler="0" source="BloomTarget2" />
+					</Textures>		
+				</Command>
+				<Command
+					target = "[StageOutput]"
+					command = "DrawQuadVP"
+					technique = "common\pipeline\bloom.fx::VertBlur" >
+					<Textures>
+						<Texture sampler="0" source="QuaterTarget" />
+						<Texture sampler="1" source="[StageInput]" />
+					</Textures>		
+				</Command>
+			</Stage>
+			<Stage id = "gaussian_blur" class = "GaussanBlur">
+				<Parameters>
+					<Kernels>
+					<Kernel x="-6.0*8.0/VIEWPORT_WIDTH" y="-6.0*8.0/VIEWPORT_HEIGHT" z="0.002216" w="0"/>
+					<Kernel x="-5.0*8.0/VIEWPORT_WIDTH" y="-5.0*8.0/VIEWPORT_HEIGHT" z="0.008764" w="0"/>
+					<Kernel x="-4.0*8.0/VIEWPORT_WIDTH" y="-4.0*8.0/VIEWPORT_HEIGHT" z="0.026995" w="0"/>
+					<Kernel x="-3.0*8.0/VIEWPORT_WIDTH" y="-3.0*8.0/VIEWPORT_HEIGHT" z="0.064759" w="0"/>
+					<Kernel x="-2.0*8.0/VIEWPORT_WIDTH" y="-2.0*8.0/VIEWPORT_HEIGHT" z="0.120985" w="0"/>
+					<Kernel x="-1.0*8.0/VIEWPORT_WIDTH" y="-1.0*8.0/VIEWPORT_HEIGHT" z="0.176033" w="0"/>
+					<Kernel x="0.0*8.0/VIEWPORT_WIDTH" y="0.0*8.0/VIEWPORT_HEIGHT" z="0.199471" w="0"/>
+					<Kernel x="1.0*8.0/VIEWPORT_WIDTH" y="1.0*8.0/VIEWPORT_HEIGHT" z="0.176033" w="0"/>
+					<Kernel x="2.0*8.0/VIEWPORT_WIDTH" y="2.0*8.0/VIEWPORT_HEIGHT" z="0.120985" w="0"/>
+					<Kernel x="3.0*8.0/VIEWPORT_WIDTH" y="3.0*8.0/VIEWPORT_HEIGHT" z="0.064759" w="0"/>
+					<Kernel x="4.0*8.0/VIEWPORT_WIDTH" y="4.0*8.0/VIEWPORT_HEIGHT" z="0.026995" w="0"/>
+					<Kernel x="5.0*8.0/VIEWPORT_WIDTH" y="5.0*8.0/VIEWPORT_HEIGHT" z="0.008764" w="0"/>
+					<Kernel x="6.0*8.0/VIEWPORT_WIDTH" y="6.0*8.0/VIEWPORT_HEIGHT" z="0.002216" w="0"/>
+					</Kernels>
+				</Parameters>				
+				<Command
+					target = "BloomTarget2"
+					command = "DrawQuadVP"
+					technique = "common\pipeline\gaussian_blur.fx::HorzBlur" >
+					<Textures>
+						<Texture sampler="0" source="[StageInput]" />
+					</Textures>	
+				</Command>
+				<Command
+					target = "[StageOutput]"
+					command = "DrawQuadVP"
+					technique = "common\pipeline\gaussian_blur.fx::VertBlur" >
+					<Textures>
+						<Texture sampler="0" source="BloomTarget2" />
+					</Textures>		
+				</Command>
+			</Stage>
+			<Stage id = "gray" class = "Base">
+				<Command
+					target = "[StageOutput]"
+					command = "DrawQuadVP"
+					technique = "common\pipeline\gray.fx::Gray" >
+					<Textures>
+						<Texture sampler="0" source="[StageInput]" />
+					</Textures>
+				</Command>
+			</Stage>
+			<Stage id = "oldfilm" class = "Base">
+				<Command
+					target = "[StageOutput]"
+					command = "DrawQuadVP"
+					technique = "common\pipeline\old_film.fx::OldFilm" >
+					<Textures>
+						<Texture sampler="0" source="[StageInput]" />
+					</Textures>
+				</Command>
+			</Stage>
+			<Stage id = "lut" class = "Base">
+				<Command
+					target = "[StageOutput]"
+					command = "DrawQuadVP"
+					technique = "common\pipeline\lut.fx::Lut" >
+					<Textures>
+						<Texture sampler="0" source="[StageInput]" />
+					</Textures>
+				</Command>
+			</Stage>
+			<Stage id = "reverse_color" class = "Base">
+				<Command
+					target = "[StageOutput]"
+					command = "DrawQuadVP"
+					technique = "common\pipeline\reverse_color.fx::Reverse" >
+					<Textures>
+						<Texture sampler="0" source="[StageInput]" />
+					</Textures>
+				</Command>
+			</Stage>
+			<Stage id = "reverse_color_stencil" class = "Base">
+				<Command
+					target = "rsstencil"
+					command = "DrawQuadVP"
+					technique = "common\pipeline\reverse_color_stencil.fx::ReverseStencil" >
+					<Textures>
+						<Texture sampler="0" source="[StageInput]" />
+					</Textures>
+				</Command>
+				<Command
+					target = "[StageOutput]"
+					command = "DrawQuadVP"
+					technique = "common\pipeline\reverse_color_stencil.fx::BlendResult" >
+					<Textures>
+						<Texture sampler="0" source="[StageInput]" />
+						<Texture sampler="1" source="rsstencil" />
+					</Textures>
+				</Command>
+			</Stage>
+			<Stage id = "fow" class = "Base">
+				<!-- <Command
+					target = "QuaterTarget2"
+					command = "DrawQuadVP"
+					technique = "common\pipeline\fow_gaussian_blur.fx::HorzBlur" >
+					<Textures>
+						<Texture sampler="0" source="[StageInput]" />
+					</Textures>	
+				</Command>
+				<Command
+					target = "QuaterTarget"
+					command = "DrawQuadVP"
+					technique = "common\pipeline\fow_gaussian_blur.fx::VertBlur" >
+					<Textures>
+						<Texture sampler="0" source="QuaterTarget2" />
+					</Textures>		
+				</Command> -->
+				<Command
+					target = "[StageOutput]"
+					command = "DrawQuadVP"
+					technique = "common\pipeline\fow.fx::Fow" >
+					<Textures>
+						<Texture sampler="0" source="[StageInput]" />
+						<Texture sampler="1" source="QuaterTarget" />
+						<Texture sampler="2" source="[SceneDepthTexture]" />
+					</Textures>
+				</Command>
+			</Stage>
+			<Stage id = "radial_blur" class = "Base">
+				<Command
+					target = "[StageOutput]"
+					command = "DrawQuadVP"
+					technique = "common\pipeline\radial_blur.fx::TShader" >
+					<Textures>
+						<Texture sampler="0" source="[StageInput]" />
+					</Textures>
+				</Command>
+			</Stage>		
+			<Stage id = "wave" class = "Base">
+				<Command
+					target = "[StageOutput]"
+					command = "DrawQuadVP"
+					technique = "common\pipeline\wave.fx::Distortion" >
+					<Textures>
+						<Texture sampler="0" source="[StageInput]" />
+					</Textures>
+				</Command>
+			</Stage>
+			<Stage id = "dark_corner" class = "Base">
+				<Command
+					target = "[StageOutput]"
+					command = "DrawQuadVP"
+					technique = "common\pipeline\dark_corner.fx::DarkCorner" >
+					<Textures>
+						<Texture sampler="0" source="[StageInput]" />
+					</Textures>
+				</Command>
+			</Stage>
+			<Stage id = "mist" class = "Base">
+				<Command
+					target = "[StageOutput]"
+					command = "DrawQuadVP"
+					technique = "common\pipeline\mist.fx::DarkCorner" >
+					<Textures>
+						<Texture sampler="0" source="[StageInput]" />
+					</Textures>
+				</Command>
+			</Stage>
+			<Stage id = "screen_filter" class = "Base">
+				<Command
+					target = "[StageOutput]"
+					command = "DrawQuadVP"
+					technique = "common\pipeline\screen_filter.fx::ScreenFilter" >
+					<Textures>
+						<Texture sampler="0" source="[StageInput]" />
+					</Textures>
+				</Command>
+			</Stage>
+			<Stage id = "screen_filter_multiply" class = "Base">
+				<Command
+					target = "[StageOutput]"
+					command = "DrawQuadVP"
+					technique = "common\pipeline\screen_filter_multiply.fx::ScreenFilter" >
+					<Textures>
+						<Texture sampler="0" source="[StageInput]" />
+					</Textures>
+				</Command>
+			</Stage>
+			<Stage id = "distortion" class = "Base">
+				<Command
+					target = "[StageOutput]"
+					command = "DrawQuadVP"
+					technique = "common\pipeline\distortion.fx::Distortion" >
+					<Textures>
+						<Texture sampler="0" source="Distortion" />
+						<Texture sampler="1" source="[StageInput]" />
+					</Textures>
+				</Command>
+			</Stage>
+
+			<Stage id = "smooth_outline" class = "Base">
+				<Command
+					target = "HalfTarget0"
+					command = "DrawQuadVP"
+					technique = "common\pipeline\smooth_outline.fx::VerBlur" >
+					<Textures>
+						<Texture sampler="0" source="outline" />
+					</Textures>
+				</Command>
+				<Command
+					target = "HalfTarget1"
+					command = "DrawQuadVP"
+					technique = "common\pipeline\smooth_outline.fx::HorBlur" >
+					<Textures>
+						<Texture sampler="0" source="HalfTarget0" />
+					</Textures>
+				</Command>
+				<Command
+					target = "[StageOutput]"
+					command = "DrawQuadVP"
+					technique = "common\pipeline\smooth_outline.fx::Blend" >
+					<Textures>
+						<Texture sampler="0" source="HalfTarget1" />
+						<Texture sampler="1" source="outline" />
+						<Texture sampler="2" source="[StageInput]" />
+					</Textures>
+				</Command>
+			</Stage>
+		</CommandQueue>
+	</Pipeline>
+</NeoX>

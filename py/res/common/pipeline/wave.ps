@@ -1,0 +1,45 @@
+sampler Texture0 : register(s0)
+{
+	MagFilter = LINEAR;
+	MinFilter = LINEAR;
+	MipFilter = LINEAR;
+	AddressU = CLAMP;
+	AddressV = CLAMP;
+	AddressW = CLAMP;
+};
+
+sampler Sampler1 = sampler_state
+{
+	MagFilter = LINEAR;
+	MinFilter = LINEAR;
+	MipFilter = LINEAR;
+	AddressU = CLAMP;
+	AddressV = CLAMP;
+	AddressW = CLAMP;
+};
+
+
+float distortionScale;
+float distortionSpeed;
+float distortionLength;
+float distortionBegin;
+float distortionPower;
+
+float FrameTime;
+
+static const float halfpi = 3.1415926 * 0.5f;
+
+float4 ps_main(float2 texCoord  : TEXCOORD0 ) : COLOR
+{  
+	float4 mask_clr = tex2D(Sampler1, texCoord.xy);
+    float distor_factor = pow( 1- abs(sin( saturate(mask_clr.a + distortionBegin) * halfpi)), distortionPower);
+
+	//扰动部分
+	float2 backgroundUv = texCoord.xy;
+	backgroundUv.x += sin(FrameTime * distortionSpeed+ backgroundUv.x *10 * distortionLength) * distortionScale * 0.1 * distor_factor;
+	backgroundUv.y += cos(FrameTime  * distortionSpeed + backgroundUv.y *10 * distortionLength) * distortionScale * 0.1 * distor_factor;
+
+	float4 final_color = tex2D(Texture0, backgroundUv);
+   
+	return final_color;
+}

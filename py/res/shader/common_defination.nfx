@@ -1,0 +1,113 @@
+#define TRUE 1
+#define FALSE 0
+
+#ifndef LIGHT_MAP_ENABLE
+#define LIGHT_MAP_ENABLE FALSE
+#endif
+
+#ifndef ALPHA_TEST_ENABLE
+#define ALPHA_TEST_ENABLE FALSE
+#endif
+
+////////////GPU Skin Start
+#ifndef GPU_SKIN_ENABLE
+#define GPU_SKIN_ENABLE FALSE
+#endif
+
+#if GPU_SKIN_ENABLE
+#define MAX_BONES 90
+float4 BoneVec[180] : SkinBones;
+#endif
+////////////GPU Skin End
+matrix4 wvp : WorldViewProjection;
+matrix4 texTrans0: TexTransform0 = (1.0, 0.0, 0.0, 0.0,
+									0.0, 1.0, 0.0, 0.0,
+									0.0, 0.0, 1.0, 0.0,
+									0.0, 0.0, 0.0, 1.0);
+
+////////////Fog Start
+#ifndef FOG_ENABLE
+#define FOG_ENABLE FALSE
+#endif
+
+#define FOG_TYPE FOG_TYPE_HEIGHT
+matrix4 world : World;
+matrix4 view : View;
+
+#if FOG_ENABLE
+float4 FogInfo: FogInfo = (0.0, 0.0, 0.0, 0.0);
+float4 FogColor: FogColor = (1.0, 1.0, 1.0, 1.0);	
+float4  HeightFogDensity:HeightFogDensity  = (1.0, 1.0, 1.0, 1.0);
+matrix4 proj : Projection;
+#endif
+////////////Fog End
+
+////////////Light Start
+#ifndef LIT_ENABLE
+#define LIT_ENABLE TRUE
+#endif
+
+#if LIT_ENABLE
+
+#ifndef NEED_WORLD
+#define NEED_WORLD
+#endif
+
+#ifndef NEED_NORMAL
+#define NEED_NORMAL
+#endif
+
+#define LIGHT_ATTR_ITEM_NUM 5
+float4 ShadowLightAttr[LIGHT_ATTR_ITEM_NUM ] : ShadowLightAttr;
+float4 Ambient : Ambient = (0.0, 0.0, 0.0, 0.0); //全局唯一的ambient颜色
+
+#define POINT_LIGHT_ATTR_ITEM_NUM 10
+float4 PointLightAttrs[POINT_LIGHT_ATTR_ITEM_NUM] : PointLightAttrs;
+#endif
+////////////Light End
+
+////////////Separate Alpha Tex Start
+#ifndef SEPARATE_ALPHA_TEX
+#define SEPARATE_ALPHA_TEX FALSE
+#endif
+
+#if SEPARATE_ALPHA_TEX
+texture sepAlphaTex;
+#endif
+
+////////////Separate Alpha Tex End
+
+float blendValue: AlphaMtl
+<
+> = 1.0f;
+///////////Shadow Map Start
+
+#ifndef SHADOW_MAP_ENABLE
+#define SHADOW_MAP_ENABLE FALSE
+#endif
+
+#ifndef SHADOW_MAP_ENABLE_DEPTH_TEX
+#define SHADOW_MAP_ENABLE_DEPTH_TEX FALSE
+#endif
+
+
+#if SHADOW_MAP_ENABLE
+float4 CameraZPlanes : CameraInfo;
+texture texShadowMap : ShadowMap;
+matrix4 lightViewProj : LightViewProj;
+
+#ifndef NEED_WORLD
+#define NEED_WORLD
+#endif
+
+#endif
+
+
+#if RECEIVE_SHADOW
+texture texShadowMap : ShadowMap;
+matrix4 lightViewProj : LightViewProj;
+float4 CameraZPlanes : CameraInfo;
+#endif
+//////////Shadow Map End
+
+

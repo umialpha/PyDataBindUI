@@ -1,0 +1,48 @@
+#define TRUE 1
+#define FALSE 0
+
+int GlobalParameter : SasGlobal
+<
+  string SasEffectAuthoring = "lql";
+  string SasEffectCategory = "";
+  string SasEffectCompany = "Netease";
+  string SasEffectDescription = "outline";
+  string SasSuportedMacros = "UnSupported GPU_SKIN_ENABLE UnSupported FALSE;";
+>;
+
+////////////GPU Skin Start
+#ifndef GPU_SKIN_ENABLE
+#define GPU_SKIN_ENABLE FALSE
+#endif
+
+#define MAX_BONES 90
+float4 BoneVec[180] : SkinBones;
+////////////GPU Skin End
+
+matrix4 wvp : WorldViewProjection;
+
+float4 OutlineColor
+<
+	string SasUiLabel = "¹´±ßÑÕÉ«"; 
+	string SasUiControl = "ListPicker_ColorOp";
+> = (0.9725f, 0.1137f, 0.2196f, 1.0f);
+
+texture TexDiffuse
+<
+	string SasUiLabel = "AlphaÍ¨µÀÌùÍ¼"; 
+	string SasUiControl = "FilePicker";
+>;
+
+float Width = 3.0f;
+int Type = 1;
+
+technique TNoShader
+{
+	pass P0
+	{
+		SamplerTexture[0] = TexDiffuse;
+		VertexShader = "outline.vs" vs_2_0 main;
+		PixelShader = "outline.ps" ps_2_0 main;
+		
+	}
+}

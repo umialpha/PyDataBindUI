@@ -1,0 +1,139 @@
+#ifndef SEPARATE_ALPHA_TEX
+#define SEPARATE_ALPHA_TEX 0
+#endif
+
+#ifndef SEC_EMISSIVE_ADD
+#define SEC_EMISSIVE_ADD 0
+#endif
+
+using namespace metal;
+
+// UNIFORM
+struct PSConstants
+{
+	//System Uniform
+	float4 camera_pos;
+	float FrameTime;
+	//User Uniform
+	float4 Emissive_color;
+	float4 Emissive_tilling;
+	float4 Emissive_speed;
+	float Emissive_animation_ctrl;
+	#if RIMLIGHT_ENABLE
+	float4 Rim_color; 
+	float Rim_pow;//diffuseÌùÍ¼¶¯»­
+	#endif
+	#if DISSOLVE_ENABLE
+	float4 Dissolve_color;
+	float Dissolve_intensity;
+	#endif
+	float4 Shader_Attributes;
+};
+
+// VARYING
+struct PixelInput
+{
+	float4 UV0;
+	float4 RAWUV0;
+	float4 PosWorld;
+	float3 NormalWorld;
+};
+
+fragment float4 metal_main(
+	#if SEC_EMISSIVE_ENABLE
+	sampler SamplerEmissive1 [[sampler(1)]],
+	texture2d<float> texture1 [[texture(1)]],
+	#endif
+	#if DISSOLVE_ENABLE
+	sampler SamplerDissolve3 [[sampler(3)]],
+	texture2d<float> texture3 [[texture(3)]],
+	#endif
+	sampler SamplerMask4 [[sampler(4)]],
+	texture2d<float> texture4 [[texture(4)]],
+	sampler SamplerEmissive0 [[sampler(0)]],
+	texture2d<float> texture0 [[texture(0)]],
+	PixelInput in[[stage_in]],
+	constant PSConstants &constants[[buffer(0)]]
+)
+{
+	float4 final_color = float4(1.0);
+
+	float4 emissive_color1;
+	float frame_time = constants.FrameTime * FRAMETIME_SCALE;
+	float2 animation_speed = float2(0.0);
+#if EMISSIVE_ANIMATION_ENABLE
+	animation_speed = float2(constants.Emissive_animation_ctrl);
+#else
+	animation_speed = float2(frame_time);
+#endif
+	float2 animation_uv = in.RAWUV0.xy + constants.Emissive_speed.xy * animation_speed;
+	animation_uv *= constants.Emissive_tilling.xy;
+	emissive_color1 = texture0.sample(SamplerEmissive0,animation_uv);
+#if SEC_EMISSIVE_ENABLE
+	animation_uv = in.RAWUV0.xy + constants.Emissive_speed.zw * animation_speed;
+	animation_uv *= constants.Emissive_tilling.zw;
+	float4 emissive_color2 = texture1.sample(SamplerEmissive1,animation_uv);
+#endif
+	float3 mask_color = texture4.sample(SamplerMask4,in.UV0.xy).rgb;
+	
+#if RIMLIGHT_ENABLE
+	//vectors
+	float3 normal_dir = in.NormalWorld.xyz;
+	normal_dir = normalize(normal_dir);
+	float3 view_dir = normalize(constants.camera_pos.xyz - in.PosWorld.xyz);
+	//Ks
+	float ndotv = clamp(dot(normal_dir,view_dir), 0.0, 1.0);
+#endif
+
+#if SEC_EMISSIVE_ENABLE
+#if SEC_EMISSIVE_ADD
+	float3 emissive_color = emissive_color1.rgb + emissive_color2.rgb;
+#else
+	float3 emissive_color = min(emissive_color1.rgb,emissive_color2.rgb);
+#endif
+#else
+	float3 emissive_color = emissive_color1.rgb;
+#endif
+
+	emissive_color *= constants.Shader_Attributes.w;
+	final_color.a = emissive_color.r;
+	emissive_color *= constants.Emissive_color.rgb * constants.Emissive_color.a * EMISSIVE_SCALE;
+#if RIMLIGHT_ENABLE
+	float3 rimlight_color =  float3(constants.Rim_color.a) * pow(1.0 - ndotv,constants.Rim_pow);
+	final_color.a += rimlight_color.r;
+	rimlight_color *= constants.Rim_color.rgb;
+	emissive_color = clamp(float3(1.0) - (float3(1.0) - emissive_color) * (float3(1.0) - rimlight_color), 0.0, 1.0);
+#endif
+///////////////////////////////////////////////////////////////////////////
+#if DISSOLVE_ENABLE
+	//
+	float3 dissolve_color = texture3.sample(SamplerDissolve3,in.UV0.xy * constants.Shader_Attributes.xy).rgb;
+	dissolve_color -= float3(constants.Dissolve_intensity);
+	dissolve_color = clamp(dissolve_color, 0.0, 1.0); 
+	float3 dissolve_attribute = texture4.sample(SamplerMask4,dissolve_color.rg).rgb * 2.0;
+    dissolve_attribute = clamp(dissolve_attribute, 0.0, 1.0);
+	
+
+    float thresh = 0.1;
+	dissolve_attribute.r = clamp(dissolve_attribute.r - thresh, 0.0, 1.0);
+	dissolve_attribute.g = clamp(dissolve_attribute.g - thresh, 0.0, 1.0);
+	dissolve_attribute.b = clamp(dissolve_attribute.b - thresh, 0.0, 1.0);
+	
+	dissolve_color = constants.Dissolve_color.rgb * constants.Dissolve_color.a * dissolve_attribute.b;
+	float t= dissolve_attribute.g - dissolve_attribute.b;
+	// t = select(t < thresh, 0, t);
+	final_color.xyz = emissive_color * clamp(float3(t), 0.0, 1.0) +  dissolve_color;
+#else
+	final_color.xyz = emissive_color;
+#endif
+#if DISSOLVE_ENABLE
+	final_color.a =  final_color.a * dissolve_attribute.g + dissolve_attribute.b ;
+#endif
+
+	
+	final_color.a *= mask_color.r;
+	// final_color.a  = 1;
+
+
+	return final_color;
+}

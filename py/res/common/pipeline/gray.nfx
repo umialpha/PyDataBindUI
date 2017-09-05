@@ -1,0 +1,11 @@
+float gray_factor = 1.0f;
+float4 dynamicRT:DynamicResolutionRT;
+
+technique Gray
+{
+	pass T0
+	{
+		VertexShader = "bloom.vs" vs_2_0 VSMain;
+		PixelShader = "gray.ps" ps_2_0 GrayPS;
+	}
+}

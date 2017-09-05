@@ -1,0 +1,205 @@
+/////////////////////////////////////////////////shadowmap 相关
+#ifndef __SHADOW_FXL__
+#define __SHADOW_FXL__
+
+#if EQUAL(SHADOW_MAP_ENABLE, TRUE)
+
+#define NEED_LIGHT_VIEW_PROJ_MAT
+#define NEED_SHADOW_MAP
+#define NEED_SHADOW_LIGHT_ATTRS
+#include "vardefination.fxl"
+
+//
+#ifndef SHADOWMAP_TYPE
+	#define SHADOWMAP_TYPE SOFT_SHADOWMAP
+#endif
+
+sampler sampleShadow :register(s8)= sampler_state
+{
+	Texture = (ShadowMap);
+	AddressU = BORDER;
+	AddressV = BORDER;
+	BorderColor = 0xFFFFFFFF;
+	MagFilter = POINT;
+	MinFilter = POINT;
+	MipFilter = POINT;
+};
+
+texture	TexNoise
+<
+	string TextureFile = "common\\textures\\noise.bmp"; 
+>;
+
+sampler	SamplerNoise :register(s10) = sampler_state
+{
+	Texture	  =	(TexNoise);
+	MagFilter = POINT;
+	MinFilter = POINT;
+	MipFilter = POINT;
+};
+      
+	  
+////////////////////////////////////////
+#define PCF_NUM_SAMPLES 16
+
+cbuffer POISSON_DISKS
+{
+static float2 poissonDisk[16] = {
+
+float2( 0.0, 0.0 ),
+float2( -0.94201624, -0.39906216 ),
+float2( 0.94558609, -0.76890725 ),
+float2( -0.094184101, -0.92938870 ),
+float2( 0.34495938, 0.29387760 ),
+float2( -0.91588581, 0.45771432 ),
+float2( -0.81544232, -0.87912464 ),
+float2( -0.38277543, 0.27676845 ),
+float2( 0.97484398, 0.75648379 ),
+float2( 0.44323325, -0.97511554 ),
+float2( 0.53742981, -0.47373420 ),
+float2( -0.26496911, -0.41893023 ),
+float2( 0.79197514, 0.19090188 ),
+float2( -0.24188840, 0.99706507 ),
+float2( -0.81409955, 0.91437590 ),
+float2( 0.19984126, 0.78641367 )
+};
+};
+
+float PCF_Filter( float2 uv, float zReceiver, float filterRadiusUV , float3 pos_local)
+{
+	float sum = 0.0f;
+	float2 noise = (tex2D(SamplerNoise, pos_local.xz  + pos_local.y ).rg - float2(0.5f, 0.5f)) * 2;	
+	float cos_angle = noise.r;
+	float sin_angle = noise.g;
+	
+	for(int i = 0; i < PCF_NUM_SAMPLES; ++i)
+	{
+		float2 uv_inc_org = poissonDisk[i] * filterRadiusUV;
+		float2 uv_inc = float2(uv_inc_org.x * cos_angle + uv_inc_org.y * sin_angle, uv_inc_org.x * sin_angle - uv_inc_org.y * cos_angle);			
+		sum += tex2Dproj(sampleShadow, float4(uv + uv_inc, zReceiver, 1)).x;
+	}
+	
+	sum /= PCF_NUM_SAMPLES;
+	return sum;
+}
+
+
+float PenumbraSize(float zReceiver, float zBlocker) //Parallel plane estimation
+{
+	return (zReceiver - zBlocker) / zBlocker;
+}
+
+
+void FindBlocker(out float avgBlockerDepth, out float numBlockers, float2 uv, float zReceiver, float shadow_width )
+{
+	float blockerSum = 0;
+	numBlockers = 0;
+	for( int i = 0; i < PCF_NUM_SAMPLES; ++i )
+	{
+		float shadowMapDepth = tex2D(sampleShadow, uv + poissonDisk[i] * shadow_width).x;
+		 
+		if ( shadowMapDepth < zReceiver ) {
+			blockerSum += shadowMapDepth;
+			numBlockers++;
+		}
+
+	}
+	avgBlockerDepth = blockerSum / numBlockers;
+}
+
+float PCSS ( float4 coords, float shadow_width, float3 pos_local )
+{
+	float2 uv = coords.xy;
+	float zReceiver = coords.z; // Assumed to be eye-space z in this code
+	// STEP 1: blocker search
+	//float avgBlockerDepth = 0;
+	//float numBlockers = 0;
+	//FindBlocker( avgBlockerDepth, numBlockers, uv, zReceiver , shadow_width);
+	//if( numBlockers < 1 )
+		//There are no occluders so early out (this saves filtering)
+	//	return 0.5f;
+	
+	// STEP 2: penumbra size
+	//float penumbraRatio = PenumbraSize(zReceiver, avgBlockerDepth);
+	//float filterRadiusUV = penumbraRatio * shadow_width;
+	
+	float filterRadiusUV = shadow_width;
+	// STEP 3: filtering
+	return PCF_Filter( uv, zReceiver, filterRadiusUV, pos_local );
+}
+
+/////////////////////////////////
+void GetShadowFactor(in PS_GENERAL ps_general, out float shadow_fac)
+{			
+	float dist_receiver = ps_general.ShadowUV.z;
+		
+	#if EQUAL(SHADOWMAP_TYPE, SOFT_SHADOWMAP)
+		shadow_fac = PCSS (ps_general.ShadowUV ,ps_general.ShadowWidth/64, ps_general.PosLocal);
+	#else
+		//hard shadow
+		shadow_fac = tex2Dproj(sampleShadow, float4(ps_general.ShadowUV.xyz, 1)).x;
+	#endif
+	
+	shadow_fac = lerp(1.0f - ps_general.ShadowAlpha, 1.0f, shadow_fac);
+}
+
+
+
+void DirGetShadowUV(inout PS_GENERAL ps_general)
+{
+	float3 shadow_light_dir = ShadowLightAttr[3].xyz;
+	float angle = dot(ps_general.NormalWorld,shadow_light_dir);
+		
+	if(angle > 0)
+	{
+		ps_general.ShadowUV.z = -100000.0;
+	}else
+	{
+		//先判断当前点法线和光线的夹角，判断是否可能投影
+		float4 pos_in_light_view = mul(float4(ps_general.PosWorld,1), LightViewProjMatrix);		//计算当前顶点在lightview下深度
+		pos_in_light_view /= pos_in_light_view.w;
+				
+		float ShadowDepth = saturate(pos_in_light_view.z) ;	//归一化，并适度缩短
+		
+		float dwoffset_x = 0.5f + (0.5f/ps_general.ShadowMapSize.x);
+		float  dwoffset_y = 0.5f + (0.5f/ps_general.ShadowMapSize.y);
+		
+		float4x4 bias_mat = {0.5,0,0,0,
+											0,-0.5,0,0,
+											0,0,0,0,
+											dwoffset_x,dwoffset_y,0,1};
+							
+		
+		ps_general.ShadowUV = mul(pos_in_light_view, bias_mat);	
+		ps_general.ShadowUV.z = ShadowDepth - ShadowBlendAll.y ;	
+	}
+}
+
+void PointGetShadowUV(inout PS_GENERAL ps_general)
+{
+   //计算光view下的位置 并归一化到单位量
+	float3 pos_in_light_view = mul(float4(ps_general.PosWorld.xyz,1), LightViewProjMatrix).xyz;	
+	float L = length(pos_in_light_view);	
+	pos_in_light_view /=  L;
+	
+	pos_in_light_view.xyz = pos_in_light_view.zxy;
+	//计算原来uv
+	float abs_z = abs(pos_in_light_view.z);
+	ps_general.ShadowUV.y =  1.0f - ((pos_in_light_view.y /  (1.0f + abs_z)) * 0.5f + 0.5f); 
+	ps_general.ShadowUV.x =  (pos_in_light_view.x /  (1.0f + abs_z)) * 0.5f + 0.5f; 
+		
+	//将uv偏移到合并贴图
+	if(pos_in_light_view.z >0)
+	{
+		ps_general.ShadowUV.x  *= 0.5f;
+	}else
+	{	
+		ps_general.ShadowUV.x = ps_general.ShadowUV.x * 0.5f +0.5f;
+	}
+	
+	ps_general.ShadowUV.z =  L /ShadowLightAttr[3].w  * 0.999 - 0.001;// L * 0.99 - 0.5;
+}
+
+#endif  //shadowmapenable
+
+#endif

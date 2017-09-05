@@ -1,0 +1,43 @@
+int GlobalParameter : SasGlobal
+<
+  string SasEffectAuthoring = "hzshentuyuan";
+  string SasEffectCategory = "";
+  string SasEffectCompany = "Netease";
+  string SasEffectDescription = "common";
+  string SasSuportedMacros = "UnSupported ALPHA_TEST_ENABLE UnSupported FALSE;UnSupported SEPARATE_ALPHA_TEX UnSupported FALSE;UnSupported GPU_SKIN_ENABLE UnSupported FALSE;";
+  string SasEffectAttr = "INSTANCE_SUPPORTED=TRUE;";
+>;
+
+#include "common_defination.nfx"
+
+texture	Tex0 
+<
+	string SasUiLabel = "颜色贴图"; 
+	string SasUiControl = "FilePicker";
+>;
+
+float4 Alpha
+<
+	string SasUiLabel = "调整色";
+	string SasUiControl = "ColorPicker";
+> = (1.0, 1.0, 1.0, 1.0);
+
+matrix4 SprTrans = ((1.0, 0.0, 0.0, 0.0), (0.0, 1.0, 0.0, 0.0), (0.0, 0.0, 1.0, 0.0), (0.0, 0.0, 0.0, 1.0));
+
+SamplerTexture[0] = Tex0;
+
+#if SEPARATE_ALPHA_TEX
+SamplerTexture[7] = sepAlphaTex;
+#endif
+
+technique TShader
+<
+	string Description = "普通单层贴图";
+>
+{
+	pass p0
+	{
+		VertexShader = "sfx_spr.vs" vs_2_0 main_VS;
+		PixelShader = "sfx_spr.ps" ps_2_0 main_PS;
+	}
+}

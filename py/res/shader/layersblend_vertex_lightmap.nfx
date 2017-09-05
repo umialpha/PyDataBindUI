@@ -1,0 +1,258 @@
+#include "common_defination.nfx"
+
+int GlobalParameter : SasGlobal
+<
+  string SasEffectAuthoring = "lulu";
+  string SasEffectCategory = "";
+  string SasEffectCompany = "Netease";
+  string SasEffectDescription = "light map";
+  string SasSuportedMacros = "UnSupported LIGHT_MAP_ENABLE UnSupported TRUE;UnSupported ALPHA_TEST_ENABLE UnSupported FALSE;UnSupported FOG_ENABLE UnSupported FALSE;UnSupported SEPARATE_ALPHA_TEX UnSupported FALSE;UnSupported LIT_ENABLE UnSupported FALSE;UnSupported SHADOW_MAP_ENABLE UnSupported FALSE;UnSupported SHADOW_MAP_ENABLE_DEPTH_TEX UnSupported FALSE;UnSupported CUBEMAP_ENABLE UnSupported FALSE;UnSupported FOG_ENABLE UnSupported FALSE;UnSupported RECEIVE_SHADOW UnSupported FALSE;";
+  string SasEffectAttr = "INSTANCE_SUPPORTED=TRUE;";
+>;
+
+#ifndef GPU_SKIN_ENABLE
+#define GPU_SKIN_ENABLE 0
+#else
+#undef GPU_SKIN_ENABLE
+#define GPU_SKIN_ENABLE 0
+#endif
+
+#ifndef RECEIVE_SHADOW
+#define RECEIVE_SHADOW 0
+#endif
+
+#ifndef NEED_WORLD
+#define NEED_WORLD
+#endif
+
+#ifndef NEED_NORMAL
+#define NEED_NORMAL
+#endif
+
+#ifndef NEED_WORLD_INFO
+#define NEED_WORLD_INFO
+#endif
+
+#ifndef FOG_TYPE
+#define FOG_TYPE
+#endif
+
+#ifndef CUBEMAP_ENABLE
+#define CUBEMAP_ENABLE 0
+#endif
+
+// #ifndef FOG_TYPE_HEIGHT
+// #define FOG_TYPE_HEIGHT
+// #endif
+
+matrix4 lightmapTrans: LightMapTransform;
+float4 CameraPos : CameraPosition;
+
+texture	Tex0 
+<
+	string SasUiLabel = "颜色贴图"; 
+	string SasUiControl = "FilePicker";
+>;
+
+texture TexLightmap : LightMap
+<
+	string SasUiLabel = "烘培贴图";
+	string SasUiControl = "FilePicker";
+>;
+
+	texture	MixTex2
+	<
+		string SasUiLabel = "素材贴图2"; 
+		string SasUiControl = "FilePicker";
+	>;
+	texture	MixTex3
+	<
+		string SasUiLabel = "素材贴图3"; 
+		string SasUiControl = "FilePicker";
+	>;
+	//texture	MixTex4
+	//<
+	//	string SasUiLabel = "素材贴图4"; 
+	//	string SasUiControl = "FilePicker";
+	//>;
+	
+	float4 Tex_scale
+	<
+		string SasUiLabel = "贴图Tilling"; 
+		string SasUiControl = "FloatXPicker";
+	>  =  (1.0, 1.0, 1.0, 1.0);
+
+	float dark_factor
+	<
+		string SasUiLabel = "变暗程度"; 
+		string SasUiControl = "FilePicker";
+	> = 0.2;
+	
+	// float tex1_scale
+	// <
+		// string SasUiGroup = "素材缩放";
+		// string SasUiLabel = "素材1";
+		// string SasUiControl = "FloatPicker";
+	// > = 1.0;
+	// float tex2_scale
+	// <
+		// string SasUiGroup = "素材缩放";
+		// string SasUiLabel = "素材2";
+		// string SasUiControl = "FloatPicker";
+	// > = 1.0;
+	// float tex3_scale
+	// <
+		// string SasUiGroup = "素材缩放";
+		// string SasUiLabel = "素材3";
+		// string SasUiControl = "FloatPicker";
+	// > = 1.0;
+	// float tex4_scale
+	// <
+		// string SasUiGroup = "素材缩放";
+		// string SasUiLabel = "素材4";
+		// string SasUiControl = "FloatPicker";
+	// > = 1.0;
+
+float4 LightMapScale : LightMapScale;
+
+float ShadowAlpha
+<
+	string SasUiLabel = "实时阴影透明度";
+	string SasUiControl = "FloatPicker";
+	string SasUiMin = "0.0";
+	string SasUiMax = "1.0";
+> = 0.2;
+
+float4 ShadowColor
+<
+	string SasUiLabel = "阴影润色"; 
+	string SasUiControl = "ColorPicker";
+>  = (0.0, 0.0, 0.0, 0.0);
+
+// float CubeMapPower
+// <
+	// string SasUiLabel = "环境贴图强度";
+	// string SasUiControl = "FloatPicker";
+// > = 1.0;
+
+// float CubeMapRatio
+// <
+	// string SasUiLabel = "环境贴图融合百分比";
+	// string SasUiControl = "FloatPicker";
+// > = 0.5;
+
+// float CubeMapMipBias
+// <
+	// string SasUiLabel = "环境贴图模糊度(-5.0~5.0)";
+	// string SasUiControl = "FloatPicker";
+	// string SasUiMin = "-5.0";
+	// string SasUiMax = "5.0";
+// > = 3.0;
+
+// #if CUBEMAP_ENABLE
+	// texture	Tex1
+	// <
+		// string SasUiLabel = "cubemap贴图";
+		// string SasUiControl = "FilePicker";
+	// >;
+	// texture	Tex2
+	// <
+		// string SasUiLabel = "cubemap控制贴图";
+		// string SasUiControl = "FilePicker";
+		// string TextureFile = "common\\textures\\white.tga";
+	// >;
+// #endif
+
+#if CUBEMAP_ENABLE
+	texture	CubeMap5
+	<
+		string SasUiLabel = "cubemap混合贴图";  //R:tex1控制贴图 G:tex2控制贴图 B:tex3控制贴图 A:Cube反射贴图
+		string SasUiControl = "FilePicker";
+		string TextureFile = "common\\textures\\white.tga";
+	>;
+	
+	float CubeMapPower
+	<
+		string SasUiLabel = "环境贴图强度";
+		string SasUiControl = "FloatPicker";
+	> = 1.0;
+	
+	float4 cubemap_color
+	<
+		string SasUiLabel = "环境贴图颜色"; 
+		string SasUiControl = "ColorPicker";
+	>  = (1, 1, 1, 0.5);
+	
+	float CubeMapRatio
+	<
+		// string SasUiLabel = "环境贴图融合百分比";
+		// string SasUiControl = "FloatPicker";
+	> = 0.5;
+
+#endif
+
+
+SamplerTexture[0] = Tex0;
+SamplerMipBias[0] = -2.2;
+SamplerFilter[0] = FILTER_TRILINEAR;
+
+SamplerTexture[1] = TexLightmap;
+
+
+//SamplerXXXFilter没有了
+// 现在只有SamplerFilter值，分别为：
+// FILTER_POINT  ///< mag/min = POINT, mip = POINT
+// FILTER_BILINEAR  ///< mag/min = LINEAR, mip = POINT
+// FILTER_TRILINEAR  ///< mag/min = LINEAR, mip = LINEAR
+// FILTER_ANISOTROPIC  ///< mag/min = ANISOTROPIC, mip = LINEAR
+
+
+#if RECEIVE_SHADOW
+SamplerTexture[2] = texShadowMap;
+#endif
+
+// #if CUBEMAP_ENABLE
+	// SamplerTexture[3] = Tex1;
+	// SamplerFilter[3] = FILTER_TRILINEAR;
+	// SamplerAddressU[3] = ADDRESS_CLAMP;
+	// SamplerAddressV[3] = ADDRESS_CLAMP;
+	// //SamplerMipBias[3] = CubeMapMipBias;
+	
+	// SamplerTexture[4] = Tex2;
+// #endif
+
+//#if NEOX_MIX_TEX3_ENABLE
+	SamplerTexture[3] = MixTex2;
+    SamplerMipBias[3] = -2.2;
+    SamplerFilter[3] = FILTER_TRILINEAR;
+	SamplerTexture[4] = MixTex3;
+	SamplerMipBias[4] = -2.2;
+    SamplerFilter[4] = FILTER_TRILINEAR;
+	//SamplerTexture[5] = MixTex4;
+	//SamplerMipBias[5] = -2.2;
+ //   SamplerFilter[5] = FILTER_TRILINEAR;
+//#endif
+
+#if CUBEMAP_ENABLE
+SamplerTexture[6] = CubeMap5;
+SamplerMipBias[6] = -2.2;
+SamplerFilter[6] = FILTER_TRILINEAR;
+#endif
+
+#if SEPARATE_ALPHA_TEX
+SamplerTexture[7] = sepAlphaTex;
+SamplerMipBias[7] = -2.2;
+SamplerFilter[7] = FILTER_TRILINEAR;
+#endif
+
+technique TShader
+<
+	string Description = "普通单层贴图";
+>
+{
+	pass P0
+	{
+		VertexShader = "layersblend_vertex_lightmap.vs" vs_2_0 main;
+		PixelShader = "layersblend_vertex_lightmap.ps" ps_2_0 main;
+	}
+}

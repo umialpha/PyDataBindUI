@@ -1,0 +1,37 @@
+precision lowp float;
+
+uniform sampler2D samplerTex0;
+uniform sampler2D samplerMask1;
+
+
+uniform lowp float distortionScale;   
+uniform mediump float distortionSpeed;
+uniform mediump float distortionLength;
+uniform lowp float distortionBegin;
+uniform lowp float distortionPower;
+
+uniform highp float FrameTime;
+
+const mediump float halfpi = 3.1415926 * 0.5;
+
+varying mediump vec2 TexCoord0;
+
+void ps_main()
+{
+
+	vec4 mask_clr = texture2D(samplerMask1, TexCoord0.xy);
+    float distor_factor = pow( 1.0 - abs(sin( clamp(mask_clr.a + distortionBegin, 0.0, 1.0) * halfpi)), distortionPower);
+
+	//扰动部分
+	vec2 backgroundUv = TexCoord0.xy;
+
+	highp float temp1 = FrameTime * distortionSpeed;
+	mediump float temp2 = 10.0 * distortionLength;
+	lowp float temp3 = distortionScale * 0.1 * distor_factor;
+
+	backgroundUv.x += sin(temp1 + backgroundUv.x * temp2) * temp3;
+	backgroundUv.y += cos(temp1 + backgroundUv.y * temp2) * temp3;
+
+	gl_FragColor = texture2D(samplerTex0, backgroundUv);
+
+}

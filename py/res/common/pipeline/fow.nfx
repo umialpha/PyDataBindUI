@@ -1,0 +1,28 @@
+float4 CameraPos;
+float4 ViewDirs[4];
+
+float FowFactor;
+float TimeFactor;
+float4 FowParameter;
+float4 SceneParameter;
+
+float4 dynamicRT:DynamicResolutionRT;
+float4 ZParams:ZBufferParams;
+matrix4 InverseViewaMatrix: InverseView;
+
+texture TexFOW;
+texture FormerTexFOW;
+
+SamplerTexture[3] = TexFOW;
+SamplerTexture[4] = FormerTexFOW;
+
+
+
+technique Fow
+{
+	pass T0
+	{
+		VertexShader = "fow.vs" vs_2_0 FOWMain;
+		PixelShader = "fow.ps" ps_2_0 FOWPS;
+	}
+}

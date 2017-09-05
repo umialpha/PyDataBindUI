@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<ppg3d> 
+  <modules> 
+    <module Name="Python" File="python.dll"/>  
+    <module Name="Detour" File="detour.dll"/> 
+  </modules>  
+  <client WindowAutoSize="True" WindowClientWidth="1334" WindowClientHeight="750" World="3d" ResourceRoot=".\res" ShowLogWindow="False" LimitDisplayRate="False" FixedLogicRate="False" UseCADisplayLink="True" DumpType="0" DumpPath="dumps" ShowDumpDlg="False" ShowInitProgress="True" InitSpinningIcon="False" InitViewBackground="Default~ipad.png"> 
+    <uis> 
+      <cocosui Passing="False"/>  
+      <pygame Passing="True"/> 
+    </uis> 
+  </client>  
+  <filesystems> 
+    <filesystem name="res"> 
+      <loader name="discrete" opener="os" root="%DOC_DIR%\res" depth="0"/>  
+      <loader name="npk" opener="os" root="%DOC_DIR%\res" depth="0"/>  
+      <loader name="discrete" opener="os" root="%WORK_DIR%\res" depth="0"/>  
+      <loader name="npk" opener="os" root="%WORK_DIR%\res" depth="0"/> 
+    </filesystem>  
+    <filesystem name="script"> 
+      <loader name="discrete" opener="os" root="%DOC_DIR%\script" depth="0"/>  
+      <loader name="npk" opener="os" root="%DOC_DIR%\script" depth="0"/>  
+      <loader name="discrete" opener="os" root="%WORK_DIR%\script" depth="0"/>  
+      <loader name="npk" opener="os" root="%WORK_DIR%\script" depth="0"/> 
+    </filesystem> 
+  </filesystems>  
+  <render Depth="32" MultiSample="4" VSync="False" EnableRenderThread="False" EnableDepthShadow="True" EnableShadowMap="True" EnableESM="False"></render>  
+  <cocosui LogLevel="30" EnableBatchOptimize="True" SharedTextureSize="2048" TtfFontScale="1.5" TtfFontMax="48"> 
+    <FontNameMap> 
+      <FontNameMap0 Name="å¾®è½¯é
+é»" Value="DroidSansFallback.ttf"/> 
+    </FontNameMap> 
+  </cocosui>  
+  <rsync Enable="False"></rsync>  
+  <world CrashOnInvalidGis="True" UseInstancePool="False" GpuSkinningEnable="True" PixelDecal="False" GpuParticle="False" MergeStaticModel="True" SubMeshBatching="True" HardwareInstancing="True" ShaderInstancing="True" MaxShaderInstancingBatchSize="30"></world>  
+  <profiling PerfSystem="True" DebugPort="17776"/>  
+  <python ThreadEnable="True"></python> 
+</ppg3d>

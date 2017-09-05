@@ -1,0 +1,11 @@
+
+float4 dynamicRT:DynamicResolutionRT;
+
+technique CopyRT
+{
+	pass P0
+	{
+		VertexShader = "copy.vs" vs_2_0 VSMain;
+		PixelShader	 = "copy.ps" ps_2_0 PSMain;
+	}
+}

@@ -1,0 +1,68 @@
+using namespace metal;
+
+// UNIFORM
+struct PSConstants
+{
+	float FrameTime;
+	float Speed;
+	float Intensity;
+	float3 Color;
+	float blendValue;
+};
+
+
+// VARYING
+struct PixelInput
+{
+	float4 position [[position]];
+	float4 RAWUV0;
+};
+
+float GetCycleValue(float time)
+{
+	return sin(time) * 1.57075;
+}
+
+float GetDistortUV(PixelInput in, texture2d<float> texture1, sampler SamplerDistortion1, constant PSConstants &constants)
+{
+	float4 distort_map = texture1.sample(SamplerDistortion1, in.RAWUV0.xy);
+	float cycle_time = constants.FrameTime * constants.Speed;
+	float3 cycle_array = float3(GetCycleValue(cycle_time + 4.0), GetCycleValue(cycle_time + 0.0), GetCycleValue(cycle_time + 2.0));
+	float uv = dot(distort_map.xyz, cycle_array);
+	return uv;
+}
+
+
+fragment float4 metal_main(
+	PixelInput in[[stage_in]],
+	constant PSConstants &constants[[buffer(0)]],
+	sampler SamplerMask0 [[sampler(0)]],
+	texture2d<float> texture0 [ [texture(0)] ],
+	
+	sampler SamplerDistortion1,
+	texture2d<float> texture1 [ [texture(1)] ],
+	sampler SamplerAlbedo3,
+	texture2d<float> texture3 [ [texture(3)] ]
+#if SEPARATE_ALPHA_TEX
+	, sampler2D SamplerSepAlphaTex7
+	, texture2d<float> texture7 [ [texture(7)] ]
+#endif
+	)
+{
+	float4 output = float4(0);
+
+	float uv = GetDistortUV(in, texture1, SamplerDistortion1, constants);
+	float4 albedo = texture3.sample(SamplerAlbedo3, float2(uv, 1.0 - uv));
+	float3 emissive = albedo.rgb * constants.Intensity * constants.Color.rgb;
+	output.xyz = emissive;
+
+	float4 mask_color = texture0.sample(SamplerMask0, in.RAWUV0.xy);
+#if SEPARATE_ALPHA_TEX
+	mask_color.a = texture7.sample(SamplerSepAlphaTex7, in.RAWUV0.xy).a;
+#endif
+	output.a = (1.0 - uv) * mask_color.a;
+
+	output.a *= constants.blendValue;
+
+	return output;
+}

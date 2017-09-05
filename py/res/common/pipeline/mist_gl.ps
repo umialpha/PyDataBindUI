@@ -1,0 +1,23 @@
+precision lowp float;
+
+uniform sampler2D samplerTex0;
+uniform sampler2D samplerMask1;
+
+uniform mediump float DarkIntensity;
+uniform lowp float DarkCenterX;
+uniform lowp float DarkCenterY;
+uniform lowp float DarkCenterR;
+
+const mediump float halfpi = 3.1415926 * 0.5;
+
+varying mediump vec2 TexCoord0;
+
+void ps_main()
+{
+	vec4 org_clr = texture2D(samplerTex0, TexCoord0);
+	vec4 mask_clr = texture2D(samplerMask1, TexCoord0);
+	float factor = (pow(DarkCenterX - TexCoord0.x, 2.0) + pow(DarkCenterY - TexCoord0.y, 2.0)) / (DarkCenterR * DarkCenterR);
+
+	// gl_FragColor = org_clr * pow( abs( sin( clamp(mask_clr.a + DarkBegin, 0.0, 1.0) * halfpi)), DarkIntensity);
+	gl_FragColor = org_clr * pow( abs( clamp(1.0 - factor, 0.0, 1.0)), DarkIntensity);
+}

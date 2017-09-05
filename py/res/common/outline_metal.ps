@@ -1,0 +1,30 @@
+using namespace metal;
+
+// VARYING
+struct VertexOutput
+{
+	float4 position [[position]];
+	float4 TexCoord0;
+};
+
+// UNIFORM
+struct PSConstants
+{
+	float4 OutlineColor;
+};
+
+
+fragment float4 metal_main (
+	VertexOutput in [[stage_in]],
+	constant PSConstants &constants[[buffer(0)]],
+	texture2d<float> texture0 [[texture(0)]],
+	sampler sampler0 [[sampler(0)]]
+	)
+{
+	float4 output;
+	float4 c = texture0.sample(sampler0, in.TexCoord0.xy);
+	float4 result = constants.OutlineColor;
+	result.a *= c.a;
+	output = result;
+	return output;
+}

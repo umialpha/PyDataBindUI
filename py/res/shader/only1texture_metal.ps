@@ -1,0 +1,33 @@
+#include <metal_graphics>
+#include <metal_texture>
+#include <metal_matrix>
+#include <metal_common>
+
+using namespace metal;
+
+// VARYING
+struct PixelInput{
+	float4 UV0;	
+};
+
+// UNIFORM
+struct PSConstants
+{
+	float alpha;
+};
+
+fragment float4 metal_main(
+	PixelInput psIN[[stage_in]],
+	constant PSConstants &constants[[buffer(0)]],
+	sampler SamplerDiffuse0 [[sampler(0)]],
+	texture2d<float> texture0 [[texture(0)]]
+	)
+{
+	float4 gl_FragColor = float4(0.0);
+	// float4 tmp = texture0.sample(SamplerDiffuse0,float2(psIN.UV0.x, 1- psIN.UV0.y));
+	float4 tmp = texture0.sample(SamplerDiffuse0,psIN.UV0.xy);
+    gl_FragColor = tmp;
+
+    return gl_FragColor;
+}
+

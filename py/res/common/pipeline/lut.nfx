@@ -1,0 +1,17 @@
+texture	TexLut
+<
+	string TextureFile = "common\\textures\\lut.bmp"; 
+>;
+
+float4 dynamicRT:DynamicResolutionRT;
+SamplerTexture[1] = TexLut;
+SamplerFilter[1] = FILTER_BILINEAR_NO_MIP;
+
+technique Lut
+{
+	pass T0
+	{
+		VertexShader = "bloom.vs" vs_2_0 VSMain;
+		PixelShader = "lut.ps" ps_2_0 LutPS;
+	}
+}

@@ -1,0 +1,13 @@
+precision mediump float;
+varying mediump vec2 v_texture0;
+varying lowp vec4 v_texture1;
+void main()
+{
+const float local_0 = 0.0;
+const float local_1 = 1.0;
+mediump float local_2 = length(v_texture0);
+mediump float local_3 = local_1 - local_2;
+mediump float local_4 = step(local_0, local_3);
+lowp vec4 local_5 = v_texture1 * local_4;
+gl_FragColor = local_5;
+}

@@ -1,0 +1,33 @@
+using namespace metal;
+
+// VARYING
+struct VertexOutput
+{
+	float4 position [[position]];
+	float4 vPosition;
+};
+
+// UNIFORM
+struct PSConstants
+{
+	float4 CameraZPlanes;
+};
+
+fragment float4 metal_main (
+	VertexOutput in [[stage_in]],
+	constant PSConstants &constants[[buffer(0)]]
+	)
+{
+	float4 gl_FragColor = float4(0);
+	
+	float Near = -1.0 * constants.CameraZPlanes.w/(constants.CameraZPlanes.z + 1.0);//1.0; // camera z near
+    float Far = constants.CameraZPlanes.w/(constants.CameraZPlanes.z - 1.0);//3000.0; // camera z far
+    float LinearDepthConstant = 2.0 / (Far - Near);
+
+    float linearDepth = (in.vPosition.z - Near) * LinearDepthConstant;
+    
+	
+	gl_FragColor.r = linearDepth;
+
+	return gl_FragColor;
+}

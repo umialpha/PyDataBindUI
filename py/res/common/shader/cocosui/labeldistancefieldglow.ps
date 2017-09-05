@@ -1,0 +1,50 @@
+#ifndef USE_SEPARATE_ALPHA
+ #define USE_SEPARATE_ALPHA 0
+#endif
+
+float4 u_textColor;
+float4 u_effectColor;
+sampler2D CC_Texture0: register(s0);
+struct PS_INPUT
+{
+float4 final_position: POSITION;
+float4 v_diffuse: TEXCOORD0;
+float2 v_texture0: TEXCOORD1;
+};
+float4 main(PS_INPUT psIN) : COLOR
+{
+float4 final_color;
+float4 local_0 = tex2D(CC_Texture0, psIN.v_texture0);
+float local_1;
+#if USE_SEPARATE_ALPHA
+float local_2 = local_0.x;
+float local_3 = local_0.y;
+float local_4 = local_0.z;
+float local_5 = local_0.w;
+local_1 = local_2;
+#else
+float3 local_6 = local_0.xyz;
+float local_7 = local_0.w;
+local_1 = local_7;
+#endif
+const float local_8 = 0.04f;
+const float local_9 = 0.5f;
+float local_10 = local_9 - local_8;
+float local_11 = local_9 + local_8;
+float local_12 = smoothstep(local_10, local_11, local_1);
+const float local_13 = 1.0f;
+float local_14 = sqrt(local_1);
+float local_15 = smoothstep(local_9, local_13, local_14);
+float local_16 = local_13 - local_12;
+float4 local_17 = mul(u_effectColor, local_16);
+float4 local_18 = mul(u_textColor, local_12);
+float4 local_19 = local_17 + local_18;
+float3 local_20 = local_19.xyz;
+float local_21 = local_19.w;
+float local_22 = max(local_12, local_15);
+float local_23 = local_22 * local_21;
+float4 local_24 = {local_20.x, local_20.y, local_20.z, local_23};
+float4 local_25 = psIN.v_diffuse * local_24;
+final_color = local_25;
+return final_color;
+}

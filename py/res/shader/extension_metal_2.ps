@@ -1,0 +1,9 @@
+#if FOG_ENABLE
+
+float3 CustomFogBlend(float vsFogFactor, float3 screen_clr, constant PSConstants &constants )
+{
+	float fogFactor = vsFogFactor * constants.FogColor.a;
+	float3 result = screen_clr * (1 - fogFactor) + constants.FogColor.xyz * fogFactor;
+	return result;
+}
+#endif

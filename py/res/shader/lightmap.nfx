@@ -1,0 +1,166 @@
+int GlobalParameter : SasGlobal
+<
+  string SasEffectAuthoring = "jwh";
+  string SasEffectCategory = "";
+  string SasEffectCompany = "Netease";
+  string SasEffectDescription = "light map";
+  string SasSuportedMacros = "UnSupported LIGHT_MAP_ENABLE UnSupported TRUE;UnSupported FOG_ENABLE UnSupported FALSE;UnSupported RECEIVE_SHADOW UnSupported FALSE;UnSupported NEOX_GLASS_ENABLE UnSupported FALSE;UnSupported SPECULAR_MAP_ENABLE UnSupported FALSE;UnSupported NORMAL_MAP_ENABLE UnSupported FALSE;UnSupported CUBE_MAP_ENABLE UnSupported FALSE;UnSupported USE_NORMAL_MAP UnSupported FALSE;UnSupported ALPHA_TEST_ENABLE UnSupported FALSE;UnSupported SEPARATE_ALPHA_TEX UnSupported FALSE;UnSupported GPU_SKIN_ENABLE UnSupported FALSE;UnSupported INSTANCE_TYPE UnSupported INSTANCE_TYPE_NONE;UnSupported HIGH_LEVEL_ENABLE UnSupported TRUE;";
+  string SasEffectAttr = "INSTANCE_SUPPORTED=TRUE;";
+>;
+
+#define LIT_ENABLE FALSE
+matrix4 lightmapTrans: LightMapTransform;
+
+#ifndef LIGHT_MAP_ENABLE
+#define LIGHT_MAP_ENABLE TRUE
+#endif
+#include "common_defination.nfx"
+float4 camera_pos : CameraPosition;
+
+matrix4 viewProj : ViewProjection;
+
+#define NEED_POS_WORLD
+#ifndef NEED_NORMAL
+#define NEED_NORMAL
+#endif
+
+#ifndef INSTANCE_TYPE_NONE
+#define INSTANCE_TYPE_NONE 0
+#define INSTANCE_TYPE_PRS 1
+#define INSTANCE_TYPE_PRS_LM 2
+#define INSTANCE_TYPE_VEGETATION 3
+#define INSTANCE_TYPE_PRS_SHADER 4
+#define INSTANCE_TYPE_PRS_LM_SHADER 5
+#endif
+
+#define MAX_SHADER_INST_NUM 30
+#if INSTANCE_TYPE == INSTANCE_TYPE_PRS_SHADER
+uniform float4 instData[3 * MAX_SHADER_INST_NUM] :InstPrs;
+#endif
+#if INSTANCE_TYPE == INSTANCE_TYPE_PRS_LM_SHADER
+float4 instData[4 * MAX_SHADER_INST_NUM] :InstPrsLm;
+#endif
+
+int Gray = 0;
+float ColorMatrix[9];
+
+texture	Tex0 
+<
+	string SasUiLabel = "颜色贴图"; 
+	string SasUiControl = "FilePicker";
+>;
+
+#if LIGHT_MAP_ENABLE
+texture TexLightmap : LightMap
+<
+	string SasUiLabel = "烘培贴图";
+	string SasUiControl = "FilePicker";
+>;
+#endif
+
+#if SPECULAR_MAP_ENABLE
+texture Tex3
+<
+	string SasUiLabel = "SpecularMap"; 
+	string SasUiControl = "FilePicker"; 
+>;
+#endif
+
+#if USE_NORMAL_MAP
+texture Tex4
+<
+	string SasUiLabel = "NormalMap"; 
+	string SasUiControl = "FilePicker"; 
+>;
+#endif
+
+
+#if CUBE_MAP_ENABLE
+texture	Tex5 
+<
+	string SasUiLabel = "CubeMap"; 
+	string SasUiControl = "FilePicker";
+>;
+
+
+texture	Tex6 
+<
+	string SasUiLabel = "MaskMap"; 
+	string SasUiControl = "FilePicker";
+>;
+#endif
+
+float4 LightMapScale : LightMapScale;
+
+#if RECEIVE_SHADOW
+float ShadowAlpha
+<
+	string SasUiLabel = "实时阴影透明度";
+	string SasUiControl = "FloatPicker";
+	string SasUiMin = "0.0";
+	string SasUiMax = "1.0";
+> = 0.2;
+#endif
+
+float4 specular_control
+<
+	string SasUiLabel = "高光控制"; 
+	string SasUiControl = "FloatXPicker";
+> = (1.0,32.0,0.0,0.0);
+
+float normalmap_factor
+<
+	string SasUiLabel = "法线贴图强度"; 
+	string SasUiControl = "FloatPicker";
+> = 1.0;
+
+float3 light_dir: LightDirection;
+float4 atlasSubTex: AtlasSubTexRegion = (0,0,1,1);
+
+#if RECEIVE_SHADOW
+#ifndef NEED_NORMAL
+#define NEED_NORMAL
+#endif
+#define NEED_NORMAL_WORLD
+#endif
+
+SamplerTexture[0] = Tex0;
+SamplerMipBias[0] = -1.0;
+
+#if LIGHT_MAP_ENABLE
+SamplerTexture[1] = TexLightmap;
+#endif
+
+
+#if RECEIVE_SHADOW
+SamplerTexture[2] = texShadowMap;
+#endif
+
+#if SPECULAR_MAP_ENABLE
+SamplerTexture[3] = Tex3;
+#endif
+
+#if USE_NORMAL_MAP
+SamplerTexture[4] = Tex4;
+#endif
+
+#if CUBE_MAP_ENABLE
+SamplerTexture[5] = Tex5;
+SamplerTexture[6] = Tex6;
+#endif
+
+#if SEPARATE_ALPHA_TEX
+SamplerTexture[7] = sepAlphaTex;
+#endif
+
+technique TShader
+<
+	string Description = "普通烘焙贴图";
+>
+{
+	pass P0
+	{
+		VertexShader = "common.vs" vs_2_0 main;
+		PixelShader = "common.ps" ps_2_0 main;
+	}
+}

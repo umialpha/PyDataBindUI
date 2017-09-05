@@ -1,0 +1,117 @@
+#define EQUAL(x,y) !(x-y)
+
+#define	TERRAIN_SINGLE_LAYER 			1
+#define	TERRAIN_SINGLE_LAYER_LIGHTMAP 	2
+#define	TERRAIN_VCOLOR 					3
+#define	TERRAIN_VCOLOR_LIGHTMAP 		4
+#define	TERRAIN_ALPHAMAP_2 				5
+#define	TERRAIN_ALPHAMAP_LIGHTMAP_2 	6
+#define	TERRAIN_ALPHAMAP_3 				7
+#define	TERRAIN_ALPHAMAP_LIGHTMAP_3 	8
+#define	TERRAIN_ALPHAMAP_4 				9
+#define	TERRAIN_ALPHAMAP_LIGHTMAP_4 	10
+
+#include "shaderlib/extension.ps"
+
+sampler	SamplerDiffuse0;
+sampler	SamplerDiffuse1;
+sampler	SamplerDiffuse2;
+sampler	SamplerDiffuse3;
+sampler	SamplerDiffuse4;
+sampler	SamplerDiffuse5;
+sampler	SamplerDiffuse6;
+sampler	SamplerDiffuse7 : register(s7);
+
+float4 LightMapScale;
+
+struct PS_INPUT
+{
+	float4 Color:		COLOR0;
+	float4 Position:	POSITION;
+	float4 TexCoord0:	TEXCOORD0;
+	float4 TexCoord1:	TEXCOORD1;
+	float4 RawTexCoord0: TEXCOORD2;
+#if LIT_ENABLE
+	float3 Lighting: TEXCOORD5;
+#endif
+};
+
+float4 uv_transform;
+float3 BlendColor(float3 color0, float3 color1, float factor)
+{
+	return  color0 * (1 - factor) + color1 * factor;
+}
+
+float4 main(PS_INPUT ps_general): COLOR
+{
+	float4 diffuse_map_color0 = tex2D(SamplerDiffuse0, ps_general.RawTexCoord0.xy * uv_transform[0]);
+	float4 diffuse_map_color1 = tex2D(SamplerDiffuse1, ps_general.RawTexCoord0.xy * uv_transform[1]);
+	float4 diffuse_map_color2 = tex2D(SamplerDiffuse3, ps_general.RawTexCoord0.xy * uv_transform[2]);
+	float4 diffuse_map_color3 = tex2D(SamplerDiffuse5, ps_general.RawTexCoord0.xy * uv_transform[3]);	
+	
+	float3 blend_factors = tex2D(SamplerDiffuse2, ps_general.RawTexCoord0.xy).rgb;
+	float blend_factor0 = blend_factors.r;
+	float blend_factor1 = blend_factors.g;
+	float blend_factor2 = blend_factors.b;
+
+///此处开始分支	
+	float3 result = float3(1.0, 1.0, 1.0);
+#if EQUAL(TERRAIN_TECH_TYPE, TERRAIN_VCOLOR)
+	result = diffuse_map_color0;
+#endif
+
+#if EQUAL(TERRAIN_TECH_TYPE, TERRAIN_VCOLOR_LIGHTMAP)
+	result = diffuse_map_color0;
+#endif
+
+#if EQUAL(TERRAIN_TECH_TYPE, TERRAIN_SINGLE_LAYER)
+	result = diffuse_map_color0;
+#endif
+
+#if EQUAL(TERRAIN_TECH_TYPE, TERRAIN_SINGLE_LAYER_LIGHTMAP)
+	result = diffuse_map_color0;
+#endif
+
+#if EQUAL(TERRAIN_TECH_TYPE, TERRAIN_ALPHAMAP_2)
+	result = BlendColor(diffuse_map_color0, diffuse_map_color1, blend_factor0);
+#endif
+
+#if EQUAL(TERRAIN_TECH_TYPE, TERRAIN_ALPHAMAP_LIGHTMAP_2)
+	result = BlendColor(diffuse_map_color0, diffuse_map_color1, blend_factor0);
+#endif
+	
+#if EQUAL(TERRAIN_TECH_TYPE, TERRAIN_ALPHAMAP_3)
+	result = BlendColor(diffuse_map_color0, diffuse_map_color1, blend_factor0);
+	result =  BlendColor(result, diffuse_map_color2, blend_factor1);
+#endif
+
+#if EQUAL(TERRAIN_TECH_TYPE, TERRAIN_ALPHAMAP_LIGHTMAP_3)
+	result = BlendColor(diffuse_map_color0, diffuse_map_color1, blend_factor0);
+	result =  BlendColor(result, diffuse_map_color2, blend_factor1);
+#endif
+
+#if EQUAL(TERRAIN_TECH_TYPE, TERRAIN_ALPHAMAP_4)
+	result = BlendColor(diffuse_map_color0, diffuse_map_color1, blend_factor0);
+	result =  BlendColor(result, diffuse_map_color2, blend_factor1);
+	result =  BlendColor(result, diffuse_map_color3, blend_factor2);
+#endif
+
+#if EQUAL(TERRAIN_TECH_TYPE, TERRAIN_ALPHAMAP_LIGHTMAP_4)
+	result = BlendColor(diffuse_map_color0, diffuse_map_color1, blend_factor0);
+	result =  BlendColor(result, diffuse_map_color2, blend_factor1);
+	result =  BlendColor(result, diffuse_map_color3, blend_factor2);
+#endif
+
+	//result *= ps_general.Color.xyz;
+	float3 light_color = tex2D(SamplerDiffuse7, ps_general.TexCoord1.xy).xyz * LightMapScale.yzw;	
+#if LIT_ENABLE
+	light_color += ps_general.Lighting;
+#endif
+	result.xyz *= light_color.xyz;
+
+#if FOG_ENABLE
+	result.xyz = CustomFogBlend(ps_general.TexCoord0.w, result.xyz);
+#endif
+	return float4(result, 1.0);	
+}
+

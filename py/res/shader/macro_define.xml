@@ -1,0 +1,138 @@
+<NeoX>
+	<Macros>
+		<Macro
+			MacroName = "LIGHT_MAP_ENABLE">	
+			<Value
+				Value = "TRUE" />
+			<Value
+				Value = "FALSE" />			
+		</Macro>
+		<Macro
+			MacroName = "FOG_ENABLE">	
+			<Value
+				Value = "TRUE" />
+			<Value
+				Value = "FALSE" />
+		</Macro>
+		<Macro
+			MacroName = "SEPARATE_ALPHA_TEX">	
+			<Value
+				Value = "TRUE" />
+			<Value
+				Value = "FALSE" />		
+		</Macro>
+		<Macro
+			MacroName = "RECEIVE_SHADOW">
+			<Value
+				Value = "TRUE" />
+			<Value
+				Value = "FALSE" />
+		</Macro>
+		<Macro
+			MacroName = "GPU_SKIN_ENABLE">	
+			<Value
+				Value = "TRUE" />
+			<Value
+				Value = "FALSE" />			
+		</Macro>
+		<Macro
+			MacroName = "ALPHA_TEST_ENABLE">	
+			<Value
+				Value = "TRUE" />
+			<Value
+				Value = "FALSE" />			
+		</Macro>
+		<Macro
+			MacroName = "LIT_ENABLE">	
+			<Value
+				Value = "TRUE" />
+			<Value
+				Value = "FALSE" />			
+		</Macro>
+		<Macro
+			MacroName = "RIMLIGHT_ENABLE">	
+			<Value
+				Value = "TRUE" />
+			<Value
+				Value = "FALSE" />			
+		</Macro>
+		<Macro
+			MacroName = "MENTAL_ENABLE">	
+			<Value
+				Value = "TRUE" />
+			<Value
+				Value = "FALSE" />			
+		</Macro>
+                <Macro
+			MacroName = "SEC_EMISSIVE_ENABLE">	
+			<Value
+				Value = "TRUE" />
+			<Value
+				Value = "FALSE" />
+		</Macro>
+		<Macro
+			MacroName = "DISSOLVE_ENABLE">	
+			<Value
+				Value = "TRUE" />
+			<Value
+				Value = "FALSE" />
+		</Macro>
+		<Macro
+			MacroName = "NEOX_GLASS_ENABLE">
+			<Value
+				Value = "TRUE" />
+			<Value
+				Value = "FALSE" />
+		</Macro>
+		<Macro
+			MacroName = "EMISSIVE_ANIMATION_ENABLE">
+			<Value
+				Value = "TRUE" />
+			<Value
+				Value = "FALSE" />
+		</Macro>
+		<Macro
+			MacroName = "SHADOW_MAP_ENABLE_DEPTH_TEX">
+			<Value
+				Value = "TRUE" />
+			<Value
+				Value = "FALSE" />
+		</Macro>
+    <Macro
+     MacroName = "HIGH_LEVEL_ENABLE">
+      <Value
+				Value = "TRUE" />
+      <Value
+				Value = "FALSE" />
+    </Macro>
+    <Macro
+ MacroName = "SHADOW_MAP_ENABLE">
+      <Value
+				Value = "TRUE" />
+      <Value
+				Value = "FALSE" />
+    </Macro>
+    <Macro
+ MacroName = "EXTRA_ALPHA">
+      <Value
+				Value = "TRUE" />
+      <Value
+				Value = "FALSE" />
+    </Macro>
+		<Macro
+			 MacroName = "INSTANCE_TYPE"> 
+			<Value
+				Value = "INSTANCE_TYPE_NONE" />
+			<Value
+				Value = "INSTANCE_TYPE_PRS" />
+			<Value
+				Value = "INSTANCE_TYPE_PRS_LM" />
+			<Value
+				Value = "INSTANCE_TYPE_VEGETATION" />
+			<Value
+				Value = "INSTANCE_TYPE_PRS_SHADER" /> 
+			<Value
+				Value = "INSTANCE_TYPE_PRS_LM_SHADER" /> 
+		</Macro>
+	</Macros>
+</NeoX>

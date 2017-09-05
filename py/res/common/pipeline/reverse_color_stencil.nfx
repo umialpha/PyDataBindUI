@@ -1,0 +1,27 @@
+float reverse_factor = 1.0f;
+float4 dynamicRT:DynamicResolutionRT;
+
+technique ReverseStencil
+{
+	pass T0
+	{
+		EnableStencilTest = true;
+		StencilRef = 0x000001;
+		StencilMask = 0x000001;
+
+		StencilFunc = CMP_EQUAL;
+		StencilOperation = (STENCILOP_KEEP, STENCILOP_KEEP, STENCILOP_KEEP);
+
+		VertexShader = "bloom.vs" vs_2_0 VSMain;
+		PixelShader = "reverse_color_stencil.ps" ps_2_0 ReverseColorPS;
+	}
+}
+
+technique BlendResult
+{
+	pass T0
+	{
+		VertexShader = "bloom.vs" vs_2_0 VSMain;
+		PixelShader = "reverse_color_stencil.ps" ps_2_0 BlendTexturePS;
+	}
+}

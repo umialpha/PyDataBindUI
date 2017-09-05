@@ -1,0 +1,36 @@
+#ifndef SEPARATE_ALPHA_TEX
+#define SEPARATE_ALPHA_TEX 0
+#endif
+
+varying mediump vec4 UV0;
+varying lowp vec4 Color;
+varying mediump vec4 weight;
+
+uniform lowp vec4 tFactor;
+
+uniform sampler2D Tex0;
+uniform sampler2D Tex1;
+uniform bool is_multipy_vector;
+
+uniform mediump float ramp_scale;
+uniform mediump float ramp_offset;
+uniform mediump float dissolve;
+uniform mediump float dissolve_hardness;
+
+#if SEPARATE_ALPHA_TEX
+uniform sampler2D SamplerDiffuse7;
+#endif
+
+void PS_OneTex1x()
+{
+	lowp vec4 texColor0 = texture2D (Tex0, UV0.xy);
+	mediump float level = dot(weight.xyz, texColor0.xyz) + weight.w;
+	lowp vec4 texColor1 = texture2D (Tex1, vec2(level, 0.5) * ramp_scale + ramp_offset);
+
+#if VCOLOR_ENABLE
+	gl_FragColor *= Color;
+#endif
+	gl_FragColor = texColor1;
+	gl_FragColor.a = (level - dissolve) * dissolve_hardness;
+	
+}

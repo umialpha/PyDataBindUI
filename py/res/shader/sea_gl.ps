@@ -1,0 +1,127 @@
+#if LIGHT_MAP_ENABLE
+uniform sampler2D SamplerLightmap1;
+uniform mediump vec4 LightMapScale;
+#endif
+uniform sampler2D sampleNormalMap6;
+uniform sampler2D sampleWaveNormalMap5;
+uniform samplerCube sampleEnvironmentMap4;
+uniform highp vec4 CameraPos;
+uniform highp float FrameTime;
+uniform mediump vec4 WaterColor;
+uniform mediump vec4 NormalTilling; 
+uniform mediump vec4 NormalSpeed;
+uniform mediump vec4 PBRTest;
+uniform mediump vec4 BaseColor;
+uniform mediump vec4 WaterFaceColor;
+uniform mediump vec4 SunDir;
+
+varying highp vec4 UV0;
+
+#ifdef NEED_POS_SCREEN
+varying highp vec4 PosScreen;
+varying highp vec4 RAWUV0;
+#endif
+
+#ifdef NEED_WORLD_INFO
+varying highp vec4 PosWorld;
+varying highp vec3 NormalWorld;
+varying highp vec3 TangentWorld;
+varying highp vec3 BinormalWorld;
+#endif
+#if LIT_ENABLE
+varying lowp vec3 Lighting;
+#endif
+
+
+#include "shaderlib/extension.ps"
+#include "shaderlib/pbr.ps"
+
+mediump float Fresnel(lowp float ndv)
+{
+	return 0.02 + 0.88 * pow(1.0 - ndv, 5.0);
+}
+
+mediump vec3 GetNormal(mediump vec4 normalMap)
+{
+	mediump vec3 normalWorld = vec3(0, 0, 1.0);
+	mediump vec2 normalOffset = normalMap.xy;
+	normalOffset = normalOffset * 2.0 - 1.0;
+	normalWorld.xy = normalOffset;
+	normalWorld= normalWorld.x * TangentWorld + normalWorld.y * BinormalWorld + normalWorld.z * NormalWorld;
+	return normalize(normalWorld);
+}
+
+mediump vec3 GetOffsetNor()
+{
+	//mediump vec2 flowmap = texture2D(sampleFlowMap1, RAWUV0.xy).xy * 2.0 - 1.0;
+	mediump float time = FrameTime;
+	mediump vec2 fTime = fract(vec2(time, time + 0.5));
+	mediump vec2 uv = RAWUV0.xy * NormalTilling.x + NormalSpeed.x * FrameTime;
+	lowp vec3 normalInTex = texture2D(sampleNormalMap6, uv).xyz;
+	uv = RAWUV0.xy * NormalTilling.y + NormalSpeed.y * FrameTime;
+	lowp vec3 normalWave_01 = texture2D(sampleWaveNormalMap5, uv).xyz;
+	normalInTex = normalize(vec3(normalInTex.xy + normalWave_01.xy,normalInTex.z));
+	uv = RAWUV0.xy * NormalTilling.z + NormalSpeed.z * FrameTime;
+	lowp vec3 normalWave_02 = texture2D(sampleWaveNormalMap5, uv).xyz;
+	normalInTex = normalize(vec3(normalInTex.xy + normalWave_02.xy,normalInTex.z));
+	lowp vec3 normal_dir = GetNormal(vec4(normalInTex,1.0));
+	return normal_dir;
+	/*mediump vec3 normal0 = GetNormal(texture2D(sampleNormalMap6, RAWUV0.xy ));
+	mediump vec3 normal1 = GetNormal(texture2D(sampleNormalMap6, RAWUV0.xy ));
+	return mix(normal0, normal1, abs(2.0 * (0.5 - fTime.x)));*/
+}
+
+void main ()
+{
+ 	highp vec3 pscreen = PosScreen.xyz/PosScreen.w;
+	lowp vec3 normal_dir = GetOffsetNor();
+	mediump vec2 uv = pscreen.xy * 0.5 + 0.5;
+	lowp vec3 default_wcolor = WaterColor.xyz;
+	lowp vec3 view_dir = normalize(CameraPos.xyz - PosWorld.xyz);
+
+	// Reflection
+	//mediump vec4 env_color = textureCube(sampleEnvironmentMap4, reflectDir);
+
+	// Refraction
+	//attributes
+	lowp float roughness = GetRoughness(1.0 - PBRTest.r);
+	lowp vec3 base_map = BaseColor.rgb;
+
+	lowp vec3 specular_color = vec3(1.0);//GetSpecularColor(default_wcolor, 0.0);
+    //mediump float depth = texture2D(sampleDepth5, refr_uv).r;
+	//depth = depth * 2.0 - 1.0;
+	//if (depth < pscreen.z)
+	//	refract_color.xyz = vec3(1.0, 0.0, 0.0);
+	//DirectLighting parameters
+	lowp vec3 light_dir = normalize(SunDir.xyz);
+	//vectors
+	lowp vec3 half_dir = normalize(view_dir + light_dir);
+	//Ks
+	lowp float ndl = max(0.001,dot(normal_dir,light_dir));
+	lowp float ndh = max(0.001,dot(normal_dir,half_dir));
+	lowp float ndv = max(0.001,dot(normal_dir,view_dir));
+	lowp float vdh = max(0.001,dot(view_dir,half_dir));
+	//Specular
+	mediump vec3 specular = GetBRDFSpecular(specular_color,roughness,ndh,ndv,ndl,vdh);
+	//Env Specular
+	lowp float NdotV_origin = dot(NormalWorld.xyz,view_dir);
+	lowp vec3 ReflectVector = normalize(2.0 * NdotV_origin * normal_dir - view_dir);
+	lowp vec3 env = textureCube(sampleEnvironmentMap4, ReflectVector).xyz;
+	// Water color
+
+	// reflect_color.xyz = max(env_color, reflect_color.xyz);
+
+   	//gl_FragColor.xyz = mix(water_color, reflect_color.xyz, f);
+   //	gl_FragColor.xyz = reflect_color.xyz * f + water_color;
+	gl_FragColor.xyz = mix(WaterFaceColor.rgb * (env + specular * base_map.xyz), WaterColor.xyz,ndv ) ;//+ specular * base_map;
+
+#if LIGHT_MAP_ENABLE
+	mediump vec3 lightMapColor = texture2D (SamplerLightmap1, UV1.xy).xyz;
+	gl_FragColor.xyz *= lightMapColor * LightMapScale.yzw;
+#endif
+#if FOG_ENABLE
+	gl_FragColor.xyz = CustomFogBlend(UV0.w, gl_FragColor.xyz);
+#endif
+	// gl_FragColor.xyz = specular;
+}
+

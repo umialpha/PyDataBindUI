@@ -1,0 +1,26 @@
+float4 PixelKernelWeight[13];
+float4 dynamicRT:DynamicResolutionRT;
+
+int VIEWPORT_WIDTH;
+int VIEWPORT_HEIGHT;
+texture TexFOW;
+SamplerTexture[3] = TexFOW;
+
+
+technique HorzBlur
+{
+	pass P0
+	{
+		VertexShader = "fow_gaussian_blur.vs" vs_2_0 VSMain;
+		PixelShader = "fow_gaussian_blur.ps" ps_2_0 GBH;
+	}
+}
+
+technique VertBlur
+{
+	pass P0
+	{
+		VertexShader = "fow_gaussian_blur.vs" vs_2_0 VSMain;
+		PixelShader = "fow_gaussian_blur.ps" ps_2_0 GBV;
+	}
+}

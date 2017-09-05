@@ -1,0 +1,21 @@
+#include <metal_graphics>
+#include <metal_texture>
+#include <metal_matrix>
+#include <metal_common>
+using namespace metal;
+struct PS_INPUT
+{
+float4 final_position [[position]];
+float2 v_texture0;
+};
+fragment float4 metal_main(
+PS_INPUT psIN[[stage_in]]
+, texture2d<float> CC_Texture0 [[texture(0)]]
+, sampler CC_Texture0_state [[sampler(0)]]
+)
+{
+float4 final_color;
+float4 local_0 = CC_Texture0.sample(CC_Texture0_state, psIN.v_texture0);
+final_color = local_0;
+return final_color;
+}

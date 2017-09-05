@@ -1,0 +1,80 @@
+// ! ForwardPassPS.hlsl.usf:MainPS
+
+#include <metal_stdlib>
+
+using namespace metal;
+
+struct PSStageIn
+{
+	float4 OUT_TEXCOORD10 ;
+	float4 OUT_TEXCOORD11 ;
+	float2 OUT_TEXCOORD0 ;
+	float4 OUT_TEXCOORD5 ;
+};
+
+struct FPSOut
+{
+	half4 OUT_SV_Target [[ user(SV_Target) ]];
+};
+
+struct PSConstants
+{
+        float4 VectorUniformExpressions[3];
+    float4 ScalarUniformExpressions;
+    float4 CameraPos;
+
+};
+fragment half4 metal_main(PSStageIn __PSStageIn [[ stage_in ]],	sampler Tex0Sampler [[ sampler(0) ]], texture2d<float> Tex0 [[ texture(0) ]],
+constant PSConstants &constants[ [buffer(0)] ])
+{
+	float4 v0;
+	v0.xyzw = __PSStageIn.OUT_TEXCOORD11;
+	half3x3 m1;
+	half3 v2;
+	half3 v3;
+	v3.xyz = half3(__PSStageIn.OUT_TEXCOORD10.xyz);
+	v2.xyz = v3;
+	half3 v4;
+	half3 v5;
+	v5.xyz = half3(v0.xyz);
+	v4.xyz = v5;
+	half3x3 m6;
+	m6[0].xyz = v2;
+	m6[1].xyz = cross(v4,v2);
+	m6[2].xyz = v4;
+	m1 = m6;
+	half h7;
+	h7 = half(v0.w);
+	m1[1].xyz = (m6[1]*half3(h7));
+	half4 v8;
+	half h9;
+	h9 = half(1.0);
+	v8.w = h9;
+	half2 v10;
+	v10.xy = half2(((constants.VectorUniformExpressions[0].xy+__PSStageIn.OUT_TEXCOORD0)*constants.VectorUniformExpressions[1].xy));
+	float3 v11;
+	v11.xyz = float3(m1[2]);
+	half3 v12;
+	v12.xyz = half3(normalize(v11));
+	half3 v13;
+	v13.xyz = half3(normalize((constants.CameraPos.xyz+(-__PSStageIn.OUT_TEXCOORD5.xyz))));
+	half h14;
+	h14 = half(0.0);
+	half h15;
+	h15 = half(0.00000100);
+	half h16;
+	h16 = half(constants.ScalarUniformExpressions.x);
+	float3 v17;
+	v17.xyz = float3((half4(Tex0.sample(Tex0Sampler, float2(v10))).xyz*half3(pow(fmax(fabs((h9+(-fmax(h14,dot(v12,v13))))),h15),h16))));
+	half3 v18;
+	v18.xyz = half3(((v17*constants.VectorUniformExpressions[2].xyz)*constants.ScalarUniformExpressions.yyy));
+	half3 v19;
+	v19.xyz = half3(0.0,0.0,0.0);
+	half3 v20;
+	v20.xyz = half3(0.45454544,0.45454544,0.45454544);
+	v8.xyz = pow(fmax(v18,v19),v20);
+	half4 t21;
+	t21.xyzw = v8;
+	return t21;
+}
+

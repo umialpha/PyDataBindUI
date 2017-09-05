@@ -1,0 +1,260 @@
+#include <metal_graphics>
+#include <metal_texture>
+#include <metal_matrix>
+#include <metal_common>
+using namespace metal;
+#ifndef LIGHT_MAP_ENABLE
+ #define LIGHT_MAP_ENABLE 0
+#endif
+
+#ifndef LIT_ENABLE
+ #define LIT_ENABLE 0
+#endif
+
+#ifndef ALPHA_TEST_ENABLE
+ #define ALPHA_TEST_ENABLE 0
+#endif
+
+#ifndef FOG_TYPE_NONE
+ #define FOG_TYPE_NONE 0
+#endif
+
+#ifndef FOG_TYPE_LINEAR
+ #define FOG_TYPE_LINEAR 1
+#endif
+
+#ifndef FOG_TYPE_HEIGHT
+ #define FOG_TYPE_HEIGHT 2
+#endif
+
+#ifndef FOG_TYPE
+ #define FOG_TYPE FOG_TYPE_LINEAR
+#endif
+
+#ifndef SEPARATE_ALPHA_TEX
+ #define SEPARATE_ALPHA_TEX 0
+#endif
+
+#ifndef SHADOW_MAP_ENABLE
+ #define SHADOW_MAP_ENABLE 0
+#endif
+
+#ifndef SHADOW_MAP_ENABLE_DEPTH_TEX
+ #define SHADOW_MAP_ENABLE_DEPTH_TEX 1
+#endif
+
+#ifndef SYSTEM_DEPTH_RANGE_NEGATIVE
+ #define SYSTEM_DEPTH_RANGE_NEGATIVE 0
+#endif
+
+#if (LIT_ENABLE && SHADOW_MAP_ENABLE)
+static void calc_shadow(const float4 light_proj_pos,const float4 depth_color,const float shadow_alpha,thread float& shadow_frac);
+#endif
+#if !(SHADOW_MAP_ENABLE_DEPTH_TEX)
+static void unpack_depth(const float4 color_in,thread float& depth);
+#endif
+#if (LIT_ENABLE && SHADOW_MAP_ENABLE)
+static void calc_shadow(const float4 light_proj_pos,const float4 depth_color,const float shadow_alpha,thread float& shadow_frac)
+{
+float local_0 = light_proj_pos.x;
+float local_1 = light_proj_pos.y;
+float local_2 = light_proj_pos.z;
+float local_3 = light_proj_pos.w;
+float local_4;
+if (local_0 > 0.0 && local_0 < 1.0 && local_1 > 0.0 && local_1 < 1.0)
+{
+const float local_5 = 1.0f;
+float local_6;
+#if SHADOW_MAP_ENABLE_DEPTH_TEX
+float local_7 = depth_color.x;
+float local_8;
+#if SYSTEM_DEPTH_RANGE_NEGATIVE
+const float local_9 = 1.0f;
+const float local_10 = 2.0f;
+float local_11 = local_7 * local_10;
+float local_12 = local_11 - local_9;
+local_8 = local_12;
+#else
+local_8 = local_7;
+#endif
+local_6 = local_8;
+#else
+float local_13;
+unpack_depth(depth_color,local_13);
+local_6 = local_13;
+#endif
+float local_14;
+if (local_6-local_2<0.0)
+{
+const float local_15 = 1.0f;
+float local_16 = local_15 - shadow_alpha;
+local_14 = local_16;
+}
+else
+{
+const float local_17 = 1.0f;
+local_14 = local_17;
+}
+float local_18 = local_5 - local_14;
+float local_19 = local_18 * local_3;
+float local_20 = local_5 - local_19;
+local_4 = local_20;
+}
+else
+{
+const float local_21 = 1.0f;
+local_4 = local_21;
+}
+shadow_frac = local_4;
+}
+#endif
+#if !(SHADOW_MAP_ENABLE_DEPTH_TEX)
+static void unpack_depth(const float4 color_in,thread float& depth)
+{
+const float4 local_0 = {5.960464E-08f, 1.525879E-05f, 0.00390625f, 1.0f};
+float local_1 = dot(color_in, local_0);
+depth = local_1;
+}
+#endif
+struct PSConstants
+{
+#if ALPHA_TEST_ENABLE
+float alphaRef;
+#endif
+float AlphaMtl;
+#if LIGHT_MAP_ENABLE
+float4 LightMapScale;
+#endif
+#if FOG_TYPE == FOG_TYPE_LINEAR || FOG_TYPE == FOG_TYPE_HEIGHT
+float4 FogColor;
+#endif
+};
+struct PS_INPUT
+{
+float4 final_position [[position]];
+float4 v_texture0;
+#if LIGHT_MAP_ENABLE
+float4 v_texture1;
+#endif
+#if (LIT_ENABLE && SHADOW_MAP_ENABLE)
+float4 v_texture2;
+#endif
+#if LIT_ENABLE
+float3 v_lighting;
+#endif
+};
+fragment float4 ps_main(
+PS_INPUT psIN[[stage_in]]
+, constant PSConstants &constants[[buffer(0)]]
+#if (LIT_ENABLE && SHADOW_MAP_ENABLE)
+, texture2d<float> sam_shadow [[texture(4)]]
+, sampler sam_shadow_state [[(4)]]
+#endif
+#if LIGHT_MAP_ENABLE
+, texture2d<float> sam_lightmap [[texture(1)]]
+, sampler sam_lightmap_state [[sampler(1)]]
+#endif
+, texture2d<float> sam_diffuse [[texture(0)]]
+, sampler sam_diffuse_state [[sampler(0)]]
+#if SEPARATE_ALPHA_TEX
+, texture2d<float> sam_diffuse_alpha [[texture(7)]]
+, sampler sam_diffuse_alpha_state [[sampler(7)]]
+#endif
+)
+{
+float4 final_color;
+float3 local_0;
+#if LIT_ENABLE
+float3 local_1;
+#if SHADOW_MAP_ENABLE
+const float local_2 = 0.5f;
+float2 local_3 = {psIN.v_texture2.x, psIN.v_texture2.y};
+float4 local_4 = sam_shadow.sample(sam_shadow_state, local_3);
+float local_5;
+calc_shadow(psIN.v_texture2,local_4,local_2,local_5);
+float3 local_6 = local_5 * psIN.v_lighting;
+local_1 = local_6;
+#else
+local_1 = psIN.v_lighting;
+#endif
+local_0 = local_1;
+#else
+const float3 local_7 = {0.0f, 0.0f, 0.0f};
+local_0 = local_7;
+#endif
+float3 local_8;
+#if LIGHT_MAP_ENABLE
+float local_9 = constants.LightMapScale.x;
+float3 local_10 = constants.LightMapScale.yzw;
+float2 local_11 = {psIN.v_texture1.x, psIN.v_texture1.y};
+float4 local_12 = sam_lightmap.sample(sam_lightmap_state, local_11);
+float3 local_13 = {local_12.x, local_12.y, local_12.z};
+float3 local_14 = local_13 * local_10;
+local_8 = local_14;
+#else
+const float3 local_15 = {0.0f, 0.0f, 0.0f};
+local_8 = local_15;
+#endif
+float3 local_16 = local_8 + local_0;
+float2 local_17 = psIN.v_texture0.xy;
+float local_18 = psIN.v_texture0.z;
+float local_19 = psIN.v_texture0.w;
+float4 local_20 = sam_diffuse.sample(sam_diffuse_state, local_17);
+float4 local_21;
+#if SEPARATE_ALPHA_TEX
+float4 local_22 = sam_diffuse_alpha.sample(sam_diffuse_alpha_state, local_17);
+float3 local_23 = local_22.xyz;
+float local_24 = local_22.w;
+float3 local_25 = local_20.xyz;
+float local_26 = local_20.w;
+float4 local_27 = {local_25.x, local_25.y, local_25.z, local_24};
+local_21 = local_27;
+#else
+local_21 = local_20;
+#endif
+float3 local_28 = local_21.xyz;
+float local_29 = local_21.w;
+float3 local_30;
+#if LIGHT_MAP_ENABLE
+float3 local_31 = local_28 * local_16;
+local_30 = local_31;
+#else
+float3 local_32;
+#if LIT_ENABLE
+float3 local_33 = local_28 * local_16;
+local_32 = local_33;
+#else
+local_32 = local_28;
+#endif
+local_30 = local_32;
+#endif
+float3 local_34;
+#if FOG_TYPE==FOG_TYPE_NONE
+local_34 = local_30;
+#elif FOG_TYPE==FOG_TYPE_LINEAR
+float3 local_35 = constants.FogColor.xyz;
+float local_36 = constants.FogColor.w;
+float local_37 = local_19 * local_36;
+float3 local_38 = {local_37, local_37, local_37};
+float3 local_39 = mix(local_30, local_35, local_38);
+local_34 = local_39;
+#elif FOG_TYPE==FOG_TYPE_HEIGHT
+float3 local_40 = constants.FogColor.xyz;
+float local_41 = constants.FogColor.w;
+float local_42 = local_19 * local_41;
+float3 local_43 = {local_42, local_42, local_42};
+float3 local_44 = mix(local_30, local_40, local_43);
+local_34 = local_44;
+#endif
+float local_45 = local_29 * constants.AlphaMtl;
+float4 local_46 = {local_34.x, local_34.y, local_34.z, local_45};
+#if ALPHA_TEST_ENABLE
+if (local_45 - constants.alphaRef < 0.0) 
+{ 
+discard_fragment();
+} 
+#else
+#endif
+final_color = local_46;
+return final_color;
+}

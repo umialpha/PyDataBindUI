@@ -1,0 +1,305 @@
+/*
+描述：
+一些结构体的声明, 把可能需要用到的中间结果和计算集中处理，
+然后利用编译器的优化能力把不需要的优化掉
+
+暂时包括：
+VS_INPUT	—— vs输入参数  todo：考虑不同情况下使用不同参数
+VS_General —— vs里面的中间结构体
+PS_General —— ps里面的中间结构体
+
+vs用到的中间结构体
+支持的宏：
+#define NORMAL_MAP_ENABLE
+#define SHADOW_MAP_ENABLE
+
+*/
+
+
+
+//////////////////////////////////////////////////////////vs部分
+//vs里面可能用到的中间结果
+struct VS_GENERAL
+{
+	float4 Pos;				//原始的顶点位置
+	float4 PosWorld;		//世界空间下的位置
+	float4 PosWorldView;	//视觉空间下的位置（没经过归一化）
+	float4 PosWorldViewProj; //视觉空间下的位置（经过归一化）
+	float4 Color;			//原始的顶点色
+	float3 Normal;			//原始的normal
+	float3 NormalWorld;		//世界空间下的法线方向
+	
+#if NORMAL_MAP_ENABLE	
+	float3 TangentWorld;	//世界空间下的tangent
+	float3 BinormalWorld;	//世界空间下的binormal
+#endif
+
+	float4 TexCoord0;
+#if LIGHT_MAP_ENABLE
+	float4 TexCoord1;
+#endif
+	float4 veg_idx;
+	bool  FogEnable;
+	float4 FogInfo;
+};
+
+//vs输入定义，暂时只有一个，以后难说
+//gpu蒙皮暂时和sh的instance矛盾了，因为输入不够了
+struct VS_INPUT
+{
+	float4 v_pos:		POSITION;
+	float4 v_normal: 	NORMAL;
+	float4 v_tangent: 	TANGENT0;
+	float4 v_texcoord0: TEXCOORD0;
+#if LIGHT_MAP_ENABLE
+	float4 v_texcoord1: TEXCOORD1;
+#endif	
+	float4 v_color:		COLOR;
+
+#if EQUAL(INSTANCE_TYPE, INSTANCE_TYPE_PRS)
+	float4 v_prs_mat0: TEXCOORD5;
+	float4 v_prs_mat1: TEXCOORD6;
+	float4 v_prs_mat2: TEXCOORD7;
+	
+#elif  EQUAL(INSTANCE_TYPE, INSTANCE_TYPE_PRS_LM)
+	float4 v_lightmap_mat: TEXCOORD4;
+	float4 v_prs_mat0: TEXCOORD5;
+	float4 v_prs_mat1: TEXCOORD6;
+	float4 v_prs_mat2: TEXCOORD7;
+#elif EQUAL(INSTANCE_TYPE, INSTANCE_TYPE_VEGETATION)
+	float4 v_lightmap_mat: TEXCOORD4;
+	float4 v_prs_mat0: TEXCOORD5;
+	float4 v_prs_mat1: TEXCOORD6;
+	float4 v_prs_mat2: TEXCOORD7;
+	float4 v_veg_idx: TEXCOORD8;
+#endif
+
+};
+
+
+#if !defined(INSTANCE_TYPE) || EQUAL(INSTANCE_TYPE, INSTANCE_TYPE_NONE)
+#define NEED_WORLD_MATRIX
+#define NEED_WORLDVIEWPROJ_MATRIX
+#define NEED_WORLDVIEW_MATRIX
+#endif
+
+#define NEED_FOG_ENABLE
+#define NEED_FOG_INFO
+#define NEED_TEX_TRANSFORM0
+#define NEED_TEX_TRANSFORM1
+#define NEED_ALPHA_MTL
+#define NEED_VIEW_MATRIX
+#define NEED_VIEWPROJ_MATRIX
+#define NEED_LIGHT_MAP
+
+#include "vardefination.fxl"
+
+float3 GetWorldPositionOffset(in VS_GENERAL vs_general);
+float3 GetWVPOffset(in VS_GENERAL vs_general);
+
+//从vs_input 得到 vs_general 的函数
+void VS_GENERAL_From_VS_INPUT(in VS_INPUT IN, inout VS_GENERAL OUT)
+{
+	OUT.Pos = IN.v_pos;
+	
+#if EQUAL(INSTANCE_TYPE, INSTANCE_TYPE_PRS) || EQUAL(INSTANCE_TYPE, INSTANCE_TYPE_PRS_LM) || EQUAL(INSTANCE_TYPE, INSTANCE_TYPE_VEGETATION)
+	float4x4 WorldMatrixInstance = (float4x4)0;
+	WorldMatrixInstance[0]= IN.v_prs_mat0;
+	WorldMatrixInstance[1]= IN.v_prs_mat1;
+	WorldMatrixInstance[2]= IN.v_prs_mat2;
+
+	WorldMatrixInstance = transpose(WorldMatrixInstance);
+	WorldMatrixInstance[3].w = 1;
+
+#else
+	float4x4 WorldMatrixInstance = WorldMatrix;
+#endif
+
+	
+	
+	OUT.Color	= IN.v_color;
+	OUT.Normal = IN.v_normal.xyz;
+	OUT.NormalWorld = normalize(mul(IN.v_normal.xyz, (float3x3)WorldMatrixInstance)).xyz;
+
+	
+#if NORMAL_MAP_ENABLE
+	OUT.TangentWorld = normalize(mul(IN.v_tangent.xyz, WorldMatrixInstance)); 
+	OUT.BinormalWorld = normalize( cross(OUT.NormalWorld.xyz, OUT.TangentWorld.xyz) );
+
+	if (length(IN.v_tangent.xyz) > 1.0f)
+		OUT.BinormalWorld *= -1.0f;
+#endif
+
+	OUT.TexCoord0.xy = IN.v_texcoord0.xy; //mul(float3(IN.v_texcoord0.xy,1), TexTransMatrix0).xy;
+	
+#if EQUAL(INSTANCE_TYPE, INSTANCE_TYPE_VEGETATION)	
+	OUT.veg_idx = IN.v_veg_idx;
+#endif
+	
+#if EQUAL(INSTANCE_TYPE, INSTANCE_TYPE_PRS_LM) || EQUAL(INSTANCE_TYPE, INSTANCE_TYPE_VEGETATION)
+	float3x3 LightMapTransInstance = (float3x3)0;		
+	LightMapTransInstance[0].x = IN.v_lightmap_mat.x;
+	LightMapTransInstance[1].y = IN.v_lightmap_mat.y;
+	LightMapTransInstance[2].x = IN.v_lightmap_mat.z;
+	LightMapTransInstance[2].y = IN.v_lightmap_mat.w;
+#else 
+	float3x3 LightMapTransInstance = (float3x3)LightMapTransform;		
+#endif
+
+#if LIGHT_MAP_ENABLE
+	OUT.TexCoord1.xy = mul(float3(IN.v_texcoord1.xy,1), LightMapTransInstance).xy;
+#endif	
+	OUT.FogEnable = FogEnable;
+	OUT.FogInfo = FogInfo;
+	
+	OUT.PosWorld = mul(IN.v_pos, WorldMatrixInstance);
+	OUT.PosWorld.xyz += GetWorldPositionOffset(OUT);
+	OUT.PosWorldView = mul(OUT.PosWorld, ViewMatrix);
+	OUT.PosWorldViewProj = mul(OUT.PosWorld,ViewProjMatrix);
+	OUT.PosWorldViewProj.xyz += GetWVPOffset(OUT);
+}
+
+
+struct VS_OUTPUT
+{
+	float4 Color:		COLOR0;			//顶点色
+	float4 Position:	POSITION;			//输出位置
+	float4 TexCoord0:	TEXCOORD0;		//第一层uv，一般用于diffuse
+#if LIGHT_MAP_ENABLE
+	float4 TexCoord1:	TEXCOORD1;		//第二次uv，一般用于lightmap
+#endif
+	float4 PosWorld:	TEXCOORD2;		//xyz——世界位置, w —— fog
+	float4 NormalWorld:	TEXCOORD3;	//normal在世界空间下位置
+	float4 PosLocal:	TEXCOORD4;		//本地位置，一般用于做各种贴图混合
+	float4 PosScreen: TEXCOORD5;		//屏幕位置
+	
+#if EQUAL(SHADE_MODE , SHADE_GOURAND)
+	float3 AmbientDiffuseColor: TEXCOORD6;
+	float4 ShadowLightColor: TEXCOORD7;
+	float4 SpecularColor: TEXCOORD8;	//灯光汇总的specular
+#elif  EQUAL(SHADE_MODE , SHADE_PHONG)
+	#if NORMAL_MAP_ENABLE	
+	float3 TangentWorld:  	TEXCOORD6;
+	float3 BinormalWorld:   TEXCOORD7;
+	#endif
+#endif	
+
+
+};
+
+//基本的从General 到 output的变换,特殊的就不包了，各自做,实际上normal和pos在gpu蒙皮下要先完成skin才能传递
+void VS_OUTPUT_From_VS_GENERAL(in VS_GENERAL IN, inout VS_OUTPUT OUT)
+{
+	OUT.Position = IN.PosWorldViewProj;
+	OUT.PosWorld = IN.PosWorld;
+	OUT.PosLocal = IN.Pos;
+	OUT.PosScreen = IN.PosWorldViewProj;
+	OUT.Color	= IN.Color;
+	OUT.NormalWorld.xyz = IN.NormalWorld;
+		
+	OUT.TexCoord0 = IN.TexCoord0;
+#if LIGHT_MAP_ENABLE
+	OUT.TexCoord1 = IN.TexCoord1;
+#endif	
+	
+#if EQUAL(SHADE_MODE, SHADE_PHONG)	
+	#if NORMAL_MAP_ENABLE	
+		OUT.TangentWorld = IN.TangentWorld;
+		OUT.BinormalWorld = IN.BinormalWorld ;
+	#endif
+#endif
+
+}
+
+/////////////////////////////////////////////////////////////////ps部分
+//ps里面可能用到的中间结果
+struct PS_GENERAL
+{
+	float3 PosWorld;		//世界空间下的位置
+	float3 PosLocal;		//原来本地空间下位置
+	float3 PosScreen;		//屏幕空间下的位置
+	float4 Color;			//原始的顶点色
+	float3 Normal;			//没经过normalmap的原来法线
+	float3 NormalWorld;		//世界空间下的法线方向
+	float3 NormalWorldView;//view空间下的法线方向
+	
+	float3 TangentWorld;	//世界空间下的tangent
+	float3 BinormalWorld;	//世界空间下的binormal
+
+	float FogFactor;		//雾的浓度
+	float4 FogColor;			//雾的颜色
+	bool  FogEnable;		//全局fog是否开启 todo：还是应该和个体与好之后传进来？
+	float AlphaMtl;			//外面设进来的alph控制值
+	
+	float4 RawTexCoord0;	//变换前的tex0
+	float4 TexCoord0;		//第一层uv
+#if LIGHT_MAP_ENABLE
+	float4 TexCoord1;		//第二层uv
+	float4 LightMapScale; //新参数哦 
+#endif	
+	float4 ShadowUV;		//shadowmap的uv,xy放真正的uv，z放的是当前点算出的lightview深度
+	float2 ShadowMapSize;	//暂时只接收一个影子的灯
+	float ShadowAlpha;		//将最后影子亮度的[0,1]范围映射到 [alpha,1] 范围
+	float  ShadowWidth; 	//当用于pcf时使用，暂时是由灯决定的
+
+	float3 VertexAmbientDiffuseColor;
+	float3 VertexShadowLightColor;
+	float3 VertexSpecularColor;
+	
+};
+
+
+//ps输入定义
+#define PS_INPUT VS_OUTPUT
+
+
+#define NEED_FOG_COLOR
+#define NEED_FOG_ENABLE
+#define NEED_SHADOW_INFO
+#define NEED_WORLDVIEW_MATRIX
+#include "vardefination.fxl"
+//从ps_input 得到 ps_general 的函数
+void PS_GENERAL_From_PS_INPUT(in PS_INPUT IN, inout PS_GENERAL OUT)
+{
+	OUT.PosWorld = IN.PosWorld.xyz;
+	OUT.PosLocal = IN.PosLocal.xyz;
+	OUT.PosScreen = IN.PosScreen.xyz/IN.PosScreen.w;
+	OUT.Color	= IN.Color;
+	OUT.Normal =  IN.NormalWorld.xyz;
+	OUT.NormalWorld = IN.NormalWorld.xyz;
+	OUT.NormalWorldView = mul(float4(OUT.NormalWorld,1) , WorldViewMatrix).xyz;
+	
+	
+#if EQUAL(SHADE_MODE, SHADE_GOURAND)		
+
+	OUT.VertexAmbientDiffuseColor = IN.AmbientDiffuseColor.xyz;
+	OUT.VertexShadowLightColor = IN.ShadowLightColor.xyz;
+	OUT.VertexSpecularColor = IN.SpecularColor.xyz;
+	
+#elif EQUAL(SHADE_MODE, SHADE_PHONG)		
+	#if NORMAL_MAP_ENABLE	
+		OUT.TangentWorld = IN.TangentWorld;
+		OUT.BinormalWorld =IN.BinormalWorld;
+	#endif
+#endif
+
+	OUT.FogFactor = IN.PosWorld.w;			//雾的浓度
+	OUT.FogColor = FogColor;					//雾的颜色,xyz为颜色，w为浓度
+	OUT.FogEnable = FogEnable;				//是否有雾
+	
+	OUT.AlphaMtl = AlphaMtl;		//alpha控制值
+
+	OUT.RawTexCoord0 = IN.TexCoord0;  //uv动画变换前
+	OUT.TexCoord0.xyz = mul(float3(IN.TexCoord0.xy,1), (float3x3)TexTransMatrix0);	//第一层uv
+#if LIGHT_MAP_ENABLE
+	OUT.TexCoord1 = IN.TexCoord1;	//第二层uv
+	OUT.LightMapScale = LightMapScale;
+#endif
+
+#if EQUAL(SHADOW_MAP_ENABLE, TRUE)
+	OUT.ShadowMapSize = ShadowInfo.y;	//shadowmap大小
+	OUT.ShadowAlpha = ShadowInfo.z;	//shadow的alpha值
+	OUT.ShadowWidth = ShadowInfo.w; //shadow的blur
+#endif
+
+}

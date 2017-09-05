@@ -1,0 +1,61 @@
+uniform mediump sampler2D tex0;
+varying mediump vec2 TexCoord0;
+
+mediump vec4 PixelKernelWeight[13];
+
+// mediump float VIEWPORT_WIDTH = 1334.0;
+// mediump float VIEWPORT_HEIGHT = 750.0;
+
+uniform int VIEWPORT_WIDTH;
+uniform int VIEWPORT_HEIGHT;
+
+uniform sampler2D tex3;
+
+void GBH()
+{
+	PixelKernelWeight[0] = vec4(-6.0*8.0/float(VIEWPORT_WIDTH), -6.0*8.0/float(VIEWPORT_HEIGHT), 0.002216, 0);
+	PixelKernelWeight[1] = vec4(-5.0*8.0/float(VIEWPORT_WIDTH), -5.0*8.0/float(VIEWPORT_HEIGHT), 0.008764, 0);
+	PixelKernelWeight[2] = vec4(-4.0*8.0/float(VIEWPORT_WIDTH), -4.0*8.0/float(VIEWPORT_HEIGHT), 0.026995, 0);
+	PixelKernelWeight[3] = vec4(-3.0*8.0/float(VIEWPORT_WIDTH), -3.0*8.0/float(VIEWPORT_HEIGHT), 0.064759, 0);
+	PixelKernelWeight[4] = vec4(-2.0*8.0/float(VIEWPORT_WIDTH), -2.0*8.0/float(VIEWPORT_HEIGHT), 0.120985, 0);
+	PixelKernelWeight[5] = vec4(-1.0*8.0/float(VIEWPORT_WIDTH), -1.0*8.0/float(VIEWPORT_HEIGHT), 0.176033, 0);
+	PixelKernelWeight[6] = vec4(0.0*8.0/float(VIEWPORT_WIDTH), 0.0*8.0/float(VIEWPORT_HEIGHT), 0.199471, 0);
+	PixelKernelWeight[7] = vec4(1.0*8.0/float(VIEWPORT_WIDTH), 1.0*8.0/float(VIEWPORT_HEIGHT), 0.176033, 0);
+	PixelKernelWeight[8] = vec4(2.0*8.0/float(VIEWPORT_WIDTH), 2.0*8.0/float(VIEWPORT_HEIGHT), 0.120985, 0);
+	PixelKernelWeight[9] = vec4(3.0*8.0/float(VIEWPORT_WIDTH), 3.0*8.0/float(VIEWPORT_HEIGHT), 0.064759, 0);
+	PixelKernelWeight[10] = vec4(4.0*8.0/float(VIEWPORT_WIDTH), 4.0*8.0/float(VIEWPORT_HEIGHT), 0.026995, 0);
+	PixelKernelWeight[11] = vec4(5.0*8.0/float(VIEWPORT_WIDTH), 5.0*8.0/float(VIEWPORT_HEIGHT), 0.008764, 0);
+	PixelKernelWeight[12] = vec4(6.0*8.0/float(VIEWPORT_WIDTH), 6.0*8.0/float(VIEWPORT_HEIGHT), 0.002216, 0);
+
+
+	mediump vec4 color = vec4( 0.0, 0.0, 0.0, 0.0 );
+	for( int i = 0; i < 13; i++ ) {
+		mediump float c = texture2D( tex3, vec2( TexCoord0.x+PixelKernelWeight[i].x, TexCoord0.y ) ).a*PixelKernelWeight[i].z;
+		color = color+vec4(c,c,c,1.0);
+	}
+	gl_FragColor = vec4( color.xyz, 1.0 );
+
+}
+
+void GBV()
+{
+	PixelKernelWeight[0] = vec4(-6.0*8.0/float(VIEWPORT_WIDTH), -6.0*8.0/float(VIEWPORT_HEIGHT), 0.002216, 0);
+	PixelKernelWeight[1] = vec4(-5.0*8.0/float(VIEWPORT_WIDTH), -5.0*8.0/float(VIEWPORT_HEIGHT), 0.008764, 0);
+	PixelKernelWeight[2] = vec4(-4.0*8.0/float(VIEWPORT_WIDTH), -4.0*8.0/float(VIEWPORT_HEIGHT), 0.026995, 0);
+	PixelKernelWeight[3] = vec4(-3.0*8.0/float(VIEWPORT_WIDTH), -3.0*8.0/float(VIEWPORT_HEIGHT), 0.064759, 0);
+	PixelKernelWeight[4] = vec4(-2.0*8.0/float(VIEWPORT_WIDTH), -2.0*8.0/float(VIEWPORT_HEIGHT), 0.120985, 0);
+	PixelKernelWeight[5] = vec4(-1.0*8.0/float(VIEWPORT_WIDTH), -1.0*8.0/float(VIEWPORT_HEIGHT), 0.176033, 0);
+	PixelKernelWeight[6] = vec4(0.0*8.0/float(VIEWPORT_WIDTH), 0.0*8.0/float(VIEWPORT_HEIGHT), 0.199471, 0);
+	PixelKernelWeight[7] = vec4(1.0*8.0/float(VIEWPORT_WIDTH), 1.0*8.0/float(VIEWPORT_HEIGHT), 0.176033, 0);
+	PixelKernelWeight[8] = vec4(2.0*8.0/float(VIEWPORT_WIDTH), 2.0*8.0/float(VIEWPORT_HEIGHT), 0.120985, 0);
+	PixelKernelWeight[9] = vec4(3.0*8.0/float(VIEWPORT_WIDTH), 3.0*8.0/float(VIEWPORT_HEIGHT), 0.064759, 0);
+	PixelKernelWeight[10] = vec4(4.0*8.0/float(VIEWPORT_WIDTH), 4.0*8.0/float(VIEWPORT_HEIGHT), 0.026995, 0);
+	PixelKernelWeight[11] = vec4(5.0*8.0/float(VIEWPORT_WIDTH), 5.0*8.0/float(VIEWPORT_HEIGHT), 0.008764, 0);
+	PixelKernelWeight[12] = vec4(6.0*8.0/float(VIEWPORT_WIDTH), 6.0*8.0/float(VIEWPORT_HEIGHT), 0.002216, 0);
+
+	mediump vec4 color = vec4( 0.0, 0.0, 0.0, 0.0 );
+	for( int i = 0; i < 13; i++ ) {
+		color = color+ texture2D( tex0, vec2( TexCoord0.x, TexCoord0.y+PixelKernelWeight[i].y) )*PixelKernelWeight[i].z;;
+	}
+	gl_FragColor = vec4( color.xyz, 1.0 );
+}

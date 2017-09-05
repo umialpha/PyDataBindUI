@@ -1,0 +1,409 @@
+/*------------------------------------------
+本文件负责所有有特殊含义的变量声明，只要声明了宏，此处就自动添加变量,而且保证所有变量只声明一次
+------------------------------------------*/
+
+
+/*
+变量按照perframe，pertarget，permodel，permaterial和perrc来排列
+
+*/
+
+//perframe
+#ifndef MAX_LIGHT_NUM 
+	#define MAX_LIGHT_NUM 5
+#endif
+
+#ifdef NEED_GL_BUFFER_SIZE
+	#ifndef _NEED_GL_BUFFER_SIZE
+	float4 GLBufferSize: GLBufferSize ;	
+	#define _NEED_GL_BUFFER_SIZE
+	#endif
+#endif 
+
+
+#ifdef NEED_SCREENSIZE
+	#ifndef _NEED_SCREENSIZE
+	float4 ScreenSize: ScreenSize ;	
+	#define _NEED_SCREENSIZE
+	#endif
+#endif 
+
+#ifdef NEED_FRAME_TIME
+	#ifndef _NEED_FRAME_TIME
+	float FrameTime: FrameTime ;		
+	#define _NEED_FRAME_TIME
+	#endif
+#endif 
+
+
+////矩阵
+#ifdef NEED_WORLD_MATRIX
+	#ifndef _WORLD_MATRIX
+	float4x4 WorldMatrix: World ;	
+	#define _WORLD_MATRIX
+	#endif
+#endif 
+
+#ifdef NEED_VIEW_MATRIX
+	#ifndef _NEED_VIEW_MATRIX
+	float4x4 ViewMatrix: View ;		
+	#define _NEED_VIEW_MATRIX
+	#endif
+#endif 
+
+#ifdef NEED_PROJ_MATRIX
+	#ifndef _NEED_PROJ_MATRIX
+	float4x4 ProjMatrix: Projection ;	
+	#define _NEED_PROJ_MATRIX
+	#endif		
+#endif 
+
+#ifdef NEED_WORLDVIEW_MATRIX
+	#ifndef _NEED_WORLDVIEW_MATRIX
+	float4x4 WorldViewMatrix: WorldView;	
+	#define _NEED_WORLDVIEW_MATRIX
+	#endif			
+#endif 
+
+#ifdef NEED_VIEWPROJ_MATRIX
+	#ifndef _NEED_VIEWPROJ_MATRIX
+	float4x4 ViewProjMatrix: ViewProjection;	
+	#define _NEED_VIEWPROJ_MATRIX
+	#endif			
+#endif 
+
+#ifdef NEED_WORLDVIEWPROJ_MATRIX
+	#ifndef _NEED_WORLDVIEWPROJ_MATRIX
+	float4x4 WorldViewProjMatrix: WorldViewProjection;	
+	#define _NEED_WORLDVIEWPROJ_MATRIX
+	#endif	
+#endif 
+
+#ifdef NEED_INVERWORLD_MATRIX
+	#ifndef _NEED_INVERWORLD_MATRIX
+	float4x4 InverseWorldMatrix: InverseWorld;		
+	#define _NEED_INVERWORLD_MATRIX
+	#endif
+#endif 
+
+#ifdef NEED_CAMERA_POS
+	#ifndef _NEED_CAMERA_POS
+	float4 CameraPos : CameraPosition;
+	#define _NEED_CAMERA_POS
+	#endif		
+#endif 
+
+#ifdef NEED_CAMERA_INFO
+	#ifndef _NEED_CAMERA_INFO
+	float4 CameraInfo : CameraInfo;
+	#define _NEED_CAMERA_INFO
+	#endif		
+#endif 
+
+//////////环境、雾
+#ifdef NEED_AMBIENT
+	#ifndef _NEED_AMBIENT
+	float4 Ambient : Ambient = float4(0.0, 0.0, 0.0, 0.0); //全局唯一的ambient颜色
+	#define _NEED_AMBIENT
+	#endif	
+#endif 
+
+#ifdef NEED_FOG_ENABLE
+	#ifndef _NEED_FOG_ENABLE
+	bool FogEnable :FogEnable = false;
+	#define _NEED_FOG_ENABLE
+	#endif	
+#endif 
+
+#ifdef NEED_FOG_COLOR
+	#ifndef _NEED_FOG_COLOR
+	float4 FogColor: FogColor = 0;	
+	#define _NEED_FOG_COLOR
+	#endif
+#endif 
+
+
+//前两float固定为距离上的begin和end，和固定管线的定义一致，也在传统面板上计算
+//第3、4个float为自定义信息
+#ifdef NEED_FOG_INFO
+	#ifndef _NEED_FOG_INFO
+	float4 FogInfo: FogInfo = float4(0.0, 0.0, 0.0, 0.0);
+	#define _NEED_FOG_INFO
+	#endif
+#endif 
+
+///光照材质
+#ifdef NEED_DIFFUSE_MTL
+	#ifndef _NEED_DIFFUSE_MTL
+	float4 DiffuseMtl: DiffuseMtl<
+	string SasUiLabel = "漫反射材质"; 
+	string SasUiControl = "ColorPicker";
+> = {1,1,1,1};		
+	#define _NEED_DIFFUSE_MTL
+	#endif
+#endif 
+
+#ifdef NEED_SPECULAR_MTL
+	#ifndef _NEED_SPECULAR_MTL
+	float4 SpecularMtl: SpecularMtl<
+	string SasUiLabel = "高光材质"; 
+	string SasUiControl = "ColorPicker";
+> = {1,1,1,1};		
+	#define _NEED_SPECULAR_MTL
+	#endif
+#endif 
+
+#ifdef NEED_EMISSIVE_MTL
+	#ifndef _NEED_EMISSIVE_MTL
+	float4 EmissiveMtl: EmissiveMtl<
+	string SasUiLabel = "自发光材质"; 
+	string SasUiControl = "ColorPicker";
+> = {0,0,0,0};
+	#define _NEED_EMISSIVE_MTL
+	#endif
+#endif 
+
+#ifdef NEED_ALPHA_MTL
+	#ifndef _NEED_ALPHA_MTL
+	float AlphaMtl: AlphaMtl<
+> = 1.0f;
+	#define _NEED_ALPHA_MTL
+	#endif
+#endif 
+
+//光照信息
+
+#ifdef NEED_LIGHT_COUNT
+	#ifndef _NEED_LIGHT_COUNT
+	int LightNum: LightNum = 0;
+	#define _NEED_LIGHT_COUNT
+	#endif
+#endif 
+
+ #ifdef NEED_SHADOW_LIGHT_ATTRS
+	#ifndef _NEED_SHADOW_LIGHT_ATTRS
+	// 对应的五个项依次为
+	// float4 LightAmbient;
+	//	float4 LightDiffuseType;
+	//	float4 LightSpecular;
+	//	float4 LightAttr;
+	///	float4 LightAttrCustom;
+
+	#define LIGHT_ATTR_ITEM_NUM 5
+	float4 ShadowLightAttr[LIGHT_ATTR_ITEM_NUM] : ShadowLightAttr;
+	#define _NEED_SHADOW_LIGHT_ATTRS
+	#endif
+#endif 
+ 
+ #ifdef NEED_DIR_LIGHT_ATTRS
+	#ifndef _NEED_DIR_LIGHT_ATTRS
+	// 对应的五个项依次为
+	// float4 LightAmbient;
+	//	float4 LightDiffuseType;
+	//	float4 LightSpecular;
+	//	float4 LightAttr;
+	///	float4 LightAttrCustom;
+
+	#define LIGHT_ATTR_ITEM_NUM 5
+	float4 DirLightAttr[LIGHT_ATTR_ITEM_NUM] : DirLightAttr;
+	#define _NEED_DIR_LIGHT_ATTRS
+	#endif
+#endif 
+   
+ #ifdef NEED_POINT_LIGHT_ATTRS
+	#ifndef _NEED_POINT_LIGHT_ATTRS
+	// 对应的五个项依次为
+	// float4 LightAmbient;
+	//	float4 LightDiffuseType;
+	//	float4 LightSpecular;
+	//	float4 LightAttr;
+	///	float4 LightAttrCustom;
+
+	#define LIGHT_ATTR_ITEM_NUM 5
+	float4 PointLightAttrs[LIGHT_ATTR_ITEM_NUM * MAX_LIGHT_NUM] : PointLightAttrs;
+	#define _NEED_POINT_LIGHT_ATTRS
+	#endif
+#endif 
+
+////shadow map 相关
+#ifdef NEED_SHADOW_MAP
+	#ifndef _NEED_SHADOW_MAP
+	texture ShadowMap: ShadowMap
+	<
+		string SasUiLabel = "ShadowMap";
+	>;
+	#define _NEED_SHADOW_MAP
+	#endif
+#endif 
+
+#ifdef NEED_SHADOW_INFO
+	#ifndef _NEED_SHADOW_INFO
+	//由所有shadow的信息打包而成， x- 投影灯的类型 y - size, z-alpha, w - blurwidth
+	float4 ShadowInfo: ShadowInfo = 0.0f;
+	#define _NEED_SHADOW_INFO
+	#endif
+#endif 
+
+#ifdef NEED_SHADOW_BLEND_ALL
+	#ifndef _NEED_SHADOW_BLEND_ALL
+	//.x shadow的混合方式，1代表混合全部，0，代表只混合影子灯
+	//.y shadowbias
+	//.z 点光是否双面投影
+	float4 ShadowBlendAll: ShadowBlendAll = 0;
+	#define _NEED_SHADOW_BLEND_ALL
+	#endif
+#endif 
+
+#ifdef NEED_LIGHT_VIEW_PROJ_MAT
+	#ifndef _NEED_LIGHT_VIEW_PROJ_MAT
+	float4x4 LightViewProjMatrix:  LightViewProj ;		
+	#define _NEED_LIGHT_VIEW_PROJ_MAT
+	#endif
+#endif 
+
+//UV动画
+#ifdef NEED_TEX_TRANSFORM0
+	#ifndef _NEED_TEX_TRANSFORM0
+	float4x4 TexTransMatrix0: TexTransform0 = {1,0,0,0,
+										0,1,0,0,
+										0,0,0,0,
+										0,0,0,0};
+	#define _NEED_TEX_TRANSFORM0
+	#endif
+#endif 
+
+//texture
+#ifdef NEED_BONEMAP_IDX
+	#ifndef _NEED_BONEMAP_IDX
+	float3 BoneMapIdx: BoneMapIdx<
+> = 0.0f;
+	#define _NEED_BONEMAP_IDX
+	#endif
+#endif 
+
+
+#ifdef NEED_BONE_MAP
+	#ifndef _NEED_BONE_MAP
+texture	BoneMap : BoneMap;
+sampler	SamplerBoneMap = sampler_state
+{
+	Texture	  =	(BoneMap);
+	MipFilter =	POINT;
+	MinFilter =	POINT;
+	MagFilter =	POINT;
+};
+#define _NEED_BONE_MAP
+	#endif
+#endif 
+
+
+#ifdef NEED_NORMAL_MAP
+	#ifndef _NEED_NORMAL_MAP
+	texture NormalMap:NormalMap
+	<
+	string SasUiLabel = "NormalMap";
+	string SasUiControl = "FilePicker";
+	>;
+	#define _NEED_NORMAL_MAP
+	#endif
+#endif 
+
+#ifdef NEED_LIGHT_MAP
+	#ifndef _NEED_LIGHT_MAP
+	texture TexLightmap:LightMap
+	<
+	>;
+	float4x4 LightMapTransform: LightMapTransform = {1,0,0,0,
+										0,1,0,0,
+										0,0,0,0,
+										0,0,0,0};
+										
+	float4 LightMapScale:LightMapScale = 0;
+										
+	#define _NEED_LIGHT_MAP
+	#endif
+#endif 
+
+
+#ifdef NEED_CHARACTER_LIGHT_ATTR
+	#ifndef _NEED_CHARACTER_LIGHT_ATTR
+	float4 CharacterLightAttr: CharacterLightAttr<
+> = {0.1,0.7,0.0,0.0};
+	#define _NEED_CHARACTER_LIGHT_ATTR
+	#endif
+#endif 
+
+
+#ifdef NEED_CAMERA_RATE
+	#ifndef _NEED_CAMERA_RATE
+	float4 CameraRate: CameraRate<
+> = {0.0,0.0,0.0,0.0};
+	#define _NEED_CAMERA_RATE
+	#endif
+#endif 
+
+
+
+
+#ifdef NEED_IRRADIANCE_MAP0
+	#ifndef _NEED_IRRADIANCE_MAP0
+	texture IrradianceMap0: IrrandianceMap0;
+	sampler	SamplerIrradiance0 :register(s11) = sampler_state
+	{
+		Texture	  =	(IrradianceMap0);
+		MipFilter =	LINEAR;
+		MinFilter =	LINEAR;
+		MagFilter =	LINEAR;
+	};
+										
+	#define _NEED_IRRADIANCE_MAP0
+	#endif
+#endif 
+
+#ifdef NEED_IRRADIANCE_MAP1
+	#ifndef _NEED_IRRADIANCE_MAP1
+	texture IrradianceMap1: IrrandianceMap1;
+	sampler	SamplerIrradiance1 :register(s12) = sampler_state
+	{
+		Texture	  =	(IrradianceMap1);
+		MipFilter =	LINEAR;
+		MinFilter =	LINEAR;
+		MagFilter =	LINEAR;
+	};
+										
+	#define _NEED_IRRADIANCE_MAP1
+	#endif
+#endif 
+
+#ifdef NEED_BONE_VEC
+	#ifndef _NEED_BONE_VEC
+		float4 BoneVec[MAX_BONES*2] : SkinBones;
+		#define _NEED_BONE_VEC
+	#endif
+#endif 
+
+#ifdef NEED_SH_ATTR
+	#ifndef _NEED_SH_ATTR
+		float4 SH_ATTR[7]:SHAttribute = 
+		{
+		float4(0,0,0,0),
+		float4(0,0,0,0),
+		float4(0,0,0,0),
+		float4(0,0,0,0),
+		float4(0,0,0,0),
+		float4(0,0,0,0),
+		float4(0,0,0,0),
+		};
+		#define _NEED_SH_ATTR
+	#endif
+#endif 
+
+
+
+
+
+
+
+
+
+

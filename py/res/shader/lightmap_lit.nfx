@@ -1,0 +1,112 @@
+int GlobalParameter : SasGlobal
+<
+  string SasEffectAuthoring = "jwh";
+  string SasEffectCategory = "";
+  string SasEffectCompany = "Netease";
+  string SasEffectDescription = "light map with lighting";
+  string SasSuportedMacros = "UnSupported LIGHT_MAP_ENABLE UnSupported TRUE;UnSupported FOG_ENABLE UnSupported FALSE;UnSupported RECEIVE_SHADOW UnSupported FALSE;UnSupported NEOX_GLASS_ENABLE UnSupported FALSE;UnSupported SPECULAR_MAP_ENABLE UnSupported FALSE;UnSupported NORMAL_MAP_ENABLE UnSupported FALSE;UnSupported CUBE_MAP_ENABLE UnSupported FALSE;UnSupported USE_NORMAL_MAP UnSupported FALSE;UnSupported ALPHA_TEST_ENABLE UnSupported FALSE;UnSupported SEPARATE_ALPHA_TEX UnSupported FALSE;UnSupported GPU_SKIN_ENABLE UnSupported FALSE;";
+  string SasEffectAttr = "INSTANCE_SUPPORTED=TRUE;";
+>;
+
+#define LIT_ENABLE TRUE
+matrix4 lightmapTrans: LightMapTransform;
+
+#ifndef LIGHT_MAP_ENABLE
+#define LIGHT_MAP_ENABLE TRUE
+#endif
+#include "common_defination.nfx"
+float4 camera_pos : CameraPosition; 
+
+int Gray = 0;
+float ColorMatrix[9];
+
+texture	Tex0 
+<
+	string SasUiLabel = "颜色贴图"; 
+	string SasUiControl = "FilePicker";
+>;
+
+texture TexLightmap : LightMap
+<
+	string SasUiLabel = "烘培贴图";
+	string SasUiControl = "FilePicker";
+>;
+texture Tex3
+<
+	string SasUiLabel = "SpecularMap"; 
+	string SasUiControl = "FilePicker"; 
+>;
+texture Tex4
+<
+	string SasUiLabel = "NormalMap"; 
+	string SasUiControl = "FilePicker"; 
+>;
+texture	Tex5 
+<
+	string SasUiLabel = "CubeMap"; 
+	string SasUiControl = "FilePicker";
+>;
+texture	Tex6 
+<
+	string SasUiLabel = "MaskMap"; 
+	string SasUiControl = "FilePicker";
+>;
+float4 LightMapScale : LightMapScale;
+
+#if RECEIVE_SHADOW
+float ShadowAlpha
+<
+	string SasUiLabel = "实时阴影透明度";
+	string SasUiControl = "FloatPicker";
+	string SasUiMin = "0.0";
+	string SasUiMax = "1.0";
+> = 0.2;
+#endif
+
+float4 specular_control
+<
+	string SasUiLabel = "高光控制"; 
+	string SasUiControl = "FloatXPicker";
+> = (1.0,32.0,0.0,0.0);
+
+float normalmap_factor
+<
+	string SasUiLabel = "法线贴图强度"; 
+	string SasUiControl = "FloatPicker";
+> = 1.0;
+
+
+float3 light_dir: LightDirection;
+
+#if RECEIVE_SHADOW
+#ifndef NEED_NORMAL
+#define NEED_NORMAL
+#endif
+#define NEED_NORMAL_WORLD
+#endif
+
+SamplerTexture[0] = Tex0;
+SamplerTexture[1] = TexLightmap;
+
+#if RECEIVE_SHADOW
+SamplerTexture[2] = texShadowMap;
+#endif
+SamplerTexture[3] = Tex3;
+SamplerTexture[4] = Tex4;
+SamplerTexture[5] = Tex5;
+SamplerTexture[6] = Tex6;
+#if SEPARATE_ALPHA_TEX
+SamplerTexture[7] = sepAlphaTex;
+#endif
+
+technique TShader
+<
+	string Description = "普通烘焙贴图";
+>
+{
+	pass P0
+	{
+		VertexShader = "common.vs" vs_2_0 main;
+		PixelShader = "common.ps" ps_2_0 main;
+	}
+}

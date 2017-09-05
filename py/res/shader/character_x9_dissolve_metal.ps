@@ -1,0 +1,286 @@
+using namespace metal;
+
+#ifndef GLOSS_SUPPORTED
+#define GLOSS_SUPPORTED FALSE
+#endif
+
+#ifndef SEPARATE_ALPHA_TEX
+#define SEPARATE_ALPHA_TEX FALSE
+#endif
+
+#ifndef RIMLIGHT_ENABLE
+#define RIMLIGHT_ENABLE FALSE
+#endif
+
+#ifndef MENTAL_ENABLE
+#define MENTAL_ENABLE FALSE
+#endif
+
+#ifndef NEED_POS_WORLD
+#define NEED_POS_WORLD TRUE
+#endif
+
+#ifndef NEED_NORMAL_WORLD
+#define NEED_NORMAL_WORLD TRUE
+#endif
+
+#ifndef DISSOLVE_ENABLE
+#define DISSOLVE_ENABLE TRUE
+#endif
+
+#ifndef NORMAL_MAP_ENABLE
+#define NORMAL_MAP_ENABLE FALSE
+#endif
+
+#ifndef CUBE_MAP_ENABLE
+#define CUBE_MAP_ENABLE FALSE
+#endif
+
+#include "shaderlib/extension_metal.ps"
+
+// UNIFORM
+struct PSConstants
+{
+#if DISSOLVE_ENABLE
+	float4 Dissolve_color;
+	float Dissolve_color_intensity;
+	float Dissolve_intensity;
+#endif
+
+	float matcap_brightness;
+
+#ifdef NEED_NORMAL_WORLD
+	float3 light_dir;
+#endif
+
+#if RIMLIGHT_ENABLE
+	float4 rimlight_color;
+	float rimlight_brightness;
+#endif
+
+	float blendValue;
+
+#if ALPHA_TEST_ENABLE
+	float alphaRef;
+#endif
+
+	float4 camera_pos;
+
+	float4x4 view;
+
+	float4 ShadowLightAttr[LIGHT_ATTR_ITEM_NUM ];
+	float4 ExtraRimColor;
+};
+
+
+// VARYING
+struct PixelInput
+{
+	float4 position [[position]];
+#if NEED_NORMAL_WORLD
+	float3 TangentWorld;
+	float3 BinormalWorld;
+#endif
+
+	float4 UV0;
+
+#ifdef NEED_POS_WORLD
+	float4 PosWorld;
+#endif
+
+#ifdef NEED_NORMAL_WORLD
+	float3 NormalWorld;
+#endif
+
+#if LIT_ENABLE
+	float3 Lighting;
+#endif
+
+#if SHADOW_MAP_ENABLE
+	float4 PosLightProj;
+#endif
+	
+};
+
+#if SHADOW_MAP_ENABLE
+float UnpackRGBA2Float(float4 v)
+{
+	const float4 vUnpack = float4(1.0, 1.0/256.0, 1.0/65536.0, 1.0/16777216.0);	//1/2^0, 1/2^8, 1/2^16, 1/2^24
+	return dot(v, vUnpack);
+}
+#endif
+
+float4 getMatCapColor(float2 uv, float gloss, sampler SamplerMatcap1, texture2d<float> texture1, float matcap_brightness)
+{
+	float4 matcap;
+#if GLOSS_SUPPORTED && GLOSS_ENABLE
+	//matcap = texture2DLodEXT (SamplerMatcap1, uv, 8.0 - gloss * 8.0);
+	matcap = texture1.sample(SamplerMatcap1, uv);
+#else
+	matcap = float4(0.0);
+#endif
+	return matcap * gloss * matcap_brightness;
+}
+
+float2 getMatCapUV(float2 norm)
+{
+	return float2(norm.x, -norm.y) * 0.5 + 0.5;
+}
+
+#if DISSOLVE_ENABLE
+/*
+	溶解效果获取函数:
+	溶解使用采样贴图的方式来实现,用一张深度贴图来采样另外一张贴图的通道的方式来实现边缘效果,
+	这样方便做出不同程度的边缘及边缘宽度返回float3类型为最终rgb颜色
+*/
+float3 GetDissolveAttribute(float2 uv, sampler SamplerDissolve3, texture2d<float> texture3, float Dissolve_intensity)
+{
+	float3 dissolve_color = float3(0.0);
+	//Dissolve
+	//取溶解效果贴图
+	dissolve_color = texture3.sample(SamplerDissolve3,uv).xxx;
+	//添加可控制的溶解参数混合
+	dissolve_color -= float3(Dissolve_intensity) ;
+	dissolve_color = max(float3(0.0),dissolve_color);
+	//通过溶解效果贴图来采样溶解控制图,获取最终的溶解状态,g通道控制溶解边缘及样式,b通道控制边缘描边宽度
+	float3 dissolve_attribute= texture3.sample(SamplerDissolve3, dissolve_color.xy).yyy ;
+	dissolve_attribute.y = 1.0 - dissolve_attribute.y;
+	return dissolve_attribute;
+}
+#endif
+
+
+fragment float4 metal_main(
+	PixelInput in[[stage_in]],
+	constant PSConstants &constants[[buffer(0)]],
+	sampler SamplerDiffuse0 [[sampler(0)]],
+	texture2d<float> texture0 [ [texture(0)] ],
+	sampler SamplerMatcap1[[sampler(1)]],
+	texture2d<float> texture1 [ [texture(1)] ]
+
+#if DISSOLVE_ENABLE
+	, sampler SamplerDissolve3 [[sampler(3)]]
+	, texture2d<float> texture3 [ [texture(3)] ]
+#endif
+
+#if RIMLIGHT_ENABLE
+	, sampler SamplerRimMatcap2 [[sampler(2)]]
+	, texture2d<float> texture2 [ [texture(2)] ]
+#endif
+
+//法线贴图
+#if NORMAL_MAP_ENABLE
+	, sampler SamplerNormalMap4 [[sampler(4)]]
+	, texture2d<float> texture4 [ [texture(4)] ]
+#endif
+
+#if SHADOW_MAP_ENABLE
+	, sampler SamplerShadowmap6 [[sampler(6)]]
+	, texture2d<float> texture6 [ [texture(6)] ]
+#endif
+
+#if SEPARATE_ALPHA_TEX
+	, sampler SamplerSepAlphaTex7 [[sampler(7)]]
+	, texture2d<float> texture7 [ [texture(7)] ]
+#endif
+
+)
+{
+	float4 output = float4(0);
+
+	float4 albedo;
+	albedo = texture0.sample(SamplerDiffuse0, in.UV0.xy);
+#if SEPARATE_ALPHA_TEX
+	float sepAlpha = texture7.sample(SamplerSepAlphaTex7, in.UV0.xy).a;
+	albedo = float4(albedo.r, albedo.g, albedo.b, sepAlpha);
+#endif
+#if DISSOLVE_ENABLE
+	float3 dissolve_attribute= GetDissolveAttribute(in.UV0.xy, SamplerDissolve3, texture3, constants.Dissolve_intensity);
+#endif
+#if ALPHA_TEST_ENABLE
+#if DISSOLVE_ENABLE
+	float delta = albedo.a * dissolve_attribute.g - constants.alphaRef;
+#else
+	float delta = albedo.a - alphaRef;
+#endif
+	if (delta <= 0.0) {
+		discard_fragment();
+	}
+#endif
+	output = albedo;
+	//normal
+	float3 normalWorld = float3(0.0,0.0,1.0);
+#if NORMAL_MAP_ENABLE
+	float4 normalMap = texture4.sample(SamplerNormalMap4,in.UV0.xy);
+	float2 normalOffset = normalMap.xy;
+	normalOffset = normalOffset * 2.0 - 1.0;
+	normalWorld.xy = float2(normalOffset.x, -normalOffset.y);
+	normalWorld= normalWorld.x * in.TangentWorld + normalWorld.y * in.BinormalWorld + normalWorld.z * in.NormalWorld;
+#else
+	normalWorld = in.NormalWorld.xyz;
+#endif
+	normalWorld = normalize(normalWorld);
+	//matcap
+	float3 normalView = float3(0.0);
+	float3 viewDir = normalize(constants.camera_pos.xyz - in.PosWorld.xyz);
+	float NdotV = max(0.0,dot(normalWorld,viewDir));
+	float3x3 ViewMat = float3x3(constants.view[0].xyz, constants.view[1].xyz, constants.view[2].xyz);
+	normalView= ViewMat * normalWorld;
+
+#if GLOSS_SUPPORTED && GLOSS_ENABLE && NORMAL_MAP_ENABLE
+	float gloss = normalMap.z;
+#else
+    float gloss = 0.0;
+#endif
+	float2 matCapUV = getMatCapUV(normalView.xy);
+	float4 texColor1 = getMatCapColor(matCapUV, gloss, SamplerMatcap1, texture1, constants.matcap_brightness);
+#if RIMLIGHT_ENABLE
+	float4 rim = texture2.sample(SamplerRimMatcap2, matCapUV);
+	rim = rim * constants.rimlight_color * constants.rimlight_brightness;
+#endif
+	float3 texColor2 = float3(0.0);
+
+
+	float shadowFactor = 0.0;
+#if SHADOW_MAP_ENABLE
+	float4 lightProjPos = in.PosLightProj;
+	float depthToLight =  (lightProjPos.z / lightProjPos.w + 1.0) / 2.0;
+	float2 shadowMapCoord = (lightProjPos.xy / lightProjPos.w + 1.0) / 2.0;
+	// float depthInTex = texture2D(SamplerShadowmap6, shadowMapCoord).r;
+	// shadowFactor = (depthInTex < depthToLight) ? 1.0 : 0.0;
+	if ( 0.0 < shadowMapCoord.x && shadowMapCoord.x - 1.0 < 0.0 && 0.0 < shadowMapCoord.y && shadowMapCoord.y - 1.0 < 0.0 )
+	{
+		float depthShadowMap = UnpackRGBA2Float( texture6.sample(SamplerShadowmap6, shadowMapCoord) );
+		shadowFactor = (depthToLight - depthShadowMap > 0.0) ? 1.0 : 0.0;
+	}
+#endif
+	
+	float NdotL = 0.0;
+#ifdef NEED_NORMAL_WORLD
+	NdotL = clamp(dot(-constants.light_dir, normalWorld),0.0,1.0);
+#endif
+
+#if SHADOW_MAP_ENABLE
+	NdotL *= (1.0 - shadowFactor);
+	//shadowFactor *= 0.25;// ShadowAlpha ;
+	NdotL = NdotL * 0.9 + 0.1;
+#endif
+	float3 light = NdotL * constants.ShadowLightAttr[1].xyz + in.Lighting + float3(0.3);
+#if NORMAL_MAP_ENABLE && MENTAL_ENABLE
+	float mental = normalMap.w;
+	output.rgb = albedo.rgb * (1.0 - mental) + texColor1.rgb * albedo.rgb * mental;	
+#else
+	output.rgb = albedo.rgb + texColor1.rgb ;
+#endif
+	output.rgb *= light;
+
+	output.rgb += constants.ExtraRimColor.rgb * (1.0 - NdotV);
+#if DISSOLVE_ENABLE
+	//Dissolve
+	output.rgb += constants.Dissolve_color.rgb * constants.Dissolve_color_intensity * dissolve_attribute.r;
+#endif
+
+	output.a *= constants.blendValue;
+
+	return output;
+}

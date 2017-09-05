@@ -1,0 +1,284 @@
+
+#ifndef SEPARATE_ALPHA_TEX
+#define SEPARATE_ALPHA_TEX 0
+#endif
+
+#if FOG_ENABLE
+uniform lowp vec4 FogColor;
+uniform mediump vec4 FogInfo;
+uniform lowp float HeightFogDensity;
+uniform highp mat4 view;
+#ifndef INSTANCE_TYPE_NONE
+#define INSTANCE_TYPE_NONE 0
+#define INSTANCE_TYPE_PRS 1 
+#define INSTANCE_TYPE_PRS_LM 2
+#define INSTANCE_TYPE_VEGETATION 3
+#define INSTANCE_TYPE_PRS_SHADER 4
+#define INSTANCE_TYPE_PRS_LM_SHADER 5
+#endif
+lowp vec3 CustomFogBlend(lowp float vsFogFactor, lowp vec3 screen_clr)
+{
+	lowp float fogFactor = vsFogFactor * FogColor.a;
+	lowp vec3 result = screen_clr * (1.0 - fogFactor) + FogColor.xyz * fogFactor;
+	return result;
+}
+
+#ifndef NO_LIGHT_FOG
+#define NO_LIGHT_FOG FALSE
+#endif
+
+mediump vec4 GetFogEx(highp vec4 PositionWorld)
+{
+    mediump vec4 PositionView = view  * vec4(PositionWorld.xyz, 1.0);
+	lowp float cam_pos = PositionView.z / PositionView.w;
+	lowp float distance_factor = clamp((cam_pos - FogInfo.x) / (FogInfo.y - FogInfo.x), 0.0, 1.0) * FogColor.a;
+#if NO_LIGHT_FOG
+	//lowp float start_dis = FogInfo.z * cam_pos / 800.0;
+	//lowp float end_dis = FogInfo.w * cam_pos / 800.0;
+	lowp float height_factor = 0.0;
+#else
+	lowp float height_factor = clamp((PositionWorld.y - FogInfo.z) / (FogInfo.w - FogInfo.z), 0.0, 1.0) * HeightFogDensity;
+#endif
+
+	lowp float den_factor = max(height_factor, distance_factor);
+	return vec4(FogColor.x, FogColor.y, FogColor.z, den_factor);
+}
+#endif
+
+uniform sampler2D SamplerDiffuse0;
+#if LIGHT_MAP_ENABLE
+uniform sampler2D SamplerLightmap1;
+uniform mediump vec4 LightMapScale;
+#endif
+
+#ifndef NEED_POS_WORLD
+#define NEED_POS_WORLD TRUE
+#endif
+
+#ifndef NEED_NORMAL_WORLD
+#define NEED_NORMAL_WORLD TRUE
+#endif
+
+#ifndef SPECULAR_MAP_ENABLE
+#define SPECULAR_MAP_ENABLE FALSE
+#endif
+
+#ifndef NORMAL_MAP_ENABLE
+#define NORMAL_MAP_ENABLE FALSE
+#endif
+
+#ifndef USE_NORMAL_MAP
+#define USE_NORMAL_MAP FALSE
+#endif
+
+#ifndef CUBE_MAP_ENABLE
+#define CUBE_MAP_ENABLE FALSE
+#endif
+
+#ifndef RECEIVE_SHADOW
+#define RECEIVE_SHADOW FALSE
+#endif
+
+#ifndef NEOX_GLASS_ENABLE
+#define NEOX_GLASS_ENABLE FALSE
+#endif
+
+#if RECEIVE_SHADOW
+uniform sampler2D SamplerShadowmap2;
+uniform lowp float ShadowAlpha;
+uniform highp mat4 lightViewProj;
+#endif
+
+//高光贴图和参数
+#if SPECULAR_MAP_ENABLE
+uniform sampler2D SamplerSpecularMap3;
+uniform mediump vec4 specular_control;
+uniform mediump vec4 camera_pos;
+#endif
+
+uniform mediump vec3 light_dir;
+
+//法线贴图
+#if USE_NORMAL_MAP
+uniform sampler2D SamplerNormalMap4;
+uniform mediump float normalmap_factor;
+#endif
+
+#if LIT_ENABLE
+varying lowp vec3 Lighting;
+#endif
+
+//Cube贴图和材质区分贴图
+#if CUBE_MAP_ENABLE
+uniform samplerCube SamplerCubeMap5;
+uniform sampler2D SamplerMaterialMaskMap6;
+#endif
+
+#if SEPARATE_ALPHA_TEX
+uniform sampler2D SamplerSepAlphaTex7;
+#endif
+
+uniform lowp float blendValue;
+#if ALPHA_TEST_ENABLE
+uniform lowp float alphaRef;
+#endif
+
+varying mediump vec4 UV0;
+#if LIGHT_MAP_ENABLE
+varying mediump vec4 UV1;	
+#endif
+// varying lowp vec4 Color;
+
+#ifdef NEED_POS_WORLD
+varying highp vec4 PosWorld;
+#endif
+
+#ifdef NEED_NORMAL_WORLD
+varying highp vec3 NormalWorld;
+#if USE_NORMAL_MAP
+varying highp vec3 TangentWorld;
+varying highp vec3 BinormalWorld;
+#endif
+#endif
+
+#if RECEIVE_SHADOW
+varying highp vec4 PosLightProj;
+#endif
+
+
+
+#if RECEIVE_SHADOW
+highp float UnpackRGBA2Float(highp vec4 v)
+{
+	const highp vec4 vUnpack = vec4(1.0, 1.0/256.0, 1.0/65536.0, 1.0/16777216.0);	//1/2^0, 1/2^8, 1/2^16, 1/2^24
+	return dot(v, vUnpack);
+}
+#endif
+
+void main ()
+{
+	lowp vec4 albedo;
+	albedo = texture2D (SamplerDiffuse0, UV0.xy);
+    
+#if SEPARATE_ALPHA_TEX
+    lowp float sepAlpha = texture2D(SamplerSepAlphaTex7, UV0.xy).a;
+    albedo = vec4(albedo.r, albedo.g, albedo.b, sepAlpha);
+#endif
+
+#if ALPHA_TEST_ENABLE
+    lowp float delta = albedo.a - alphaRef;
+    if (delta <= 0.0) {
+        discard;
+    }
+#endif
+
+    //定义高光颜色
+    highp vec4 specColorRGB = vec4(0.0, 0.0, 0.0, 1.0);
+
+#ifdef NEED_NORMAL_WORLD
+    highp vec3 normal = NormalWorld.xyz;
+#endif
+
+#if USE_NORMAL_MAP
+    lowp vec3 normalOffset = vec3(0.0, 0.0, 1.0);
+    normalOffset.xy = texture2D (SamplerNormalMap4, UV0.xy).xy; 
+    normalOffset = normalOffset * 2.0 - 1.0;
+    normalOffset.xy = vec2(normalOffset.x, -normalOffset.y);
+    normal = normalize(normalOffset.z * NormalWorld + normalOffset.x * TangentWorld + normalOffset.y*BinormalWorld);
+    lowp float LdotN_NormalMap = dot(-light_dir.xyz, normal.xyz);
+    lowp float LdotN_Original = dot(-light_dir.xyz, NormalWorld.xyz);
+    lowp float diff_ratio = 1.0 + (LdotN_NormalMap - LdotN_Original) * normalmap_factor;
+    albedo.xyz *= diff_ratio;
+#endif
+
+#if SPECULAR_MAP_ENABLE
+    lowp vec4 ViewDir = normalize(camera_pos - PosWorld);
+    lowp vec3 Hn = normalize(ViewDir.xyz - light_dir.xyz);
+    lowp float NdotH = clamp(dot(normal, Hn), 0.0, 1.0) ;
+    lowp vec4 specMapColor;
+    specMapColor = texture2D (SamplerSpecularMap3, UV0.xy);
+
+    specColorRGB.rgb = pow(NdotH, specular_control.g) * specMapColor.rgb;
+
+#endif
+
+	gl_FragColor = albedo;
+
+
+    lowp vec3 texColor2 = vec3(0.0);
+
+#if LIGHT_MAP_ENABLE
+    mediump vec3 lightMapColor = texture2D (SamplerLightmap1, UV1.xy).xyz;
+    texColor2 = lightMapColor * LightMapScale.yzw;
+#endif
+
+
+    lowp float shadowFactor = 0.0;
+
+#if RECEIVE_SHADOW
+    highp vec4 lightProjPos = PosLightProj;
+#ifdef NEED_POS_WORLD
+    lightProjPos = lightViewProj * PosWorld;
+#endif
+    highp float depthToLight =  (lightProjPos.z / lightProjPos.w + 1.0) / 2.0;
+    highp vec2 shadowMapCoord = (lightProjPos.xy / lightProjPos.w + 1.0) / 2.0;
+    if ( 0.0 < shadowMapCoord.x && shadowMapCoord.x - 1.0 < 0.0 && 0.0 < shadowMapCoord.y && shadowMapCoord.y - 1.0 < 0.0 )
+    {
+        highp float depthInTex = texture2D(SamplerShadowmap2, shadowMapCoord).r;
+        shadowFactor = (depthInTex < depthToLight) ? 1.0 : 0.0;
+        // mediump float depthShadowMap = UnpackRGBA2Float( texture2D(SamplerShadowmap2, shadowMapCoord) );
+        // shadowFactor = (depthToLight - depthShadowMap > 0.0) ? 1.0 : 0.0;
+    }
+#endif
+	
+#if RECEIVE_SHADOW
+    shadowFactor *= ShadowAlpha;
+#endif
+
+#if SPECULAR_MAP_ENABLE
+     gl_FragColor.rgb = (albedo.rgb + specColorRGB.rgb);
+#else
+     gl_FragColor.rgb = albedo.rgb;
+#endif
+
+#if CUBE_MAP_ENABLE
+	mediump float NdotV_origin = dot(ViewDir.xyz, normal);
+	mediump vec3 reflectVector = normalize(2.0 * NdotV_origin * normal - ViewDir.xyz);
+	mediump vec4 reflectColor = vec4(0.0);
+	reflectColor = textureCube(SamplerCubeMap5, reflectVector); 
+#endif
+
+#if CUBE_MAP_ENABLE
+	mediump vec4 maskColor = texture2D(SamplerMaterialMaskMap6,UV0.xy);
+	gl_FragColor.xyz = specColorRGB.rgb  + reflectColor.rgb * maskColor.r  + albedo.rgb * (1.0 - maskColor.r) ;
+#endif
+
+#if LIGHT_MAP_ENABLE
+#if LIT_ENABLE
+    texColor2.xyz += Lighting.xyz;
+#endif
+    gl_FragColor.xyz *= texColor2;
+#endif
+
+#if NEOX_GLASS_ENABLE && CUBE_MAP_ENABLE
+	lowp float refFactor = 1.0 - NdotV_origin;
+	refFactor *= refFactor;
+	refFactor *= refFactor;
+	gl_FragColor.a += refFactor * reflectColor.g * albedo.a ;
+#endif
+
+    gl_FragColor.xyz *= ( 1.0 - shadowFactor);
+
+
+#if FOG_ENABLE && NEED_POS_WORLD
+	mediump vec4 retFog = GetFogEx(PosWorld);
+	gl_FragColor.xyz = mix(gl_FragColor.xyz, retFog.xyz, retFog.a);
+
+#endif
+
+#if LIT_ENABLE
+    gl_FragColor.rgb *= Lighting.xyz;
+#endif
+    gl_FragColor.a *= blendValue;
+}
+

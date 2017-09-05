@@ -1,0 +1,43 @@
+#ifndef USE_SEPARATE_ALPHA
+ #define USE_SEPARATE_ALPHA 0
+#endif
+
+#if USE_SEPARATE_ALPHA || !(USE_SEPARATE_ALPHA)
+float4 u_textColor;
+#endif
+sampler2D CC_Texture0: register(s0);
+struct PS_INPUT
+{
+float4 final_position: POSITION;
+float4 v_diffuse: TEXCOORD0;
+float2 v_texture0: TEXCOORD1;
+};
+float4 main(PS_INPUT psIN) : COLOR
+{
+float4 final_color;
+float4 local_0 = tex2D(CC_Texture0, psIN.v_texture0);
+float4 local_1;
+#if USE_SEPARATE_ALPHA
+float3 local_2 = u_textColor.xyz;
+float local_3 = u_textColor.w;
+float local_4 = local_0.x;
+float local_5 = local_0.y;
+float local_6 = local_0.z;
+float local_7 = local_0.w;
+float local_8 = local_3 * local_4;
+float4 local_9 = {local_2.x, local_2.y, local_2.z, local_8};
+float4 local_10 = psIN.v_diffuse * local_9;
+local_1 = local_10;
+#else
+float3 local_11 = u_textColor.xyz;
+float local_12 = u_textColor.w;
+float3 local_13 = local_0.xyz;
+float local_14 = local_0.w;
+float local_15 = local_12 * local_14;
+float4 local_16 = {local_11.x, local_11.y, local_11.z, local_15};
+float4 local_17 = psIN.v_diffuse * local_16;
+local_1 = local_17;
+#endif
+final_color = local_1;
+return final_color;
+}

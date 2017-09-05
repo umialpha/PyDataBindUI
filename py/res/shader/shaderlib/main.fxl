@@ -1,0 +1,65 @@
+
+#ifndef FOG_ENABLE
+	#define FOG_ENABLE FALSE
+#endif
+
+#ifndef SHADOW_MAP_ENABLE
+	#define SHADOW_MAP_ENABLE TRUE
+#endif
+
+#ifndef NORMAL_MAP_ENABLE
+	#define NORMAL_MAP_ENABLE FALSE
+#endif
+
+#ifndef LIGHT_MAP_ENABLE
+	#define LIGHT_MAP_ENABLE FALSE
+#endif
+
+#if FOG_ENABLE
+	#ifndef FOG_TYPE
+		#define FOG_TYPE FOG_TYPE_NONE	//默认没有雾
+	#endif
+#endif //FOG_ENABLE
+	
+///////////////////////////shader部分
+#include "struct.fxl"
+#include "extension.fxl"
+#include "fog.fxl"
+
+VS_OUTPUT vs_main(VS_INPUT IN)
+{
+	VS_OUTPUT result = (VS_OUTPUT)0;
+	VS_GENERAL vs_general = (VS_GENERAL)0;
+	VS_GENERAL_From_VS_INPUT(IN, vs_general);
+	VS_OUTPUT_From_VS_GENERAL(vs_general, result);
+
+#if FOG_ENABLE
+	//result.PosWorld.w = GetFog(vs_general);
+#endif
+
+	return result;
+}
+
+
+float4 ps_main(VS_OUTPUT IN):COLOR
+{
+	PS_GENERAL ps_general = (PS_GENERAL)0;
+	PS_GENERAL_From_PS_INPUT(IN, ps_general);
+
+	float4 result = 0;
+	result.xyz = GetEmissiveMtl(ps_general);	//自发光
+
+#if FOG_ENABLE
+	if(ps_general.FogEnable)
+	{
+		//result.xyz = CustomFogBlend(ps_general, result.xyz);
+		result.xyz = lerp(result.xyz, FogColor.xyz, GetFogEx(IN.PosWorld, FogInfo, FogColor.a));
+	}
+#endif
+
+	result.a = GetCustomAlphaValue(ps_general);
+
+	return result;
+	
+}
+	

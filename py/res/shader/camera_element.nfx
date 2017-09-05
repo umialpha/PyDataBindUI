@@ -1,0 +1,43 @@
+// int GlobalParameter : SasGlobal
+// <
+  // string SasEffectDescription = "sun_flare";
+  // string SasSuportedMacros = "UnSupported INSTANCE_TYPE UnSupported INSTANCE_TYPE_NONE;";
+  // string SasEffectAttr = "INSTANCE_SUPPORTED=TRUE;";
+// >;
+
+texture Tex0
+<
+    string SasUiLabel = "Texture"; 
+    string SasUiControl = "FilePicker"; 
+>;
+
+float hw_ratio = 1.0;
+float flare_rotate=0.0;
+float flare_tranx=0.0;
+float flare_trany=0.0;
+float flare_scale=0.7;
+float4 flare_color = (1.0,1.0,1.0,1.0);
+float flare_alpha=0.3;
+
+matrix4 world:World;
+
+SamplerTexture[0] = Tex0;
+SamplerAddressU[0] = ADDRESS_CLAMP;
+SamplerAddressV[0] = ADDRESS_CLAMP;
+
+// EnableZTest = true;
+technique technique0
+<
+    string Description = "xx";
+>
+{
+    pass p0
+    {
+        //EnableAlphaBlend = true;
+        //BlendFactor = (BLEND_DESTCOLOR, BLEND_ONE);// （源，目标）//DS+D
+        //BlendFactor = (BLEND_ONE, BLEND_INVSRCCOLOR);// （源，目标）//S+D(1-S)// One pass
+        // BlendFactor = (BLEND_ONE, BLEND_SRCCOLOR);// （源，目标）//这个的确实现了DS+S，然而有的地方会很黑
+        VertexShader = "camera_element.vs" vs_2_0 main;
+        PixelShader = "camera_element.ps" ps_2_0 main;
+    }
+}

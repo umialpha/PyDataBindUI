@@ -1,0 +1,397 @@
+#include <metal_graphics>
+#include <metal_texture>
+#include <metal_matrix>
+#include <metal_common>
+using namespace metal;
+#ifndef ALPHA_TEST_ENABLE
+ #define ALPHA_TEST_ENABLE 0
+#endif
+
+#ifndef FOG_TYPE_NONE
+ #define FOG_TYPE_NONE 0
+#endif
+
+#ifndef FOG_TYPE_LINEAR
+ #define FOG_TYPE_LINEAR 1
+#endif
+
+#ifndef FOG_TYPE_HEIGHT
+ #define FOG_TYPE_HEIGHT 2
+#endif
+
+#ifndef FOG_TYPE
+ #define FOG_TYPE FOG_TYPE_NONE
+#endif
+
+#ifndef SEPARATE_ALPHA_TEX
+ #define SEPARATE_ALPHA_TEX 0
+#endif
+
+#ifndef TEX_COUNT_1
+ #define TEX_COUNT_1 0
+#endif
+
+#ifndef TEX_COUNT_2
+ #define TEX_COUNT_2 1
+#endif
+
+#ifndef TEX_COUNT
+ #define TEX_COUNT TEX_COUNT_1
+#endif
+
+#ifndef VCOLOR_MODE_MUL
+ #define VCOLOR_MODE_MUL 0
+#endif
+
+#ifndef VCOLOR_MODE_ADD
+ #define VCOLOR_MODE_ADD 1
+#endif
+
+#ifndef VCOLOR_MODE_CHANGE
+ #define VCOLOR_MODE_CHANGE 2
+#endif
+
+#ifndef VCOLOR_MODE
+ #define VCOLOR_MODE VCOLOR_MODE_MUL
+#endif
+
+#ifndef MUL_RATIO_1
+ #define MUL_RATIO_1 1
+#endif
+
+#ifndef MUL_RATIO_2
+ #define MUL_RATIO_2 2
+#endif
+
+#ifndef MUL_RATIO_4
+ #define MUL_RATIO_4 4
+#endif
+
+#ifndef MUL_RATIO
+ #define MUL_RATIO MUL_RATIO_1
+#endif
+
+#ifndef HSV_CHANGE_HUE
+ #define HSV_CHANGE_HUE 1
+#endif
+
+#if VCOLOR_MODE == VCOLOR_MODE_CHANGE || (VCOLOR_MODE == VCOLOR_MODE_CHANGE && !(HSV_CHANGE_HUE))
+static void rgb_to_hsv(const float3 rgb,thread float3& hsv);
+#endif
+#if VCOLOR_MODE == VCOLOR_MODE_CHANGE
+static void hsv_to_rgb(const float3 hsv,thread float3& rgb);
+#endif
+#if VCOLOR_MODE == VCOLOR_MODE_CHANGE || (VCOLOR_MODE == VCOLOR_MODE_CHANGE && !(HSV_CHANGE_HUE))
+static void rgb_to_hsv(const float3 rgb,thread float3& hsv)
+{
+float local_0 = rgb.x;
+float local_1 = rgb.y;
+float local_2 = rgb.z;
+float local_3 = min(local_0, local_1);
+float local_4 = min(local_3, local_2);
+float local_5 = max(local_0, local_1);
+float local_6 = max(local_5, local_2);
+float local_7 = local_6 - local_4;
+float local_8;
+float local_9;
+if (local_7 != 0.0)
+{
+const float3 local_10 = {2.0f, 2.0f, 2.0f};
+float3 local_11 = {local_7, local_7, local_7};
+float3 local_12 = local_11 / local_10;
+const float3 local_13 = {6.0f, 6.0f, 6.0f};
+float3 local_14 = {local_6, local_6, local_6};
+float3 local_15 = local_14 - rgb;
+float3 local_16 = local_15 / local_13;
+float3 local_17 = local_16 + local_12;
+float3 local_18 = local_17 / local_11;
+float local_19;
+if (rgb.x == local_6)
+{
+float local_20 = local_18.x;
+float local_21 = local_18.y;
+float local_22 = local_18.z;
+float local_23 = local_22 - local_21;
+local_19 = local_23;
+}
+else if (rgb.y == local_6)
+{
+const float local_24 = 0.33f;
+float local_25 = local_18.x;
+float local_26 = local_18.y;
+float local_27 = local_18.z;
+float local_28 = local_24 + local_25;
+float local_29 = local_28 - local_27;
+local_19 = local_29;
+}
+else
+{
+const float local_30 = 0.67f;
+float local_31 = local_18.x;
+float local_32 = local_18.y;
+float local_33 = local_18.z;
+float local_34 = local_30 + local_32;
+float local_35 = local_34 - local_31;
+local_19 = local_35;
+}
+float local_36;
+if (local_19 < 0.0)
+{
+const float local_37 = 1.00f;
+float local_38 = local_19 + local_37;
+local_36 = local_38;
+}
+else if (local_19 > 1.0)
+{
+const float local_39 = 1.00f;
+float local_40 = local_19 - local_39;
+local_36 = local_40;
+}
+else
+{
+local_36 = local_19;
+}
+float local_41 = local_7 / local_6;
+local_8 = local_36;
+local_9 = local_41;
+}
+else
+{
+const float local_42 = 0.00f;
+local_8 = local_42;
+local_9 = local_42;
+}
+float3 local_43 = {local_8, local_9, local_6};
+hsv = local_43;
+}
+#endif
+#if VCOLOR_MODE == VCOLOR_MODE_CHANGE
+static void hsv_to_rgb(const float3 hsv,thread float3& rgb)
+{
+float local_0 = hsv.x;
+float local_1 = hsv.y;
+float local_2 = hsv.z;
+float3 local_3;
+if (local_1!=0.0)
+{
+const float local_4 = 6.00f;
+float local_5 = local_0 * local_4;
+float local_6 = floor(local_5);
+float local_7 = local_5 - local_6;
+float local_8 = local_1 * local_7;
+float local_9 = local_8 * local_2;
+const float local_10 = 1.00f;
+float local_11 = local_10 - local_1;
+float local_12 = local_2 * local_11;
+float local_13 = local_12 + local_9;
+float local_14 = local_10 - local_8;
+float local_15 = local_2 * local_14;
+float3 local_16;
+if (local_6==0.0)
+{
+float3 local_17 = {local_2, local_13, local_12};
+local_16 = local_17;
+}
+else if (local_6==1.0)
+{
+float3 local_18 = {local_15, local_2, local_12};
+local_16 = local_18;
+}
+else if (local_6==2.0)
+{
+float3 local_19 = {local_12, local_2, local_13};
+local_16 = local_19;
+}
+else if (local_6==3.0)
+{
+float3 local_20 = {local_12, local_15, local_2};
+local_16 = local_20;
+}
+else if (local_6==4.0)
+{
+float3 local_21 = {local_13, local_12, local_2};
+local_16 = local_21;
+}
+else
+{
+float3 local_22 = {local_2, local_12, local_15};
+local_16 = local_22;
+}
+local_3 = local_16;
+}
+else
+{
+float3 local_23 = {local_2, local_2, local_2};
+local_3 = local_23;
+}
+rgb = local_3;
+}
+#endif
+struct PSConstants
+{
+#if ALPHA_TEST_ENABLE
+float alphaRef;
+#endif
+#if FOG_TYPE == FOG_TYPE_LINEAR || FOG_TYPE == FOG_TYPE_HEIGHT
+float4 FogColor;
+#endif
+#if VCOLOR_MODE == VCOLOR_MODE_CHANGE
+float hsv_offset_A;
+#endif
+#if VCOLOR_MODE == VCOLOR_MODE_CHANGE
+float hsv_offset_I;
+#endif
+float alpha_add;
+float alpha_clamp_range;
+};
+struct PS_INPUT
+{
+float4 final_position [[position]];
+float4 v_diffuse;
+#if TEX_COUNT == TEX_COUNT_2
+float4 v_specular;
+#endif
+float4 v_texture0;
+#if TEX_COUNT == TEX_COUNT_2
+float4 v_texture1;
+#endif
+};
+fragment float4 ps_main(
+PS_INPUT psIN[[stage_in]]
+, constant PSConstants &constants[[buffer(0)]]
+, texture2d<float> sam_diffuse [[texture(0)]]
+, sampler sam_diffuse_state [[sampler(0)]]
+#if (TEX_COUNT == TEX_COUNT_2 && SEPARATE_ALPHA_TEX) || SEPARATE_ALPHA_TEX
+, texture2d<float> sam_diffuse_alpha [[texture(7)]]
+, sampler sam_diffuse_alpha_state [[sampler(7)]]
+#endif
+)
+{
+float4 final_color;
+const float local_0 = 0.0f;
+float2 local_1 = psIN.v_texture0.xy;
+float local_2 = psIN.v_texture0.z;
+float local_3 = psIN.v_texture0.w;
+float4 local_4 = sam_diffuse.sample(sam_diffuse_state, local_1);
+float4 local_5;
+#if SEPARATE_ALPHA_TEX
+float3 local_6 = {local_4.x, local_4.y, local_4.z};
+float4 local_7 = sam_diffuse_alpha.sample(sam_diffuse_alpha_state, local_1);
+float3 local_8 = local_7.xyz;
+float local_9 = local_7.w;
+float4 local_10 = {local_6.x, local_6.y, local_6.z, local_9};
+local_5 = local_10;
+#else
+local_5 = local_4;
+#endif
+float4 local_11;
+#if TEX_COUNT==TEX_COUNT_1
+local_11 = local_5;
+#elif TEX_COUNT==TEX_COUNT_2
+const uint local_12 = 3;
+float local_13 = psIN.v_specular[local_12];
+float4 local_14 = {local_13, local_13, local_13, local_13};
+float2 local_15 = {psIN.v_texture1.x, psIN.v_texture1.y};
+float4 local_16 = sam_diffuse.sample(sam_diffuse_state, local_15);
+float4 local_17;
+#if SEPARATE_ALPHA_TEX
+float3 local_18 = {local_16.x, local_16.y, local_16.z};
+float4 local_19 = sam_diffuse_alpha.sample(sam_diffuse_alpha_state, local_15);
+float3 local_20 = local_19.xyz;
+float local_21 = local_19.w;
+float4 local_22 = {local_18.x, local_18.y, local_18.z, local_21};
+local_17 = local_22;
+#else
+local_17 = local_16;
+#endif
+float4 local_23 = mix(local_5, local_17, local_14);
+local_11 = local_23;
+#endif
+const int local_24 = MUL_RATIO;
+float4 local_25 = {static_cast<float>(local_24), static_cast<float>(local_24), static_cast<float>(local_24), static_cast<float>(local_24)};
+float4 local_26 = local_11 * local_25;
+float4 local_27;
+#if VCOLOR_MODE==VCOLOR_MODE_MUL
+float4 local_28 = local_26 * psIN.v_diffuse;
+local_27 = local_28;
+#elif VCOLOR_MODE==VCOLOR_MODE_ADD
+float4 local_29 = local_26 + psIN.v_diffuse;
+local_27 = local_29;
+#elif VCOLOR_MODE==VCOLOR_MODE_CHANGE
+float3 local_30 = psIN.v_diffuse.xyz;
+float local_31 = psIN.v_diffuse.w;
+float3 local_32 = local_26.xyz;
+float local_33 = local_26.w;
+float local_34 = local_33 * local_31;
+float3 local_35;
+rgb_to_hsv(local_30,local_35);
+float local_36 = local_35.x;
+float local_37;
+#if HSV_CHANGE_HUE
+local_37 = local_36;
+#else
+const float local_38 = 1.0f;
+float3 local_39;
+rgb_to_hsv(local_32,local_39);
+float local_40 = local_39.x;
+float local_41 = local_36 + local_40;
+float local_42 = fmod(local_41, local_38);
+local_37 = local_42;
+#endif
+const float local_43 = 0.5f;
+float local_44 = constants.hsv_offset_A - local_43;
+float local_45 = step(local_43, constants.hsv_offset_A);
+float local_46 = local_45 * local_44;
+const float local_47 = 2.0f;
+const float3 local_48 = {0.299f, 0.587f, 0.114f};
+float local_49 = dot(local_48, local_32);
+float local_50 = constants.hsv_offset_I + local_49;
+float local_51 = saturate(local_50);
+float local_52 = local_51 - local_43;
+float local_53 = abs(local_52);
+float local_54 = local_43 - local_53;
+float local_55 = local_54 * local_47;
+float local_56 = local_55 * constants.hsv_offset_A;
+float local_57 = local_56 * local_46;
+float local_58 = local_51 + local_57;
+float3 local_59 = {local_37, local_56, local_58};
+float3 local_60;
+hsv_to_rgb(local_59,local_60);
+float4 local_61 = {local_60.x, local_60.y, local_60.z, local_34};
+local_27 = local_61;
+#endif
+float4 local_62 = saturate(local_27);
+float3 local_63 = local_62.xyz;
+float local_64 = local_62.w;
+float local_65 = local_64 + constants.alpha_add;
+float local_66 = clamp(local_65, local_0, constants.alpha_clamp_range);
+float local_67 = local_66 / constants.alpha_clamp_range;
+float3 local_68;
+#if FOG_TYPE==FOG_TYPE_NONE
+local_68 = local_63;
+#elif FOG_TYPE==FOG_TYPE_LINEAR
+float3 local_69 = constants.FogColor.xyz;
+float local_70 = constants.FogColor.w;
+float local_71 = local_3 * local_70;
+float3 local_72 = {local_71, local_71, local_71};
+float3 local_73 = mix(local_63, local_69, local_72);
+local_68 = local_73;
+#elif FOG_TYPE==FOG_TYPE_HEIGHT
+float3 local_74 = constants.FogColor.xyz;
+float local_75 = constants.FogColor.w;
+float local_76 = local_3 * local_75;
+float3 local_77 = {local_76, local_76, local_76};
+float3 local_78 = mix(local_63, local_74, local_77);
+local_68 = local_78;
+#endif
+float4 local_79 = {local_68.x, local_68.y, local_68.z, local_67};
+#if ALPHA_TEST_ENABLE
+if (local_67 - constants.alphaRef < 0.0) 
+{ 
+discard_fragment();
+} 
+#else
+#endif
+final_color = local_79;
+return final_color;
+}

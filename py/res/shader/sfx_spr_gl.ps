@@ -1,0 +1,31 @@
+#ifdef GL_ES
+precision highp float;
+#endif
+
+#ifndef SEPARATE_ALPHA_TEX
+#define SEPARATE_ALPHA_TEX 0
+#endif
+
+varying vec2 uv;
+uniform sampler2D SamplerDiffuse0;
+uniform lowp vec4 Alpha;
+uniform lowp float blendValue;
+
+#if SEPARATE_ALPHA_TEX
+uniform sampler2D SamplerSepAlphaTex7;
+#endif
+
+void main_PS(void)
+{
+	lowp vec4 texColor1;
+	texColor1 = texture2D (SamplerDiffuse0, uv.xy);
+	
+#if SEPARATE_ALPHA_TEX
+	lowp float sepAlpha = texture2D(SamplerSepAlphaTex7, uv.xy).a;
+	texColor1 = vec4(texColor1.r, texColor1.g, texColor1.b, sepAlpha);
+#endif
+
+	texColor1 *= Alpha*2.0;
+	gl_FragColor =  texColor1;
+	gl_FragColor.a *= blendValue;
+}

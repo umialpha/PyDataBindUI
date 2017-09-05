@@ -1,0 +1,36 @@
+precision lowp float;
+precision lowp int;
+
+uniform sampler2D tex0;
+uniform sampler2D tex1;
+
+varying mediump vec2 TexCoord0;
+
+highp vec3 GetLutColor(highp vec3 color)
+{
+	const highp float dim = 16.0;
+	const highp float inv_dim = 1.0 / dim;
+	const highp float scale = dim - 1.0;
+	const highp vec3 bias = vec3(0.5, 0.5, 0.0);
+
+	highp vec3 lut_coord = bias + color.rgb * scale;
+	lut_coord *= inv_dim;
+	lut_coord.x *= inv_dim;
+
+	highp float z = lut_coord.z * dim; 
+	highp float integer_part = floor(z);
+	highp float frac_part = z - integer_part;
+
+	lut_coord.x += integer_part * inv_dim; 
+	highp vec3 color1 = texture2D(tex1, lut_coord.xy).rgb;
+	lut_coord.x += inv_dim;
+	highp vec3 color2 = texture2D(tex1, lut_coord.xy).rgb;
+
+	return mix(color1, color2, frac_part);
+}
+
+void LutPS()
+{
+	vec4 color = texture2D(tex0, TexCoord0.xy);
+	gl_FragColor = vec4(GetLutColor(color.xyz), 1.0);
+}

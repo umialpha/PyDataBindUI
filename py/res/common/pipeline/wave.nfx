@@ -1,0 +1,62 @@
+float FrameTime: FrameTime ;
+
+texture	TexCorner
+<
+	string TextureFile = "common\\pipeline\\dark_corner.dds"; 
+>;
+
+/////////////////////////参数扰动相关
+
+
+float distortionScale<		
+	string SasUiLabel = "扰动幅度";
+	string SasUiControl = "FloatPicker";
+	float SasUiMin = 0.0f;
+	float SasUiMax = 0.2f;
+	float SasUiSteps = 0.01f;
+> = 0.01f;
+
+float distortionSpeed<		
+	string SasUiLabel = "扰动速度";
+	string SasUiControl = "FloatPicker";
+	float SasUiMin = 0.0f;
+	float SasUiMax = 8.0f;
+	float SasUiSteps = 0.1f;
+> = 6.f;
+
+float distortionLength<		
+	string SasUiLabel = "扰动尺寸";
+	string SasUiControl = "FloatPicker";
+	float SasUiMin = 0.0f;
+	float SasUiMax = 10.0f;
+	float SasUiSteps = 0.01f;
+> = 5.0f;
+
+
+float distortionBegin<		
+	string SasUiLabel = "扰动中心";
+	string SasUiControl = "FloatPicker";
+	float SasUiMin = 0.0f;
+	float SasUiMax = 1.0f;
+	float SasUiSteps = 0.05f;
+> = 0.1f;
+
+float distortionPower
+<
+	string SasUiLabel = "向往衰减";
+	string SasUiControl = "FloatPicker";
+	float SasUiMin = 0.3f;
+	float SasUiMax = 1.0f;
+	float SasUiSteps = 0.01f;
+> = 0.35f; 
+float4 dynamicRT:DynamicResolutionRT;
+SamplerTexture[1] = TexCorner;
+technique Distortion
+{
+	pass T0
+	{
+		VertexShader = "bloom.vs" vs_2_0 VSMain;
+		PixelShader = "wave.ps" ps_2_0 ps_main;
+		
+	}
+}

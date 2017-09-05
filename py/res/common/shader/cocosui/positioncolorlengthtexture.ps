@@ -1,0 +1,18 @@
+struct PS_INPUT
+{
+float4 final_position: POSITION;
+float2 v_texture0: TEXCOORD0;
+float4 v_texture1: TEXCOORD1;
+};
+float4 main(PS_INPUT psIN) : COLOR
+{
+float4 final_color;
+const float local_0 = 0.0f;
+const float local_1 = 1.0f;
+float local_2 = length(psIN.v_texture0);
+float local_3 = local_1 - local_2;
+float local_4 = step(local_0, local_3);
+float4 local_5 = mul(psIN.v_texture1, local_4);
+final_color = local_5;
+return final_color;
+}

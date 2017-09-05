@@ -1,0 +1,188 @@
+/**
+ *	@file 	pbr.fxh
+ *	@author Wang Chao <hzwangchao2014@corp.netease.com>
+ *	@date	2015/11/25
+ */
+#ifndef PBR_TML
+#define	PBR_TML 
+// Physically based shading model
+// parameterized with the below options
+
+// Microfacet specular = D*G*F / (4*NoL*NoV) = D*Vis*F
+// Vis = G / (4*NoL*NoV)
+#define M_INV_PI 0.31830988618379067153776752674503
+#define M_INV_LOG2 1.4426950408889634073599246810019
+#define M_PI 3.1415926535897932384626433832795
+#define MAX_RGBM_VALUE 8;
+//Mobile Gammar to linear space convert 
+float3 GammarToLinear(float3 value){
+	return value * value;
+}
+//Mobile linear to gammar space convert
+float3 LinearToGammar(float3 value){
+	return sqrt(value);
+}
+inline float DotClamped (float3 a, float3 b)
+{
+	return saturate(dot(a, b));
+}
+//BRDF Functions
+float3 Diffuse_Lambert( float3 DiffuseColor )
+{
+	return DiffuseColor ;
+}
+//这里的BRDF函数的变化程度和ENV里的粗超度变化程度基本近似,如果需要修改这里的,则需要修改粗糙度对环境图的采样函数,参看EnvBRDFApprox
+//GGX
+// cf http://blog.selfshadow.com/publications/s2013-shading-course/karis/s2013_pbs_epic_notes_v2.pdf p3
+float D_GGX(float Roughness,float NoH)
+{
+	float alpha = Roughness * Roughness;
+	float tmp = alpha / max(1e-8,(NoH*NoH*(alpha*alpha-1.0)+1.0));
+	return tmp * tmp * M_INV_PI;
+}
+// Anisotropic GGX
+// [Burley 2012, "Physically-Based Shading at Disney"]
+float D_GGXaniso( float RoughnessX, float RoughnessY, float NoH, float3 H, float3 X, float3 Y )
+{
+	float mx = RoughnessX * RoughnessX;
+	float my = RoughnessY * RoughnessY;
+	float XoH = dot( X, H );
+	float YoH = dot( Y, H );
+	float d = XoH*XoH / (mx*mx) + YoH*YoH / (my*my) + NoH*NoH;
+	return 1 / ( M_PI * mx*my * d*d );
+}
+// Tuned to match behavior of Vis_Smith
+// [Schlick 1994, "An Inexpensive BRDF Model for Physically-Based Rendering"]
+float Vis_Schlick( float Roughness, float NoV, float NoL )
+{
+	float k = ( Roughness * Roughness ) * 0.5;
+	float Vis_SchlickV = NoV * (1 - k) + k;
+	float Vis_SchlickL = NoL * (1 - k) + k;
+	return 0.25 / ( Vis_SchlickV * Vis_SchlickL );
+}
+// [Schlick 1994, "An Inexpensive BRDF Model for Physically-Based Rendering"]
+// [Lagarde 2012, "Spherical Gaussian approximation for Blinn-Phong, Phong and Fresnel"]
+float3 F_Schlick( float3 SpecularColor, float VoH )
+{
+	float Fc = pow(1 - VoH,5);
+	return SpecularColor + (1.0 - SpecularColor) * Fc;
+}
+
+float3 Diffuse( float3 DiffuseColor )
+{
+	return Diffuse_Lambert( DiffuseColor );
+}
+float Distribution( float Roughness, float NoH )
+{
+	return D_GGX( Roughness, NoH );
+}
+
+// Vis = G / (4*NoL*NoV)
+float GeometricVisibility( float Roughness, float NoV, float NoL, float VoH )
+{
+	return Vis_Schlick( Roughness, NoV, NoL );
+}
+
+float3 Fresnel( float3 SpecularColor, float VoH )
+{
+	return F_Schlick( SpecularColor, VoH );
+}
+
+//---------------
+// EnvBRDF
+//---------------
+
+half3 EnvBRDFApprox( half3 SpecularColor, half Roughness, half NoV )
+{
+	// [ Lazarov 2013, "Getting More Physical in Call of Duty: Black Ops II" ]
+	// Adaptation to fit our G term.
+	const half4 c0 = { -1, -0.0275, -0.572, 0.022 };
+	const half4 c1 = { 1, 0.0425, 1.04, -0.04 };
+	half4 r = Roughness * c0 + c1;
+	half a004 = min( r.x * r.x, exp2( -9.28 * NoV ) ) * r.x + r.y;
+	half2 AB = half2( -1.04, 1.04 ) * a004 + r.zw;
+
+	return SpecularColor * AB.x + AB.y;
+}
+//Textures 
+//PBR variables
+//Caculate base material attribute
+float GetRoughness(float maskValue)
+{
+	float glossness = max(0.04,min(0.98,maskValue)); 
+	// mask map restore glossness value
+	return 1.0 - glossness;
+}
+float GetMetallic(float maskValue)
+{
+	return max(0.001,min(0.999,maskValue));
+}
+float3 GetDiffuseColor(float3 baseColor, float metallic)
+{
+	return baseColor - baseColor * metallic;
+}
+float3 GetSpecularColor(float3 specularColor, float metallic)
+{
+	return lerp(0.04,specularColor,metallic);
+}
+//这里单独的给出了环境漫反射和高光反射以及动态光照的函数,提供一定的灵活性,后期会重构
+//IBL lighting
+
+//Decode high dynamic env map
+//MAX_RGBM_VALUE  to define scale index of encode
+float3 RGBMDecode(float4 decode_color){
+	float3 color = decode_color.rgb * decode_color.a  * MAX_RGBM_VALUE;
+	return color ;
+}
+//Diffuse env 
+float3 IBLDiffuse(float3 diffuseColor,sampler envDiffuse,float3 normalDir)
+{
+	float3 env_diffuse = texCUBE(envDiffuse,normalDir).rgb;
+	env_diffuse  *=  2.0;//添加了一个环境光强度的修正系数,主要是生成的irr图貌似不是能量守恒的,这个后续还需要解决
+	return  env_diffuse * diffuseColor;
+}
+//Specular env
+float3 IBLSpeuclar(float3 specularColor,sampler envSpecular,float3 normalDir,float3 viewDir,float NoV,float roughness,float reflectIntensity)
+{
+	float3 F = EnvBRDFApprox(specularColor,roughness,NoV);
+	
+	float ref_level = 0.0;//(pow(roughness,0.6) ) * 6.0 - 1.0;
+#if NEOX_ENV_MATCAP_ENABLE
+	ref_level = roughness  * 12.0 - 1.0;
+	float3 env_color = tex2Dlod(SamplerCube5,float4(normalDir.xy,0.0,ref_level)).rgb;
+	//env_color *= 2.0;
+#else
+	ref_level = (pow(roughness,0.6) ) * 6.0 - 1.0;
+	float3 refVec = normalize(reflect(-viewDir,normalDir));
+	float3 env_color = texCUBElod(envSpecular,float4(refVec,ref_level)).xyz;
+#endif
+	env_color *= env_color;
+	env_color *= 2.0 - roughness;
+	env_color *= reflectIntensity ;
+	return F * env_color;
+}
+//Dynamic Lighting 
+//brdf lighting
+float3 GetBRDFDiffuse(float3 diffuseColor)
+{
+	return Diffuse(diffuseColor);
+}
+float3 GetBRDFSpecular(float3 specularColor,float roughness,float NoH,float NoV,float NoL,float VoH)
+{
+	return  Distribution(roughness,NoH) * GeometricVisibility(roughness, NoV, NoL,VoH) * Fresnel(specularColor,VoH)  ;
+}
+//Direction Lighting
+float3 PbrLighting(float3 diffuseColor, float3 specularColor, float3 normalDir, float3 lightDir, float3 viewDir, float3 halfDir,float NoL,float roughness)
+{
+	
+	float NoH = saturate(dot(normalDir,halfDir));
+	float NoV = saturate(dot(normalDir,viewDir));
+	float VoH = saturate(dot(viewDir,halfDir));
+
+	float3 diffuse = GetBRDFDiffuse(diffuseColor);
+	float3 specular =  GetBRDFSpecular(specularColor,roughness,NoH,NoV,NoL,VoH);
+	return   diffuse + specular;
+}
+
+
+#endif //STD_PBR_FXH

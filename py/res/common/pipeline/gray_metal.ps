@@ -1,0 +1,32 @@
+using namespace metal;
+
+//UNIFORM
+struct PSConstants
+{
+	float gray_factor ;
+};
+
+
+// VARYING
+struct VertexOutput
+{
+	float4 position [[position]];
+	float2 TexCoord0;
+
+};
+
+fragment float4 GrayPS (
+	VertexOutput in [[stage_in]]
+	, constant PSConstants &constants[[buffer(0)]]
+	, texture2d<float> texture0 [[texture(0)]]
+	, sampler sampler0 [[sampler(0)]]
+	)
+{
+	float4 output;
+	float4 color = texture0.sample(sampler0, in.TexCoord0.xy);
+	float gray_tmp = dot( color.xyz, float3(0.299, 0.587, 0.114));
+	float3 gray_color = float3(gray_tmp);
+	gray_color = mix(gray_color, color.xyz, constants.gray_factor);
+	output = float4(gray_color.xyz, 1.0);
+	return output;
+}

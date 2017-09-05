@@ -1,0 +1,131 @@
+using namespace metal;
+
+#define EQUAL(x,y) !(x-y)
+
+#define	TERRAIN_SINGLE_LAYER 			1
+#define	TERRAIN_SINGLE_LAYER_LIGHTMAP 	2
+#define	TERRAIN_VCOLOR 					3
+#define	TERRAIN_VCOLOR_LIGHTMAP 		4
+#define	TERRAIN_ALPHAMAP_2 				5
+#define	TERRAIN_ALPHAMAP_LIGHTMAP_2 	6
+#define	TERRAIN_ALPHAMAP_3 				7
+#define	TERRAIN_ALPHAMAP_LIGHTMAP_3 	8
+#define	TERRAIN_ALPHAMAP_4 				9
+#define	TERRAIN_ALPHAMAP_LIGHTMAP_4 	10
+
+#include "shaderlib/extension_metal.ps"
+
+// VARYING
+struct VertexOutput
+{
+	float4 position [[position]];
+	float4 UV0;
+	float4 UV1;
+#if LIT_ENABLE
+	float3 Lighting;
+#endif
+#if SHADOW_MAP_ENABLE
+	float4 PosLightProj;
+	float4 PosLight;
+#endif
+};
+
+struct PSConstants
+{
+	float4 uv_transform;
+	float4 LightMapScale;
+#if FOG_ENABLE
+	float4 FogColor;
+#endif
+#if SHADOW_MAP_ENABLE
+	float ShadowAlpha;
+#endif
+};
+
+
+float3 BlendColor(const float3 color0, const float3 color1, const float factor)
+{
+	return  color0 * (1.0 - factor) + color1 * factor;
+}
+
+
+fragment float4 metal_main (
+	VertexOutput in [[stage_in]],
+	constant PSConstants &constants[[buffer(0)]],
+	texture2d<float> texture0 [[texture(0)]],
+	sampler sampler0 [[sampler(0)]],
+	texture2d<float> texture1 [[texture(1)]],
+	sampler sampler1 [[sampler(1)]],
+	texture2d<float> texture2 [[texture(2)]],
+	sampler sampler2 [[sampler(2)]],
+	texture2d<float> texture3 [[texture(3)]],
+	sampler sampler3 [[sampler(3)]],
+	texture2d<float> texture7 [[texture(7)]],
+	sampler sampler7 [[sampler(7)]]
+#if SHADOW_MAP_ENABLE
+	, depth2d<float> texture4 [[texture(4)]]
+#endif
+	)
+{
+	float4 output;
+
+	float3 diffuse_map_color0 = texture0.sample(sampler0, in.UV0.xy * constants.uv_transform.x).xyz;
+	float3 diffuse_map_color1 = texture1.sample(sampler1, in.UV0.xy * constants.uv_transform.y).xyz;;
+	float3 diffuse_map_color2 = texture3.sample(sampler3, in.UV0.xy * constants.uv_transform.z).xyz;;
+	
+	float3 blend_factors = texture2.sample(sampler2, in.UV0.xy).xyz;
+	float blend_factor0 = blend_factors.x;
+	float blend_factor1 = blend_factors.y;
+	//float blend_factor2 = blend_factors.z;
+	
+	float3 result = float3(1.0, 1.0, 1.0);
+#if EQUAL(TERRAIN_TECH_TYPE, TERRAIN_VCOLOR)
+	result = diffuse_map_color0;
+#endif
+
+#if EQUAL(TERRAIN_TECH_TYPE, TERRAIN_VCOLOR_LIGHTMAP)
+	result = diffuse_map_color0;
+#endif
+
+#if EQUAL(TERRAIN_TECH_TYPE, TERRAIN_SINGLE_LAYER)
+	result = diffuse_map_color0;
+#endif
+
+#if EQUAL(TERRAIN_TECH_TYPE, TERRAIN_SINGLE_LAYER_LIGHTMAP)
+	result = diffuse_map_color0;
+#endif
+
+#if EQUAL(TERRAIN_TECH_TYPE, TERRAIN_ALPHAMAP_2)
+	result = BlendColor(diffuse_map_color0, diffuse_map_color1, blend_factor0);
+#endif
+
+#if EQUAL(TERRAIN_TECH_TYPE, TERRAIN_ALPHAMAP_LIGHTMAP_2)
+	result = BlendColor(diffuse_map_color0, diffuse_map_color1, blend_factor0);
+#endif
+	
+#if EQUAL(TERRAIN_TECH_TYPE, TERRAIN_ALPHAMAP_3)
+	result = BlendColor(diffuse_map_color0, diffuse_map_color1, blend_factor0);
+	result =  BlendColor(result, diffuse_map_color2, blend_factor1);
+#endif
+
+#if EQUAL(TERRAIN_TECH_TYPE, TERRAIN_ALPHAMAP_LIGHTMAP_3)
+	result = BlendColor(diffuse_map_color0, diffuse_map_color1, blend_factor0);
+	result =  BlendColor(result, diffuse_map_color2, blend_factor1);
+#endif
+
+	float3 light_color = texture7.sample(sampler7, in.UV1.xy).xyz * constants.LightMapScale.yzw;
+#if LIT_ENABLE
+	light_color += in.Lighting;
+#endif
+	result.xyz *= light_color;
+#if SHADOW_MAP_ENABLE
+	result.xyz *= calc_shadow(in.PosLightProj, constants.ShadowAlpha, texture4);
+#endif
+#if FOG_ENABLE
+	result.xyz = CustomFogBlend(in.UV0.w, result.xyz, constants.FogColor);
+#endif
+	output = float4(result, 1.0);
+	
+	return output;
+}
+

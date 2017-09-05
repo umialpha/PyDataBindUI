@@ -1,0 +1,11 @@
+
+#if FOG_ENABLE
+float4 FogColor;
+
+float3 CustomFogBlend(float vsFogFactor, float3 screen_clr)
+{
+	float fogFactor = vsFogFactor * FogColor.a;
+	float3 result = screen_clr * (1 - fogFactor) + FogColor.xyz * fogFactor;
+	return result;
+}
+#endif

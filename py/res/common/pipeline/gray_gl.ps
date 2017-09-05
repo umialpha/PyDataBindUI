@@ -1,0 +1,16 @@
+precision lowp float;
+precision lowp int;
+
+uniform sampler2D tex0;
+uniform float gray_factor;
+
+varying mediump vec2 TexCoord0;
+
+void GrayPS()
+{
+	vec4 color = texture2D(tex0, TexCoord0.xy);
+	float gray_tmp = dot( color.xyz, vec3(0.299, 0.587, 0.114));
+	vec3 gray_color = vec3(gray_tmp);
+	gray_color = mix(gray_color, color.xyz, gray_factor);
+	gl_FragColor = vec4(gray_color.xyz, 1.0);
+}

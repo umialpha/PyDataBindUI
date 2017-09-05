@@ -1,0 +1,132 @@
+// ! ForwardPassPS.hlsl.usf:MainPS
+
+#include <metal_stdlib>
+
+using namespace metal;
+
+struct PSStageIn
+{
+	float4 OUT_TEXCOORD10 ;
+	float4 OUT_TEXCOORD11 ;
+	float2 OUT_TEXCOORD0 ;
+	float4 OUT_TEXCOORD5 ;
+	float OUT_TEXCOORD7 ;
+};
+
+struct FPSOut
+{
+	half4 OUT_SV_Target [[ user(SV_Target) ]];
+};
+
+struct PSConstants
+{
+        float4 VectorUniformExpressions[4];
+    float4 ScalarUniformExpressions;
+    bool FogEnable;
+    float4 FogColor;
+    float4 CameraPos;
+
+};
+fragment half4 metal_main(PSStageIn __PSStageIn [[ stage_in ]],	
+	sampler Tex2Sampler [[ sampler(2) ]], texture2d<float> Tex2 [[ texture(2) ]],
+	sampler Tex1Sampler [[ sampler(1) ]], texture2d<float> Tex1 [[ texture(1) ]],
+	sampler Tex0Sampler [[ sampler(0) ]], texture2d<float> Tex0 [[ texture(0) ]],
+	sampler Tex3Sampler [[ sampler(3) ]], texture2d<float> Tex3 [[ texture(3) ]],
+constant PSConstants &constants[ [buffer(0)] ])
+{
+	float f0;
+	float2 v1;
+	float4 v2;
+	v2.xyzw = __PSStageIn.OUT_TEXCOORD11;
+	v1.xy = __PSStageIn.OUT_TEXCOORD0;
+	f0 = __PSStageIn.OUT_TEXCOORD7;
+	half3 v3;
+	half3x3 m4;
+	half3 v5;
+	half3 v6;
+	v6.xyz = half3(__PSStageIn.OUT_TEXCOORD10.xyz);
+	v5.xyz = v6;
+	half3 v7;
+	half3 v8;
+	v8.xyz = half3(v2.xyz);
+	v7.xyz = v8;
+	half3x3 m9;
+	m9[0].xyz = v5;
+	m9[1].xyz = cross(v7,v5);
+	m9[2].xyz = v7;
+	m4 = m9;
+	half h10;
+	h10 = half(v2.w);
+	m4[1].xyz = (m9[1]*half3(h10));
+	half2 v11;
+	half2 v12;
+	v12.xy = half2(((v1*float2(2.0,1.0))*constants.ScalarUniformExpressions.xx));
+	v11.xy = v12;
+	half3 v13;
+	half2 v14;
+	v14.xy = half2(v1);
+	float2 v15;
+	v15.xy = float2(v11);
+	half2 v16;
+	v16.xy = half2((constants.VectorUniformExpressions[0].xy+v15));
+	half2 v17;
+	v17.xy = half2((constants.VectorUniformExpressions[1].xy+v15));
+	float2 v18;
+	v18.xy = float2((half4(Tex0.sample(Tex0Sampler, float2(v16))).xyz*half4(Tex1.sample(Tex1Sampler, float2(v17))).xyz).xy);
+	half2 v19;
+	v19.xy = half2(((v18*constants.ScalarUniformExpressions.yy)+v1));
+	float f20;
+	f20 = float(half4(Tex2.sample(Tex2Sampler, float2(v19))).w);
+	half3 v21;
+	v21.xyz = half3((float3((f20*constants.ScalarUniformExpressions.z))*constants.VectorUniformExpressions[2].xyz));
+	float3 v22;
+	v22.xyz = float3(m4[2]);
+	half3 v23;
+	v23.xyz = half3(normalize(v22));
+	half3 v24;
+	v24.xyz = half3(normalize((constants.CameraPos.xyz+(-__PSStageIn.OUT_TEXCOORD5.xyz))));
+	half h25;
+	h25 = half(0.0);
+	half h26;
+	h26 = half(1.0);
+	half h27;
+	h27 = half(0.00000100);
+	half h28;
+	h28 = half(constants.ScalarUniformExpressions.w);
+	float f29;
+	f29 = float(pow(fmax(fabs((h26+(-fmax(h25,dot(v23,v24))))),h27),h28));
+	half3 v30;
+	v30.xyz = half3((float3(f29)*constants.VectorUniformExpressions[3].xyz));
+	half3 v31;
+	v31.xyz = half3(0.0,0.0,0.0);
+	half3 v32;
+	v32.xyz = half3(0.45454544,0.45454544,0.45454544);
+	v13.xyz = pow(fmax(((half4(Tex3.sample(Tex3Sampler, float2(v14))).xyz+v21)+v30),v31),v32);
+	v3.xyz = v13;
+	if (constants.FogEnable)
+	{
+		half h33;
+		half h34;
+		h34 = half((constants.FogColor.w*f0));
+		half h35;
+		h35 = half(0.0);
+		half h36;
+		h36 = half(1.0);
+		h33 = clamp(h34,h35,h36);
+		float f37;
+		f37 = float(h33);
+		float3 v38;
+		v38.xyz = float3((v13*half3((h36+(-h33)))));
+		half3 v39;
+		v39.xyz = half3((v38+(constants.FogColor.xyz*float3(f37))));
+		v3.xyz = v39;
+	}
+	half4 v40;
+	v40.w = h26;
+	v40.xyz = v3;
+	half4 t41;
+	t41.xyzw = v40;
+
+	return t41;
+}
+

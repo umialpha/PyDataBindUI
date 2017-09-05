@@ -1,0 +1,272 @@
+#ifdef GL_EXT_shader_texture_lod
+#extension GL_EXT_shader_texture_lod : enable
+#define GLOSS_SUPPORTED 1
+#endif
+
+#ifndef GL_ES
+#define GLOSS_SUPPORTED 1
+#define texture2DLodEXT texture2DLod
+#endif
+
+#ifndef GLOSS_SUPPORTED
+#define GLOSS_SUPPORTED FALSE
+#endif
+
+#ifndef SEPARATE_ALPHA_TEX
+#define SEPARATE_ALPHA_TEX FALSE
+#endif
+
+#ifndef RIMLIGHT_ENABLE
+#define RIMLIGHT_ENABLE FALSE
+#endif
+
+#ifndef MENTAL_ENABLE
+#define MENTAL_ENABLE FALSE
+#endif
+
+#ifndef NEED_POS_WORLD
+#define NEED_POS_WORLD TRUE
+#endif
+
+#ifndef NEED_NORMAL_WORLD
+#define NEED_NORMAL_WORLD TRUE
+#endif
+
+#ifndef DISSOLVE_ENABLE
+#define DISSOLVE_ENABLE TRUE
+#endif
+
+#include "shaderlib/extension.ps"
+
+uniform sampler2D SamplerDiffuse0;
+uniform sampler2D SamplerMatcap1;
+
+#if DISSOLVE_ENABLE
+uniform sampler2D SamplerDissolve3;
+uniform lowp vec4 Dissolve_color;
+uniform lowp float Dissolve_color_intensity;
+uniform lowp float Dissolve_intensity;
+#endif
+
+
+#ifndef NORMAL_MAP_ENABLE
+#define NORMAL_MAP_ENABLE FALSE
+#endif
+
+#ifndef CUBE_MAP_ENABLE
+#define CUBE_MAP_ENABLE FALSE
+#endif
+
+#if SHADOW_MAP_ENABLE
+uniform sampler2D SamplerShadowmap6;
+#endif
+uniform mediump float matcap_brightness;
+
+#ifdef NEED_NORMAL_WORLD
+uniform mediump vec3 light_dir;
+#endif
+
+//法线贴图
+#if NORMAL_MAP_ENABLE
+uniform sampler2D SamplerNormalMap4;
+#endif
+
+
+#if NEED_NORMAL_WORLD
+varying highp vec3 TangentWorld;
+varying highp vec3 BinormalWorld;
+#endif
+
+#if RIMLIGHT_ENABLE
+uniform sampler2D SamplerRimMatcap2;
+uniform lowp vec4 rimlight_color;
+uniform highp float rimlight_brightness;
+#endif
+
+#if SEPARATE_ALPHA_TEX
+uniform sampler2D SamplerSepAlphaTex7;
+#endif
+
+uniform lowp float blendValue;
+
+#if ALPHA_TEST_ENABLE
+uniform lowp float alphaRef;
+#endif
+
+uniform highp vec4 camera_pos;
+varying mediump vec4 UV0;
+uniform highp mat4 view;
+
+uniform highp vec4 ShadowLightAttr[LIGHT_ATTR_ITEM_NUM ];
+uniform mediump vec4 ExtraRimColor;
+#ifdef NEED_POS_WORLD
+varying highp vec4 PosWorld;
+#endif
+#ifdef NEED_NORMAL_WORLD
+varying highp vec3 NormalWorld;
+#endif
+
+#if LIT_ENABLE
+varying lowp vec3 Lighting;
+#endif
+
+#if SHADOW_MAP_ENABLE
+varying highp vec4 PosLightProj;
+#endif
+
+#if FOG_ENABLE
+varying highp vec4 FogResult;
+#endif
+
+// #if FOG_ENABLE
+// varying highp vec4 PosView;
+// varying highp vec4 PosWorldFog;
+// #endif
+
+#if SHADOW_MAP_ENABLE
+highp float UnpackRGBA2Float(highp vec4 v)
+{
+	const highp vec4 vUnpack = vec4(1.0, 1.0/256.0, 1.0/65536.0, 1.0/16777216.0);	//1/2^0, 1/2^8, 1/2^16, 1/2^24
+	return dot(v, vUnpack);
+}
+#endif
+
+lowp vec4 getMatCapColor(mediump vec2 uv, lowp float gloss)
+{
+	lowp vec4 matcap;
+#if GLOSS_SUPPORTED && GLOSS_ENABLE
+	matcap = texture2DLodEXT (SamplerMatcap1, uv, 8.0 - gloss * 8.0);
+#else
+	matcap = vec4(0.0);
+#endif
+	return matcap * gloss * matcap_brightness;
+}
+
+mediump vec2 getMatCapUV(mediump vec2 norm)
+{
+	return vec2(norm.x, -norm.y) * 0.5 + 0.5;
+}
+#if DISSOLVE_ENABLE
+//////////////////////////////////////////////////////////////////////
+//
+//	溶解效果获取函数
+//		溶解使用采样贴图的方式来实现,用一张深度贴图来采样另外一张贴图的通道的方式来实现边缘效果,
+//		这样方便做出不同程度的边缘及边缘宽度
+//	返回float3类型为最终rgb颜色
+///////////////////////////////////////////////////////////////////////
+lowp vec3 GetDissolveAttribute(lowp vec2 uv){
+	lowp vec3 dissolve_color = vec3(0.0);
+	//Dissolve
+	//取溶解效果贴图
+	dissolve_color = texture2D(SamplerDissolve3,uv).xxx;
+	//添加可控制的溶解参数混合
+	dissolve_color -= vec3(Dissolve_intensity) ;
+	dissolve_color = max(vec3(0.0),dissolve_color);
+	//通过溶解效果贴图来采样溶解控制图,获取最终的溶解状态,g通道控制溶解边缘及样式,b通道控制边缘描边宽度
+	lowp vec3 dissolve_attribute = texture2D(SamplerDissolve3, dissolve_color.xy).yyy ;
+	dissolve_attribute.y = 1.0 - dissolve_attribute.y;
+	return dissolve_attribute;
+}
+#endif
+void main ()
+{
+	lowp vec4 albedo;
+	albedo = texture2D (SamplerDiffuse0, UV0.xy);
+#if SEPARATE_ALPHA_TEX
+	lowp float sepAlpha = texture2D(SamplerSepAlphaTex7, UV0.xy).a;
+	albedo = vec4(albedo.r, albedo.g, albedo.b, sepAlpha);
+#endif
+#if DISSOLVE_ENABLE
+	lowp vec3 dissolve_attribute = GetDissolveAttribute(UV0.xy);
+#endif
+#if ALPHA_TEST_ENABLE
+#if DISSOLVE_ENABLE
+	lowp float delta = albedo.a * dissolve_attribute.g - alphaRef;
+#else
+	lowp float delta = albedo.a - alphaRef;
+#endif
+	if (delta <= 0.0) {
+		discard;
+	}
+#endif
+	gl_FragColor = albedo;
+	//normal
+	highp vec3 normalWorld = vec3(0.0,0.0,1.0);
+#if NORMAL_MAP_ENABLE
+	lowp vec4 normalMap = texture2D(SamplerNormalMap4,UV0.xy);
+	lowp vec2 normalOffset = normalMap.xy;
+	normalOffset = normalOffset * 2.0 - 1.0;
+	normalWorld.xy = vec2(normalOffset.x, -normalOffset.y);
+	normalWorld= normalWorld.x * TangentWorld + normalWorld.y * BinormalWorld + normalWorld.z * NormalWorld;
+#else
+	normalWorld = NormalWorld.xyz;
+#endif
+	normalWorld = normalize(normalWorld);
+	//matcap
+	highp vec3 normalView = vec3(0.0);
+	highp vec3 viewDir = normalize(camera_pos.xyz - PosWorld.xyz);
+	lowp float NdotV = max(0.0,dot(normalWorld,viewDir));
+	highp mat3 ViewMat = mat3(view);
+	normalView= ViewMat * normalWorld;
+
+#if GLOSS_SUPPORTED && GLOSS_ENABLE && NORMAL_MAP_ENABLE
+	lowp float gloss = normalMap.z;
+#else
+    lowp float gloss = 0.0;
+#endif
+	mediump vec2 matCapUV = getMatCapUV(normalView.xy);
+	lowp vec4 texColor1 = getMatCapColor(matCapUV, gloss);
+#if RIMLIGHT_ENABLE
+	lowp vec4 rim = texture2D(SamplerRimMatcap2, matCapUV);
+	rim = rim * rimlight_color * rimlight_brightness;
+#endif
+	lowp vec3 texColor2 = vec3(0.0);
+
+
+	lowp float shadowFactor = 0.0;
+#if SHADOW_MAP_ENABLE
+	mediump vec4 lightProjPos = PosLightProj;
+	
+	highp float depthToLight =  lightProjPos.z;
+	mediump vec2 shadowMapCoord = lightProjPos.xy;
+	
+	if ( 0.0 < shadowMapCoord.x && shadowMapCoord.x - 1.0 < 0.0 && 0.0 < shadowMapCoord.y && shadowMapCoord.y - 1.0 < 0.0 )
+	{
+		mediump float depthShadowMap = UnpackRGBA2Float( texture2D(SamplerShadowmap6, shadowMapCoord) );
+		shadowFactor = (depthToLight - depthShadowMap > 0.0) ? 1.0 : 0.0;
+	}
+#endif
+	
+	lowp float NdotL = 0.0;
+#ifdef NEED_NORMAL_WORLD
+	NdotL = clamp(dot(-light_dir, normalWorld),0.0,1.0);
+#endif
+
+#if SHADOW_MAP_ENABLE
+	NdotL *= (1.0 - shadowFactor);
+	//shadowFactor *= 0.25;// ShadowAlpha ;
+	NdotL = NdotL * 0.9 + 0.1;
+#endif
+	mediump vec3 light = NdotL * ShadowLightAttr[1].xyz + Lighting + vec3(0.3);
+#if NORMAL_MAP_ENABLE && MENTAL_ENABLE
+	lowp float mental = normalMap.w;
+	gl_FragColor.rgb = albedo.rgb * (1.0 - mental) + texColor1.rgb * albedo.rgb * mental;	
+#else
+	gl_FragColor.rgb = albedo.rgb + texColor1.rgb ;
+#endif
+	gl_FragColor.rgb *= light;
+
+	gl_FragColor.rgb += ExtraRimColor.rgb * (1.0 - NdotV);
+#if DISSOLVE_ENABLE
+	//Dissolve
+	gl_FragColor.rgb += Dissolve_color.rgb * Dissolve_color_intensity * dissolve_attribute.r;
+#endif
+// #if FOG_ENABLE
+// 	mediump vec4 retFog = GetFogEx(PosWorldFog, PosView);
+// 	gl_FragColor.xyz = mix(gl_FragColor.xyz, retFog.xyz, retFog.a);
+// #endif
+	gl_FragColor.a *= blendValue;
+	// gl_FragColor.rgb = vec3(normalMap.z);
+
+}
+

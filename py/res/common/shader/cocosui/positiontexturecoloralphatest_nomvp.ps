@@ -1,0 +1,22 @@
+float CC_alpha_value;
+sampler2D CC_Texture0: register(s0);
+struct PS_INPUT
+{
+float4 final_position: POSITION;
+float4 v_diffuse: TEXCOORD0;
+float2 v_texture0: TEXCOORD1;
+};
+float4 main(PS_INPUT psIN) : COLOR
+{
+float4 final_color;
+float4 local_0 = tex2D(CC_Texture0, psIN.v_texture0);
+float4 local_1 = local_0 * psIN.v_diffuse;
+final_color = local_1;
+float3 local_2 = local_0.xyz;
+float local_3 = local_0.w;
+if (local_3 - CC_alpha_value <= 0.0) 
+{ 
+discard;
+} 
+return final_color;
+}

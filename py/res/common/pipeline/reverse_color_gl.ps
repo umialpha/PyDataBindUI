@@ -1,0 +1,15 @@
+precision lowp float;
+precision lowp int;
+
+uniform sampler2D tex0;
+uniform float reverse_factor;
+
+varying mediump vec2 TexCoord0;
+
+void ReverseColorPS()
+{
+	vec4 color = texture2D(tex0, TexCoord0.xy);
+	vec3 reverse_color = 1.0 - color.rgb;
+	reverse_color = mix(color.xyz, reverse_color, reverse_factor);
+	gl_FragColor = vec4(reverse_color.xyz, 1.0);
+}

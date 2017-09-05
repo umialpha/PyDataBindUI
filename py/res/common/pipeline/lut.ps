@@ -1,0 +1,10 @@
+sampler tex0;
+float gray_factor;
+
+float4 GrayPS(float2 t : TEXCOORD0) : COLOR
+{
+	float4 color = tex2D(tex0, t);
+	float3 gray_color = dot( color.rgb, float3(0.299f, 0.587f, 0.114f));
+	gray_color = lerp(gray_color, color.rgb, gray_factor);
+	return float4(gray_color.rgb, 1.0f);
+}

@@ -1,0 +1,38 @@
+#if FOG_ENABLE
+float3 CustomFogBlend(const float vsFogFactor, const float3 screen_clr, const float4 FogColor)
+{
+	float fogFactor = vsFogFactor * FogColor.a;
+	float3 result = screen_clr * (1.0 - fogFactor) + FogColor.xyz * fogFactor;
+	return result;
+}
+#endif
+
+
+#if RECEIVE_SHADOW
+float calc_shadow(const float4 pos, const float alpha, const depth2d<float> texture4)
+{
+	float4 lPos = pos;
+	lPos.xyz /= lPos.w;
+	lPos.xyz = lPos.xyz * 0.5 + 0.5;
+	lPos.y = 1 - lPos.y;
+
+	constexpr sampler shadow_sampler(coord::normalized, filter::linear, address::clamp_to_edge, compare_func::less);
+	float r = texture4.sample_compare(shadow_sampler, lPos.xy, lPos.z);
+	
+	return mix(alpha, 1.0, r);
+}
+
+float raw_shadow(const float4 pos, const float alpha, const depth2d<float> texture4)
+{
+	float4 lPos = pos;
+	lPos.xyz /= lPos.w;
+	lPos.xyz = lPos.xyz * 0.5 + 0.5;
+	lPos.y = 1 - lPos.y;
+
+	constexpr sampler shadow_sampler(coord::normalized, filter::linear, address::clamp_to_edge, compare_func::less);
+	float r = texture4.sample(shadow_sampler, lPos.xy);
+	
+	return r;
+}
+
+#endif

@@ -1,0 +1,55 @@
+#include <metal_graphics>
+#include <metal_texture>
+#include <metal_matrix>
+#include <metal_common>
+using namespace metal;
+#ifndef USE_SEPARATE_ALPHA
+ #define USE_SEPARATE_ALPHA 0
+#endif
+
+struct PSConstants
+{
+#if USE_SEPARATE_ALPHA || !(USE_SEPARATE_ALPHA)
+float4 u_textColor;
+#endif
+};
+struct PS_INPUT
+{
+float4 final_position [[position]];
+float4 use_color;
+float2 v_texture1;
+};
+fragment float4 metal_main(
+PS_INPUT psIN[[stage_in]]
+, constant PSConstants &constants[[buffer(0)]]
+, texture2d<float> CC_Texture0 [[texture(0)]]
+, sampler CC_Texture0_state [[sampler(0)]]
+)
+{
+float4 final_color;
+float4 local_0 = CC_Texture0.sample(CC_Texture0_state, psIN.v_texture1);
+float4 local_1;
+#if USE_SEPARATE_ALPHA
+float local_2 = local_0.x;
+float local_3 = local_0.y;
+float local_4 = local_0.z;
+float local_5 = local_0.w;
+float3 local_6 = constants.u_textColor.xyz;
+float local_7 = constants.u_textColor.w;
+float local_8 = local_7 * local_2;
+float4 local_9 = {local_6.x, local_6.y, local_6.z, local_8};
+float4 local_10 = psIN.use_color * local_9;
+local_1 = local_10;
+#else
+float3 local_11 = local_0.xyz;
+float local_12 = local_0.w;
+float3 local_13 = constants.u_textColor.xyz;
+float local_14 = constants.u_textColor.w;
+float local_15 = local_14 * local_12;
+float4 local_16 = {local_13.x, local_13.y, local_13.z, local_15};
+float4 local_17 = psIN.use_color * local_16;
+local_1 = local_17;
+#endif
+final_color = local_1;
+return final_color;
+}

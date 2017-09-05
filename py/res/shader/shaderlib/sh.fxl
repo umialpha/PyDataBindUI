@@ -1,0 +1,103 @@
+#if SH_ENABLE
+
+#define NEED_SH_ATTR
+#include "vardefination.fxl"
+/*
+float4 cAr = float4(-0.317f, 0.035f, -0.042f, 0.316f);
+float4 cAg = float4(-0.371f, -0.007f, -0.005f, 0.377f);
+float4 cAb = float4(-0.312, 0.039f, -0.046f, 0.31f);
+float4 cBr = float4(0.032f, -0.03f, -0.037f, 0.005f);
+float4 cBg = float4(-0.002f, 0.016f, -0.045f, -0.027f);
+float4 cBb = float4(0.036f, -0.035f, -0.036f, 0.008f);
+float4 cC = float4(-0.07f, -0.061f, -0.071f, 1.0f);
+*/
+static const float sqrt_1_4pi = 0.2820948f;
+static const float sqrt_3_4pi = 0.4886025f;
+static const float sqrt_15_4pi = 1.0925484f;
+static const float sqrt_5_16pi = 0.31539157f;
+static const float sqrt_15_16pi = 0.5462742f;
+
+// 第一排
+static const float basis_coe_0 = sqrt_1_4pi;
+// 第二排
+static const float basis_coe_1 = sqrt_3_4pi * 0.667f;
+static const float basis_coe_2 = sqrt_3_4pi * 0.667f;
+static const float basis_coe_3 = sqrt_3_4pi * 0.667f;
+// 第三排
+static const float basis_coe_4 = sqrt_15_4pi * 0.25f;
+static const float basis_coe_5 = sqrt_15_4pi * 0.25f;
+static const float basis_coe_6 = sqrt_5_16pi * 0.25f;
+static const float basis_coe_7 = sqrt_15_4pi * 0.25f;
+static const float basis_coe_8 = sqrt_15_16pi * 0.25f;
+
+
+float3 GetSHColor(float3 norm, float4 sh0,  float4 sh1,  float4 sh2, 
+                    float4 sh3,  float4 sh4,  float4 sh5, float4 sh6)
+{
+	float4 norm_in_beast = float4(normalize(norm.xyz), 1.0f);
+	norm_in_beast.z = -norm_in_beast.z;
+	
+    float3 x1, x2, x3;
+    
+    // Linear + constant polynomial     
+	//vA的计算改为点乘可以省slot
+    float4 vA = float4(norm_in_beast.y * basis_coe_1, norm_in_beast.z * basis_coe_2, norm_in_beast.x * basis_coe_3, basis_coe_0);
+    x1.r = dot(sh0, vA);
+    x1.g = dot(sh1, vA);
+    x1.b = dot(sh2, vA);
+    
+    // 4 of the quadratic polynomials
+	float4 vB;
+	vB.x = norm_in_beast.x * norm_in_beast.y * basis_coe_4;
+	vB.y = norm_in_beast.z * norm_in_beast.y * basis_coe_5;
+	vB.z = (2.0 * (norm_in_beast.z * norm_in_beast.z) - norm_in_beast.x * norm_in_beast.x - norm_in_beast.y * norm_in_beast.y) * basis_coe_6;
+	vB.w = norm_in_beast.x * norm_in_beast.z * basis_coe_7;
+    x2.r = dot(sh3, vB);
+    x2.g = dot(sh4, vB);
+    x2.b = dot(sh5, vB);
+   
+    // Final quadratic polynomial
+    float vC = (norm_in_beast.x * norm_in_beast.x - norm_in_beast.y * norm_in_beast.y) * basis_coe_8;
+    x3 = sh6.rgb * vC;    
+
+    return x1 + x2 + x3;
+}
+
+
+float3 GetSHColor(float3 norm)
+{
+	float4 norm_in_beast = float4(normalize(norm.xyz), 1.0f);
+	norm_in_beast.z = -norm_in_beast.z;
+	
+    float3 x1, x2, x3;
+    
+    // Linear + constant polynomial     
+	//vA的计算改为点乘可以省slot
+    float4 vA = float4(norm_in_beast.y * basis_coe_1, norm_in_beast.z * basis_coe_2, norm_in_beast.x * basis_coe_3, basis_coe_0);
+    x1.r = dot(SH_ATTR[0], vA);
+    x1.g = dot(SH_ATTR[1], vA);
+    x1.b = dot(SH_ATTR[2], vA);
+    
+    // 4 of the quadratic polynomials
+	float4 vB;
+	vB.x = norm_in_beast.x * norm_in_beast.y * basis_coe_4;
+	vB.y = norm_in_beast.z * norm_in_beast.y * basis_coe_5;
+	vB.z = (2.0 * (norm_in_beast.z * norm_in_beast.z) - norm_in_beast.x * norm_in_beast.x - norm_in_beast.y * norm_in_beast.y) * basis_coe_6;
+	vB.w = norm_in_beast.x * norm_in_beast.z * basis_coe_7;
+    x2.r = dot(SH_ATTR[3], vB);
+    x2.g = dot(SH_ATTR[4], vB);
+    x2.b = dot(SH_ATTR[5], vB);
+   
+    // Final quadratic polynomial
+    float vC = (norm_in_beast.x * norm_in_beast.x - norm_in_beast.y * norm_in_beast.y) * basis_coe_8;
+    x3 = SH_ATTR[6].rgb * vC;    
+
+    return x1 + x2 + x3;
+}
+
+float3 GetSHAmbientColor()
+{
+	return float3(SH_ATTR[0].w, SH_ATTR[1].w, SH_ATTR[2].w) * sqrt_1_4pi;
+}
+
+#endif 

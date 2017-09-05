@@ -1,0 +1,17 @@
+using namespace metal;
+
+// VARYING
+struct VertexOutput
+{
+	float4 position [[position]];
+	float3 normal_view;
+};
+
+
+fragment float4 metal_main (
+	VertexOutput in [[stage_in]]
+	)
+{
+	float2 normal_code = (normalize(in.normal_view) * 0.5 + 0.5).xy;
+	return float4(normal_code, 0, 1);
+}

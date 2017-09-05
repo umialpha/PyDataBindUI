@@ -1,0 +1,19 @@
+matrix4 wvp : WorldViewProjection;
+matrix4 texTrans0: TexTransform0;
+
+technique TShader
+{
+	pass P0
+	{
+
+		EnableStencilTest = true;
+        StencilRef = 0x000001;
+        StencilMask = 0x000001;
+
+		StencilFunc = CMP_ALWAYS;
+        StencilOperation = (STENCILOP_KEEP, STENCILOP_KEEP, STENCILOP_REPLACE);
+
+		VertexShader = "common.vs" vs_2_0 main;
+		PixelShader = "sfx_stencil.ps" ps_2_0 PS_SFXStencil; 
+	}
+}

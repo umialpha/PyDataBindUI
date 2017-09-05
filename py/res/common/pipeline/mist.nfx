@@ -1,0 +1,52 @@
+
+texture	TexCorner
+<
+	string TextureFile = "common\\pipeline\\dark_corner.dds"; 
+>;
+
+float DarkIntensity
+<
+	string SasUiLabel = "压暗程度";
+	string SasUiControl = "FloatPicker";
+	float SasUiMin = 0.0f;
+	float SasUiMax = 5.0f;
+	float SasUiSteps = 0.1f;
+> = 15.0f; 
+
+
+float DarkCenterX
+<
+	string SasUiLabel = "";
+	string SasUiControl = "FloatPicker";
+	float SasUiMin = 0.0f;
+	float SasUiMax = 1600.0f;
+	float SasUiSteps = 100.0f;
+> = 0.7f;
+
+float DarkCenterY
+<
+	string SasUiLabel = "";
+	string SasUiControl = "FloatPicker";
+	float SasUiMin = 0.0f;
+	float SasUiMax = 900.0f;
+	float SasUiSteps = 100.0f;
+> = 0.7f;
+
+float DarkCenterR
+<
+	string SasUiLabel = "";
+	string SasUiControl = "FloatPicker";
+	float SasUiMin = 0.0f;
+	float SasUiMax = 900.0f;
+	float SasUiSteps = 1.0f;
+> = 0.3f;
+float4 dynamicRT:DynamicResolutionRT;
+SamplerTexture[1] = TexCorner;
+technique DarkCorner
+{
+	pass T0
+	{
+		VertexShader = "bloom.vs" vs_2_0 VSMain;
+		PixelShader = "mist.ps" ps_2_0 ps_main;
+	}
+}

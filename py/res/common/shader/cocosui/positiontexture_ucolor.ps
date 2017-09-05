@@ -1,0 +1,15 @@
+float4 u_color;
+sampler2D CC_Texture0: register(s0);
+struct PS_INPUT
+{
+float4 final_position: POSITION;
+float2 v_texture0: TEXCOORD0;
+};
+float4 main(PS_INPUT psIN) : COLOR
+{
+float4 final_color;
+float4 local_0 = tex2D(CC_Texture0, psIN.v_texture0);
+float4 local_1 = local_0 * u_color;
+final_color = local_1;
+return final_color;
+}

@@ -1,0 +1,42 @@
+sampler	SamplerDiffuse0;
+#if LIGHT_MAP_ENABLE
+sampler SamplerLightMap;
+float4 LightMapScale;
+#endif
+#ifndef NO_LIGHT_FOG
+#define NO_LIGHT_FOG 1
+#endif
+#include "shaderlib/extension.ps"
+
+#if FOG_ENABLE
+varying highp vec4 PosView;
+varying highp vec4 PosWorldFog;
+#endif
+
+float blendValue;
+float4 Alpha;
+struct PS_INPUT
+{
+	float4 Color:		COLOR0;			
+	float4 Position:	POSITION;		
+	float4 TexCoord0:	TEXCOORD0;		
+#if LIGHT_MAP_ENABLE
+	float4 TexCoord1:	TEXCOORD1;		
+#endif
+};
+
+float4 main(PS_INPUT IN):COLOR
+{
+	float4 result = 0;
+	result = tex2D(SamplerDiffuse0, IN.TexCoord0.xy) * Alpha;		
+#if LIGHT_MAP_ENABLE
+	result.xyz *= tex2D(SamplerLightMap, IN.TexCoord1.xy).xyz * LightMapScale.yzw;	
+#endif
+#if FOG_ENABLE
+	mediump vec4 retFog = GetFogEx(PosWorldFog, PosView);
+	gl_FragColor.xyz = mix(gl_FragColor.xyz, retFog.xyz, retFog.a);
+#endif
+	result.a *= blendValue;
+
+	return result;
+}

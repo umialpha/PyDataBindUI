@@ -1,0 +1,67 @@
+int GlobalParameter : SasGlobal
+<
+  string SasEffectAuthoring = "lulu";
+  string SasEffectCategory = "";
+  string SasEffectCompany = "Netease";
+  string SasEffectDescription = "common";
+  string SasSuportedMacros = "UnSupported ALPHA_TEST_ENABLE UnSupported FALSE;UnSupported FOG_ENABLE UnSupported FALSE;UnSupported SEPARATE_ALPHA_TEX UnSupported FALSE;UnSupported LIT_ENABLE UnSupported FALSE;";
+  string SasEffectAttr = "INSTANCE_SUPPORTED=TRUE;";
+>;
+
+#define LIGHT_MAP_ENABLE TRUE
+#define GPU_SKIN_ENABLE 0
+
+#ifdef NEED_POS_WORLD
+#undef NEED_POS_WORLD
+#endif
+#define NEED_POS_WORLD TRUE
+
+#ifdef NEED_NORMAL_WORLD
+#undef NEED_NORMAL_WORLD
+#endif
+#define NEED_NORMAL_WORLD FALSE
+
+#ifdef USE_NORMAL_MAP
+#undef USE_NORMAL_MAP
+#endif
+#define USE_NORMAL_MAP FALSE
+
+#ifdef RECEIVE_SHADOW
+#undef RECEIVE_SHADOW
+#endif
+#define RECEIVE_SHADOW FALSE
+
+matrix4 lightmapTrans: LightMapTransform;
+#include "common_defination.nfx"
+
+texture	Tex0 
+<
+	string SasUiLabel = "颜色贴图"; 
+	string SasUiControl = "FilePicker";
+>;
+
+texture TexLightmap : LightMap
+<
+	string SasUiLabel = "烘培贴图";
+	string SasUiControl = "FilePicker";
+>;
+float4 LightMapScale : LightMapScale;
+
+SamplerTexture[0] = Tex0;
+SamplerTexture[1] = TexLightmap;
+
+#if SEPARATE_ALPHA_TEX
+SamplerTexture[7] = sepAlphaTex;
+#endif
+
+technique TShader
+<
+	string Description = "普通单层贴图";
+>
+{
+	pass p0
+	{
+		VertexShader = "common.vs" vs_2_0 main;
+		PixelShader = "lightmap_emissive.ps" ps_2_0 main;
+	}
+}

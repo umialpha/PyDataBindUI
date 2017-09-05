@@ -1,0 +1,26 @@
+
+
+float4 rtSize : RTSize;
+float nearPlane = 10.0f;
+float farPlane = 10000.0f;
+float focusDist = 1000.0f
+float focusRange = 200.0f
+
+technique DownSample
+{
+	pass T0
+	{
+		VertexShader = "dof_mobile.vs" vs_2_0 VBlurDownSampleVS;
+		PixelShader = "dof_mobile.ps" ps_2_0 VBlurDownSamplePS;
+	}
+}
+
+
+technique BlurBlend
+{
+	pass T0
+	{
+		VertexShader = "dof_mobile.vs" vs_2_0 HBlurBlendVS;
+		PixelShader = "dof_mobile.ps" ps_2_0 HBlurBlendPS;
+	}
+}

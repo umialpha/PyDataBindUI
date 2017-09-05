@@ -1,0 +1,11 @@
+uniform lowp vec4 OutlineColor;
+uniform sampler2D SamplerDiffuse0;
+varying mediump vec4 TexCoord0;
+
+void main()
+{
+	lowp vec4 c = texture2D (SamplerDiffuse0, TexCoord0.xy);
+	lowp vec4 result = OutlineColor;
+	result.a *= c.a;
+	gl_FragColor = result;
+}

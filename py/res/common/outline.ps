@@ -1,0 +1,16 @@
+float4 OutlineColor;
+
+sampler	SamplerDiffuse0;
+
+struct PS_INPUT
+{
+	float4 TexCoord0:	TEXCOORD0;		
+};
+
+float4 main(PS_INPUT IN):COLOR
+{
+	float4 c = tex2D(SamplerDiffuse0, IN.TexCoord0.xy);	
+	float4 result = OutlineColor;
+	result.a *= c.a;
+	return result;
+}

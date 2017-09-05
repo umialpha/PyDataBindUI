@@ -1,0 +1,239 @@
+﻿using namespace metal;
+
+#ifndef GLOSS_SUPPORTED
+#define GLOSS_SUPPORTED FALSE
+#endif
+
+#ifndef SEPARATE_ALPHA_TEX
+#define SEPARATE_ALPHA_TEX FALSE
+#endif
+
+#ifndef HIGH_LEVEL_ENABLE
+#define HIGH_LEVEL_ENABLE FALSE
+#endif
+
+#ifndef NEED_POS_WORLD
+#define NEED_POS_WORLD TRUE
+#endif
+
+#ifndef NEED_NORMAL_WORLD
+#define NEED_NORMAL_WORLD TRUE
+#endif
+
+#ifndef EXTRA_ALPHA
+#define EXTRA_ALPHA FALSE
+#endif
+
+#ifndef FOG_ENABLE
+#define FOG_ENABLE FALSE
+#endif
+
+
+struct VertexOutput
+{
+	float4 position [ [position] ];
+	float4 UV0;
+	//varying lowp float4 Color;
+#ifdef NEED_POS_WORLD
+	float4 PosWorld;
+#endif
+
+#ifdef NEED_NORMAL_WORLD
+	float3 NormalWorld;
+	float3 TangentWorld;
+	float3 BinormalWorld;
+#endif
+
+#if SHADOW_MAP_ENABLE
+	float4 PosLightProj;
+#endif
+
+#if FOG_ENABLE
+	float4 FogResult;
+#endif
+};
+
+struct PSConstants
+{
+	float melanism;
+	float matcap_brightness;
+
+#ifdef NEED_NORMAL_WORLD
+	float3 light_dir;
+#endif
+
+#if HIGH_LEVEL_ENABLE
+	float4 rimlight_color;
+	float rimlight_brightness;
+#endif
+
+	float blendValue;
+
+#if ALPHA_TEST_ENABLE
+	float alphaRef;
+#endif
+
+	float4 camera_pos;
+	float4x4 view;
+
+	float4 ShadowLightAttr[LIGHT_ATTR_ITEM_NUM];
+	float4 ExtraRimColor;
+	float ExtraAlpha;
+};
+
+#if SHADOW_MAP_ENABLE
+float UnpackRGBA2Float(float4 v)
+{
+	float4 vUnpack = float4(1.0, 1.0/256.0, 1.0/65536.0, 1.0/16777216.0);	//1/2^0, 1/2^8, 1/2^16, 1/2^24
+	
+	return dot(v, vUnpack);
+}
+#endif
+
+float2 getMatCapUV(float2 norm)
+{
+	return float2(norm.x, -norm.y) * 0.5 + 0.5;
+}
+
+float4 getMatCapColor(texture2d<float> matcapTexture1, sampler matcapSampler1, float2 uv, float gloss, float matcap_brightness)
+{
+	float4 matcap;
+
+#if HIGH_LEVEL_ENABLE
+	matcap = matcapTexture1.sample(matcapSampler1, uv, 8.0 - gloss * 8.0);
+#else
+	matcap = float4(0.0);
+#endif
+
+	return matcap * gloss * matcap_brightness;
+}
+
+fragment float4 metal_main(
+	VertexOutput in [ [stage_in] ],
+	constant PSConstants &constants[ [buffer(0)] ],
+	texture2d<float> texture0 [ [texture(0)] ],
+	sampler sampler0 [ [sampler(0)] ]
+
+#if HIGH_LEVEL_ENABLE
+	,texture2d<float> matcapTexture1 [ [texture(1)] ]
+	,sampler matcapSampler1 [ [sampler(1)] ]
+	,texture2d<float> rimMatcapTexture2 [ [texture(2)] ]
+	,sampler rimMatcapSampler2 [ [sampler(2)] ]
+	,texture2d<float> normalMapTexture4 [ [texture(4)] ]
+	,sampler normalMapSampler4 [ [sampler(4)] ]
+#endif
+
+#if SHADOW_MAP_ENABLE
+	,texture2d<float> shadowmapTexture6 [[texture(6)]]
+	,sampler shadowmapSampler6 [ [sampler(6)] ]
+#endif
+
+#if SEPARATE_ALPHA_TEX
+	,texture2d<float> alphaTexture7 [ [texture(7)] ]
+	,sampler alphaSampler7 [ [sampler(7)] ]
+#endif
+)
+{
+	float4 albedo;
+	albedo =  texture0.sample(sampler0, in.UV0.xy);
+
+#if SEPARATE_ALPHA_TEX
+	float sepAlpha = alphaTexture7.sample(alphaSampler7, in.UV0.xy).a;
+	albedo = vec4(albedo.r, albedo.g, albedo.b, sepAlpha);
+#endif
+
+#if ALPHA_TEST_ENABLE
+    float delta = albedo.a - constants.alphaRef;
+	if (delta <= 0.0) {
+		discard_fragment();
+	}
+#endif
+
+	float4 output = albedo;
+	//normal
+	float3 normalWorld = in.NormalWorld.xyz;
+	float gloss = 0.0;
+#if HIGH_LEVEL_ENABLE
+	normalWorld = float3(0.0, 0.0, 1.0);
+	float4 normalMap = normalMapTexture4.sample(normalMapSampler4, in.UV0.xy);
+	float2 normalOffset = normalMap.xy;
+	normalOffset = normalOffset * 2.0 - 1.0;
+	normalWorld.xy = float2(normalOffset.x, -normalOffset.y);
+	normalWorld= normalWorld.x * in.TangentWorld + normalWorld.y * in.BinormalWorld + normalWorld.z * in.NormalWorld;
+
+	gloss = normalMap.z;
+#endif
+
+	normalWorld = normalize(normalWorld);
+
+	float shadowFactor = 0.0;
+#if SHADOW_MAP_ENABLE
+	float4 lightProjPos = in.PosLightProj;
+	float depthToLight =  lightProjPos.z;
+	float2 shadowMapCoord = lightProjPos.xy;
+
+	// highp float depthInTex = texture2D(SamplerShadowmap6, shadowMapCoord).r;
+	// shadowFactor = (depthInTex < depthToLight) ? 1.0 : 0.0;
+	float res = 0;
+	if ( 0.0 < shadowMapCoord.x && shadowMapCoord.x - 1.0 < 0.0 && 0.0 < shadowMapCoord.y && shadowMapCoord.y - 1.0 < 0.0 )
+	{
+		float depthInTex = shadowmapTexture6.sample(shadowmapSampler6, shadowMapCoord.xy).r;
+		res = depthInTex;
+		shadowFactor = (depthInTex < depthToLight) ? 1.0 : 0.0;
+	}
+#endif
+	
+	float NdotL = 0.0;
+#ifdef NEED_NORMAL_WORLD
+	NdotL = clamp(dot(-constants.light_dir, normalWorld),0.0,1.0);
+#endif
+
+#if SHADOW_MAP_ENABLE
+	// NdotL *= (1.0 - shadowFactor);
+	// NdotL = NdotL * 0.9 + 0.1;
+#endif
+	float3 light = NdotL *  constants.ShadowLightAttr[1].xyz + float3(0.3);
+
+	float3 viewDir = normalize(constants.camera_pos.xyz - in.PosWorld.xyz);
+	float NdotV = max(0.0, dot(normalWorld, viewDir));
+
+	float4 matcapColor = float4(0.0);
+#if HIGH_LEVEL_ENABLE
+	//matcap
+	float3x3 ViewMat = float3x3(constants.view[0].xyz, constants.view[1].xyz, constants.view[2].xyz);
+	float3 normalView = ViewMat * normalWorld;
+	float2 matCapUV = getMatCapUV(normalView.xy);
+	matcapColor = getMatCapColor(matcapTexture1, matcapSampler1, matCapUV, gloss, constants.matcap_brightness);
+#endif
+
+	output.rgb = albedo.rgb + matcapColor.rgb;
+
+	output.rgb *= light;
+
+	output.rgb *= (1.0 - constants.melanism);
+
+#if HIGH_LEVEL_ENABLE
+	float4 rim = rimMatcapTexture2.sample(rimMatcapSampler2, matCapUV.xy);
+	rim = rim * constants.rimlight_color * constants.rimlight_brightness;
+	 output.rgb += rim.rgb; //float3(0,0,0);
+
+
+#endif
+	output.rgb += constants.ExtraRimColor.rgb * (1.0 - NdotV) * constants.ExtraRimColor.a;
+
+#if FOG_ENABLE
+	output.xyz = mix(output.xyz, in.FogResult.xyz, in.FogResult.a);
+#endif
+	output.a *= constants.blendValue;
+
+#if EXTRA_ALPHA
+	if (NdotV > 0.5) {
+		output.a *= constants.ExtraAlpha;
+	}
+#endif
+
+	//output = float4(1,0 ,0, 1);
+	
+	return output;
+}
+

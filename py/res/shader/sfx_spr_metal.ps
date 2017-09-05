@@ -1,0 +1,47 @@
+using namespace metal;
+
+#ifndef SEPARATE_ALPHA_TEX
+#define SEPARATE_ALPHA_TEX 0
+#endif
+
+// UNIFORM
+struct PSConstants
+{
+	float4 Alpha;
+	float blendValue;
+};
+
+// VARYING
+struct PixelInput
+{
+	float2 uv;
+};
+
+fragment float4 main_PS(
+	PixelInput in[[stage_in]],
+	constant PSConstants &constants[[buffer(0)]],
+	sampler SamplerDiffuse0 [[sampler(0)]],
+	texture2d<float> texture0 [ [texture(0)] ]
+#if SEPARATE_ALPHA_TEX
+	, sampler SamplerSepAlphaTex7 [[sampler(7)]]
+	, texture2d<float> texture7 [ [texture(7)] ]
+#endif
+)
+{
+	float4 output = float4(0);
+	float4 texColor1;
+	texColor1 = texture0.sample(SamplerDiffuse0, in.uv.xy);
+	
+#if SEPARATE_ALPHA_TEX
+	float sepAlpha = texture7.sample(SamplerSepAlphaTex7, in.uv.xy).a;
+	texColor1 = float4(texColor1.r, texColor1.g, texColor1.b, sepAlpha);
+#endif
+
+	texColor1 *= constants.Alpha*2.0;
+	output =  texColor1;
+	output.a *= constants.blendValue;
+
+	float t = in.uv.x;
+	// output = float4(t,t,t, 1);
+	return output;
+}

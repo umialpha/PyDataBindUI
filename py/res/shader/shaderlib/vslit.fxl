@@ -1,0 +1,61 @@
+
+#if EQUAL(SHADE_MODE, SHADE_GOURAND)
+
+#if LIT_ENABLE
+
+#define NEED_CAMERA_POS
+#define NEED_AMBIENT
+#define NEED_LIGHT_COUNT
+#define NEED_SHADOW_LIGHT_ATTRS
+#define NEED_POINT_LIGHT_ATTRS
+#define NEED_DIR_LIGHT_ATTRS
+
+
+#include "vardefination.fxl"	
+#include "lighting.fxl"
+
+void VsGetLightLit(in VS_GENERAL vs_general,
+ out float3 light_ambient_clr, out float3 light_diffuse_clr, out float3 light_specular_clr, out float3 shadow_light_clr)
+{
+	float3 view_dir	  = normalize(CameraPos.xyz - vs_general.PosWorld.xyz);	//世界空间下视线,此处移到lit里面	
+	int specular_power = GetSpecularPower();	
+
+	light_ambient_clr = 0;
+	light_diffuse_clr = 0;
+	light_specular_clr = 0;
+	shadow_light_clr = 0;
+	
+	//如果使用defered则屏蔽每个物体的光照
+	_ShadowLightLit(ShadowLightAttr[0], ShadowLightAttr[1], ShadowLightAttr[2], ShadowLightAttr[3],  ShadowLightAttr[4], vs_general.PosWorld.xyz, view_dir, vs_general.NormalWorld, 0.0, 1.0, specular_power,
+				    light_ambient_clr, light_diffuse_clr, light_specular_clr);
+	shadow_light_clr = light_diffuse_clr;
+	
+	_DirLightLit(DirLightAttr[0], DirLightAttr[1], DirLightAttr[2], DirLightAttr[3],  DirLightAttr[4], vs_general.PosWorld.xyz, view_dir, vs_general.NormalWorld, 0.0, 1.0, specular_power,
+				    light_ambient_clr, light_diffuse_clr, light_specular_clr);
+					
+	int index_base = 0;
+	int light_num = min(LightNum, 8 );
+	
+	float transmission_fac = 0.0f;
+#ifdef TRANSMISSION_ENABLE
+	transmission_fac = GetTransmissionFacotor(vs_general);
+#endif
+
+	//此处如果只有一个灯的时候会warning，所以先屏蔽了。。。
+	//for(int i = 0; i < light_num; ++i)
+	{
+		_PointLightLit(PointLightAttrs[index_base], PointLightAttrs[index_base+1], PointLightAttrs[index_base+2], PointLightAttrs[index_base+3],  PointLightAttrs[index_base+4], vs_general.PosWorld.xyz, view_dir, vs_general.NormalWorld, transmission_fac, 1.0, specular_power,
+				    light_ambient_clr, light_diffuse_clr, light_specular_clr);
+		index_base += 5;
+	}
+
+	
+#if SH_ENABLE
+	light_diffuse_clr += GetSHColor(vs_general.NormalWorld); //sh的diffuse分量
+#endif
+
+	return;
+}
+
+#endif 	//litenable
+#endif  //gourand

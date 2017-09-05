@@ -1,0 +1,74 @@
+#if FOG_ENABLE
+//todo:去除FogEnable这个分支，是否受雾应该编译期决定
+#if EQUAL(FOG_TYPE, FOG_TYPE_LINER)
+//普通线性雾，完全依靠和相机距离决定
+#define NEED_PROJ_MATRIX
+#include "vardefination.fxl"
+
+float GetFog(VS_GENERAL vs_general)
+{
+	if(vs_general.FogEnable)
+	{
+		//宏控制物体本身是否受雾，FogEnable控制全局scn是否开雾
+		float fog_begin_in_view =  mul(float4(0, 0,vs_general.FogInfo.x,1) , ProjMatrix).z; //计算fog_begin 和end在proj空间中的值
+		float fog_end_in_view=  mul(float4(0, 0,vs_general.FogInfo.y,1) , ProjMatrix).z;
+		return saturate(smoothstep(fog_begin_in_view, fog_end_in_view, vs_general.PosWorldViewProj.z));		
+	}else
+	{
+		return 0;
+	}	
+}
+
+#elif  EQUAL(FOG_TYPE, FOG_TYPE_HEIGHT)
+//高度雾，雾浓度为 Max(高度影响，距离影响）
+#define NEED_PROJ_MATRIX
+#define NEED_WORLD_MATRIX
+#include "vardefination.fxl"
+
+float CustomSlerp(float begin, float end, float value)
+{
+	return (value - begin) / (end - begin);
+}
+
+float GetFog(VS_GENERAL vs_general)
+{
+	if(vs_general.FogEnable)
+	{
+		//计算fog_begin 和end在proj空间中的值
+		float fog_begin_in_view = mul(float4(0, 0,vs_general.FogInfo.x,1) , ProjMatrix).z; 
+		float fog_end_in_view= mul(float4(0, 0,vs_general.FogInfo.y,1) , ProjMatrix).z;
+		float distance_factor = saturate(smoothstep(fog_begin_in_view, fog_end_in_view, vs_general.PosWorldViewProj.z));
+		
+		float fog_begin_in_height = vs_general.FogInfo.z;
+		float fog_end_in_height = vs_general.FogInfo.w;
+		//float height_factor = saturate(smoothstep(fog_begin_in_height, fog_end_in_height, vs_general.PosWorld.y));
+		// 支持end height 大于begin height
+		float height_factor = saturate(CustomSlerp(fog_begin_in_height, fog_end_in_height, vs_general.PosWorld.y));
+		//return HeightFogDensity;
+		return max(height_factor, distance_factor);
+	}else
+	{
+		return 0;
+	}	
+}
+
+
+float GetFogEx(float4 PositionWorld, float4 FogInfo, float FogShaderDensity)
+{
+	float4 PosWorldView = mul(float4(PositionWorld.xyz, 1.0), ViewMatrix);
+	float distance_factor = saturate((PosWorldView.z / PosWorldView.w - FogInfo.x) / (FogInfo.y - FogInfo.x)) * FogShaderDensity;
+	float height_factor = saturate((PositionWorld.y - FogInfo.z) / (FogInfo.w - FogInfo.z)) * HeightFogDensity;
+	return max(height_factor, distance_factor);
+}
+
+#elif EQUAL(FOG_TYPE, FOG_TYPE_NONE)
+//无雾
+float GetFog(VS_GENERAL vs_general)
+{
+	return 0;
+}
+
+#endif
+
+
+#endif //FOG_ENABLE

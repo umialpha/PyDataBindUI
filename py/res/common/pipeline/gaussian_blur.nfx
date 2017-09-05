@@ -1,0 +1,20 @@
+float4 PixelKernelWeight[13];
+float4 dynamicRT:DynamicResolutionRT;
+
+technique HorzBlur
+{
+	pass P0
+	{
+		VertexShader = "gaussian_blur.vs" vs_2_0 VSMain;
+		PixelShader = "gaussian_blur.ps" ps_2_0 GBH;
+	}
+}
+
+technique VertBlur
+{
+	pass P0
+	{
+		VertexShader = "gaussian_blur.vs" vs_2_0 VSMain;
+		PixelShader = "gaussian_blur.ps" ps_2_0 GBV;
+	}
+}

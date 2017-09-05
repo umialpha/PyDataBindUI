@@ -1,0 +1,36 @@
+using namespace metal;
+
+// VARYING
+struct PixelInput{
+	float4 UV0;	
+};
+
+// UNIFORM
+struct PSConstants
+{
+	float alpha;
+};
+
+fragment float4 metal_main(
+	PixelInput psIN[[stage_in]],
+	constant PSConstants &constants[[buffer(0)]],
+	#if SEPARATE_ALPHA_TEX
+	sampler SamplerSepAlphaTex7 [[sampler(7)]],
+	texture2d<float> texture7 [[texture(7)]],
+	#endif
+	sampler SamplerDiffuse0 [[sampler(0)]],
+	texture2d<float> texture0 [[texture(0)]])
+{
+	float4 gl_FragColor = float4(0.0);
+	float4 tmp = texture0.sample(SamplerDiffuse0,psIN.UV0.xy);
+
+	#if SEPARATE_ALPHA_TEX
+	tmp.a = texture7.sample(SamplerSepAlphaTex7, psIN.UV0.xy).a;
+	#endif
+    tmp.a =  tmp.a*constants.alpha;
+
+
+    gl_FragColor = tmp;
+    return gl_FragColor;
+}
+

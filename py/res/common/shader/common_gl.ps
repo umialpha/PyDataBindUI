@@ -1,0 +1,24 @@
+#ifndef SEPARATE_ALPHA_TEX
+#define SEPARATE_ALPHA_TEX FALSE
+#endif
+
+varying mediump vec4 UV0;
+varying lowp vec4 Color;
+uniform lowp float blendValue;
+uniform sampler2D SamplerDiffuse0;
+
+#if SEPARATE_ALPHA_TEX
+uniform sampler2D SamplerDiffuse7;
+#endif
+
+void main ()
+{
+	lowp vec4 tmpvar_1;
+	tmpvar_1 = texture2D (SamplerDiffuse0, UV0.xy);
+	#if SEPARATE_ALPHA_TEX
+		lowp float sepAlpha = texture2D (SamplerDiffuse7, UV0.xy).a;
+		tmpvar_1 = vec4(tmpvar_1.r, tmpvar_1.g, tmpvar_1.b, sepAlpha);
+	#endif
+	gl_FragColor = Color * tmpvar_1;
+	gl_FragColor.a *= blendValue;
+}

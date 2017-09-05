@@ -1,0 +1,131 @@
+//Unlit
+        
+int GlobalParameter : SasGlobal
+<
+	string SasSuportedMacros = "UnSupported GPU_SKIN_ENABLE UnSupported FALSE;";
+>;
+#define NO_SEMANTIC       0   
+#define NEOX_NFX        1   
+#define TEXCOORDPRECISIONWORKAROUND        0   
+
+#ifndef GPU_SKIN_ENABLE
+#define GPU_SKIN_ENABLE FALSE
+#endif
+
+// -----------------------------------------------------------------------------
+// Section: Platform constant availability
+// -----------------------------------------------------------------------------
+#define CONSTANT_VIEWPROJECTION			1
+#define LIGHT_ATTR_ITEM_NUM				5
+
+#if GPU_SKIN_ENABLE
+	#ifndef MAX_BONES
+		#define MAX_BONES 90
+	#endif
+	float4 worldPalette[MAX_BONES * 2] : SkinBones ;
+#endif
+
+#if NEOX_NFX
+	#define DirectionalLightColor   ShadowLightAttr[1].rgb
+#else
+	#define DirectionalLightColor   DirLightAttr[1].rgb
+#endif
+
+
+// -----------------------------------------------------------------------------
+// Section: Constant remapping in each engine
+// -----------------------------------------------------------------------------
+
+matrix4	World									: World ;
+matrix4	View									: View ;
+matrix4	InvWorld								: InverseWorld ;
+matrix4	InvView									: InverseView ;
+matrix4	Projection								: Projection ;
+matrix4	ViewProjection							: ViewProjection ;
+float4		CameraPos								: CameraPosition ;
+float4		ShadowLightAttr[LIGHT_ATTR_ITEM_NUM]	: ShadowLightAttr ;
+float4		DirLightAttr[LIGHT_ATTR_ITEM_NUM]		: DirLightAttr ;
+float4		Ambient									: Ambient ;
+float4		ScreenSize4								: ScreenSize ;
+float4		FogInfo									: FogInfo ;
+float4		FogColor								: FogColor ;
+bool		FogEnable								: FogEnable ;
+
+
+#if GPU_SKIN_ENABLE
+	float4		PlayerPos								: PlayerPosition ;
+	float4		CameraInfo								:CameraInfo;
+	float4		ZBufferParams							:ZBufferParams;
+	float       blendValue                              :AlphaMtl< > =1.0f;
+
+	matrix4 LightViewProjMatrix	: LightViewProj ;
+	#define CameraPosition	CameraPos.xyz
+	#define PlayerPosition  PlayerPos.xyz
+
+	float NearPlane;
+#endif
+
+
+#if NEEDS_LIGHTMAP
+	float4 LightMapScale : LightMapScale ;
+	matrix4 LightMapTransform : LightMapTransform ;
+#endif
+
+
+
+float3 LightDir : LightDirection ;
+
+#define ScreenSize      ScreenSize4.xy
+#define InvScreenSize   ScreenSize4.zw
+
+
+float FarPlane;
+float InvFarPlane;
+
+
+#define FOG_ENABLE 1
+
+#if !NEOX_NFX
+	#define LightDir -LightDir
+	#include "NeoXInclude/Fog.hlsl"
+#endif
+float4 ScalarUniformExpressions;
+float4 VectorUniformExpressions;
+float ScalarParameter2
+<
+string SasUiLabel = "ScalarParameter1";
+string SasUiControl = "FloatPicker";
+> = 0.2;
+
+float ScalarParameter1
+<
+string SasUiLabel = "intensity";
+string SasUiControl = "FloatPicker";
+> = 1;
+
+float4 VectorParameter1
+<
+string SasUiLabel = "color";
+string SasUiControl = "ColorPicker";
+> = (1, 1, 1, 0);
+
+texture Texture2D0
+<
+string SasUiLabel = "textures";
+string SasUiControl = "FilePicker";
+>;
+
+SamplerTexture[0] = Texture2D0;
+
+SamplerAddressU[0] = ADDRESS_WRAP;
+SamplerAddressV[0] = ADDRESS_WRAP;
+
+         
+technique TShader
+{
+	pass p0
+	{
+		VertexShader = "fresnel_oneminus.vs" vs_2_0 main;
+		PixelShader = "fresnel_oneminus.ps" ps_2_0 main;
+	}
+}

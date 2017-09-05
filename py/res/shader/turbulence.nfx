@@ -1,0 +1,86 @@
+int GlobalParameter : SasGlobal
+<
+	string SasEffectAuthoring = "jwh";
+ 	string SasEffectCategory = "";
+ 	string SasEffectCompany = "Netease";
+ 	string SasEffectDescription = "trubulence_model";
+	string SasSuportedMacros = "UnSupported ALPHA_TEST_ENABLE UnSupported FALSE;UnSupported SHADOW_MAP_ENABLE UnSupported FALSE;UnSupported GLOSS_ENABLE UnSupported FALSE;UnSupported SEPARATE_ALPHA_TEX UnSupported FALSE;";
+ >;
+
+#define TRUE 1
+#define FALSE 0
+
+#ifndef SEPARATE_ALPHA_TEX
+#define SEPARATE_ALPHA_TEX FALSE
+#endif
+
+matrix4 wvp : WorldViewProjection;
+matrix4 texTrans0: TexTransform0 = (1.0, 0.0, 0.0, 0.0,
+									0.0, 1.0, 0.0, 0.0,
+									0.0, 0.0, 1.0, 0.0,
+									0.0, 0.0, 0.0, 1.0);
+
+float4 blend_color = (1.0, 1.0, 1.0, 1.0);
+float4 texuv_clamp
+<
+	string SasUiLabel = "UV范围，超出范围变为透明"; 
+> = (0.0, 0.0, 1.0, 1.0);
+
+float4 tFactor: TFactor;
+
+texture	turbulence1
+<
+	string SasUiLabel = "偏移贴图1"; 
+	string SasUiControl = "FilePicker";
+>;
+
+texture	turbulence2
+<
+	string SasUiLabel = "偏移贴图2"; 
+	string SasUiControl = "FilePicker";
+>;
+
+float3 vx_vy_scale1
+<
+	string SasUiLabel = "vx_vy_scale1"; 
+> = (0.0, 0.0, 1.0);
+
+float3 vx_vy_scale2
+<
+	string SasUiLabel = "vx_vy_scale2"; 
+> = (0.0, 0.0, 1.0);
+
+float4 Alpha
+<
+	string SasUiLabel = "变色";
+> = (1.0, 1.0, 1.0, 1.0);
+
+float amplitude1
+<
+	string SasUiLabel = "振幅1";
+	string SasUiControl = "FloatPicker";
+	float SasUiMin = 0.0f;
+	float SasUiMax = 10.0f;
+> = 0.1;
+
+float amplitude2
+<
+	string SasUiLabel = "振幅2";
+	string SasUiControl = "FloatPicker";
+	float SasUiMin = 0.0f;
+	float SasUiMax = 10.0f;
+> = 0.1;
+
+float time : FrameTime;
+
+SamplerTexture[1] = turbulence1;
+SamplerTexture[2] = turbulence2;
+
+technique TShader
+{
+	pass P0
+	{
+		VertexShader = "turbulence.vs" vs_2_0 VS_OneTex;
+		PixelShader = "turbulence.ps" ps_2_0 PS_OneTex1x; 
+	}
+}

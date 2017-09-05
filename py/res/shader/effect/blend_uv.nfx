@@ -1,0 +1,54 @@
+matrix4 wvp : WorldViewProjection;
+matrix4 texTrans0: TexTransform0;
+
+float4 blend_color = (1.0, 1.0, 1.0, 1.0);
+float4 texuv_clamp
+<
+	string SasUiLabel = "UV范围，超出范围变为透明"; 
+> = (0.0, 0.0, 1.0, 1.0);
+
+float4 tFactor: TFactor;
+
+float scale_x
+<
+	string SasUiLabel = "scale_x";
+	string SasUiControl = "FloatPicker";
+> = 1.0;
+
+float scale_y
+<
+	string SasUiLabel = "scale_y";
+	string SasUiControl = "FloatPicker";
+> = 1.0;
+
+float offset_x
+<
+	string SasUiLabel = "offset_x";
+	string SasUiControl = "FloatPicker";
+> = 0.0;
+
+float offset_y
+<
+	string SasUiLabel = "offset_x";
+	string SasUiControl = "FloatPicker";
+> = 0.0;
+
+technique TShader
+{
+	pass P0
+	{
+		VertexShader = "blend_uv.vs" vs_2_0 VS_OneTex;
+		PixelShader = "blend_uv.ps" ps_2_0 PS_OneTex1x; 
+	}
+}
+
+technique TShaderModulate
+{
+	pass P0
+	{
+		EnableAlphaBlend = true;
+		BlendFactor = (BLEND_DESTCOLOR, BLEND_ONE, BLEND_SRCALPHA, BLEND_ONE);
+		VertexShader = "blend_uv.vs" vs_2_0 VS_OneTex;
+		PixelShader = "blend_uv.ps" ps_2_0 PS_OneTex1x; 
+	}
+}

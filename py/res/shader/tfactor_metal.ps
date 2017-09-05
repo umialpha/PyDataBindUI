@@ -1,0 +1,74 @@
+using namespace metal;
+
+//#include "shaderlib/extension.ps"
+
+// VARYING
+struct VertexOutput
+{
+	float4 position [[position]];
+	float4 UV0;
+	float4 RAWUV0;
+#if LIGHT_MAP_ENABLE
+	float4 UV1;
+#endif
+#if LIT_ENABLE
+	float3 Lighting;
+#endif
+};
+
+struct PSConstants
+{
+	float blendValue;
+	float4 Alpha;
+#if ALPHA_TEST_ENABLE
+	float alphaRef;
+#endif
+#if LIGHT_MAP_ENABLE
+	float4 LightMapScale;
+#endif
+};
+
+
+fragment float4 metal_main (
+	VertexOutput in [[stage_in]],
+	constant PSConstants &constants[[buffer(0)]],
+	texture2d<float> texture0 [[texture(0)]],
+	sampler sampler0 [[sampler(0)]],
+	texture2d<float> texture1 [[texture(1)]],
+	sampler sampler1 [[sampler(1)]]
+#if LIGHT_MAP_ENABLE
+	, texture2d<float> texture2 [[texture(2)]]
+	, sampler sampler2 [[sampler(2)]]
+#endif
+	)
+{
+	float4 output;
+	float4 texColor1 = texture0.sample(sampler0, in.UV0.xy);
+	
+#if ALPHA_TEST_ENABLE
+	float delta = texColor1.a - constants.alphaRef;
+	if (delta < 0.0) {
+		discard_fragment();
+	}
+#endif
+	output = texColor1;
+	output += texture1.sample(sampler1, in.UV0.xy) * constants.Alpha;
+
+	float3 texColor2 = float3(0.0);
+#if LIGHT_MAP_ENABLE
+	texColor2 += texture2.sample(sampler2, in.UV1.xy).xyz * 2.0;
+#endif
+#if LIT_ENABLE
+	//texColor2 += in.Lighting;
+#endif
+#if (LIGHT_MAP_ENABLE || LIT_ENABLE)
+	output.xyz *= texColor2;
+#endif
+	
+#if FOG_ENABLE
+	//gl_FragColor.xyz = CustomFogBlend(UV0.w, gl_FragColor.xyz);
+#endif
+	output.a *= constants.blendValue;
+	return output;
+}
+

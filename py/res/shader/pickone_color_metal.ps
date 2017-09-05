@@ -1,0 +1,128 @@
+// ! ForwardPassPS.hlsl.usf:MainPS
+
+#include <metal_stdlib>
+
+using namespace metal;
+
+struct PSStageIn
+{
+	float4 OUT_TEXCOORD10 ;
+	float4 OUT_TEXCOORD11 ;
+	float2 OUT_TEXCOORD0 ;
+	float4 OUT_TEXCOORD5 ;
+};
+
+struct FPSOut
+{
+	half4 OUT_SV_Target [[ user(SV_Target) ]];
+};
+
+struct PSConstants
+{
+        float4 VectorUniformExpressions[3];
+    float4 ScalarUniformExpressions;
+    float3 LightDir;
+    float blendValue;
+    float4 Ambient;
+    float4 ShadowLightAttr[5];
+    float4 CameraPos;
+
+};
+fragment half4 metal_main(PSStageIn __PSStageIn [[ stage_in ]],	sampler Tex0Sampler [[ sampler(0) ]], texture2d<float> Tex0 [[ texture(0) ]],
+constant PSConstants &constants[ [buffer(0)] ])
+{
+	float2 v0;
+	float4 v1;
+	v1.xyzw = __PSStageIn.OUT_TEXCOORD11;
+	v0.xy = __PSStageIn.OUT_TEXCOORD0;
+	half3x3 m2;
+	half3 v3;
+	half3 v4;
+	v4.xyz = half3(__PSStageIn.OUT_TEXCOORD10.xyz);
+	v3.xyz = v4;
+	half3 v5;
+	half3 v6;
+	v6.xyz = half3(v1.xyz);
+	v5.xyz = v6;
+	half3x3 m7;
+	m7[0].xyz = v3;
+	m7[1].xyz = cross(v5,v3);
+	m7[2].xyz = v5;
+	m2 = m7;
+	half h8;
+	h8 = half(v1.w);
+	m2[1].xyz = (m7[1]*half3(h8));
+	half3 v9;
+	float3 v10;
+	v10.xyz = float3(m2[2]);
+	half3 v11;
+	v11.xyz = half3(normalize(v10));
+	v9.xyz = v11;
+	float f12;
+	half h13;
+	h13 = half(1.0);
+	float f14;
+	f14 = float(h13);
+	f12 = f14;
+	half3 v15;
+	half3 v16;
+	v16.xyz = half3(normalize((-constants.LightDir)));
+	v15.xyz = v16;
+	half3 v17;
+	half3 v18;
+	v18.xyz = half3(constants.ShadowLightAttr[1].xyz);
+	v17.xyz = v18;
+	half3 v19;
+	half h20;
+	h20 = half(f12);
+	v19.x = h20;
+	v19.y = h20;
+	v19.z = h20;
+	half4 v21;
+	half h22;
+	h22 = half(0.0);
+	half3 v23;
+	v23.xyz = half3(constants.Ambient.xyz);
+	half3 v24;
+	v24.xyz = half3(0.0,0.0,0.0);
+	float3 v25;
+	v25.xyz = float3(((pow(half3(fmax(h22,fmax(h22,dot(v9,v15)))),v19)*v17)+v23));
+	float3 v26;
+	v26.xyz = float3(v24);
+	half3 v27;
+	v27.xyz = half3(normalize((constants.CameraPos.xyz+(-__PSStageIn.OUT_TEXCOORD5.xyz))));
+	half h28;
+	h28 = half(15.0);
+	float f29;
+	f29 = float(fmax(h22,dot(normalize((v27+v15)),v9)));
+	float f30;
+	f30 = float(h28);
+	float3 v31;
+	v31.xyz = float3(v17);
+	half3 v32;
+	v32.xyz = half3((v25*v26));
+	half3 v33;
+	v33.xyz = half3(((v31*float3(pow(f29,f30)))*v26));
+	half2 v34;
+	v34.xy = half2((constants.VectorUniformExpressions[1].xy*(v0+constants.VectorUniformExpressions[0].xy)));
+	float3 v35;
+	v35.xyz = float3(half4(Tex0.sample(Tex0Sampler, float2(v34))).xyz);
+	half3 v36;
+	v36.xyz = half3((constants.VectorUniformExpressions[2].xyz*v35));
+	half3 v37;
+	v37.xyz = half3(0.45454544,0.45454544,0.45454544);
+	v21.xyz = pow(((v32+v33)+fmax(v36,v24)),v37);
+	float f38;
+	f38 = float(half4(Tex0.sample(Tex0Sampler, float2(v34))).w);
+	half h39;
+	h39 = half((constants.ScalarUniformExpressions.x*f38));
+	float f40;
+	f40 = float(clamp(h39,h22,h13));
+	half h41;
+	h41 = half((f40*constants.blendValue));
+	v21.w = h41;
+	half4 t42;
+	t42.xyzw = v21;
+	return t42;
+}
+

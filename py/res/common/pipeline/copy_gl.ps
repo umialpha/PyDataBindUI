@@ -1,0 +1,10 @@
+precision mediump float;
+precision lowp int;
+
+uniform sampler2D tex0;
+varying mediump vec2 TexCoord0;
+
+void PSMain()
+{
+	gl_FragColor = texture2D(tex0, TexCoord0);
+}

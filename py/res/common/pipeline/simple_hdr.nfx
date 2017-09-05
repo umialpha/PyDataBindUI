@@ -1,0 +1,63 @@
+int GlobalParameter : SasGlobal
+<
+  string SasEffectAuthoring = "hzliuran";
+  string SasEffectCategory = "";
+  string SasEffectCompany = "Netease";
+  string SasEffectDescription = "simple_hdr";
+>;
+
+float4 rtSize : RTSize;
+
+technique DownSample
+{
+	pass T0
+	{
+		VertexShader = "simple_hdr.vs" vs_2_0 DownSamplePass;
+		PixelShader = "simple_hdr.ps" ps_2_0 DownSamplePass;
+	}
+}
+
+technique DownSample2
+{
+	pass T0
+	{
+		VertexShader = "simple_hdr.vs" vs_2_0 DownSamplePass2;
+		PixelShader = "simple_hdr.ps" ps_2_0 DownSamplePass2;
+	}
+}
+
+technique HorzBlur
+{
+	pass T0
+	{
+		VertexShader = "simple_hdr.vs" vs_2_0 HorizontalBlurPass;
+		PixelShader = "simple_hdr.ps" ps_2_0 BlurPass;
+	}
+}
+
+technique VertBlur
+{
+	pass T0
+	{
+		VertexShader = "simple_hdr.vs" vs_2_0 VerticalBlurPass;
+		PixelShader = "simple_hdr.ps" ps_2_0 BlurPass2;
+	}
+}
+
+technique Brightness
+{
+	pass T0
+	{
+		VertexShader = "simple_hdr.vs" vs_2_0 BrightnessPass;
+		PixelShader = "simple_hdr.ps" ps_2_0 BrightnessPass;
+	}
+}
+
+technique Debug
+{
+	pass T0
+	{
+		VertexShader = "simple_hdr.vs" vs_2_0 DebugPass;
+		PixelShader = "simple_hdr.ps" ps_2_0 DebugPass;
+	}
+}

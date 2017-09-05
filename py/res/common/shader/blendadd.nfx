@@ -1,0 +1,109 @@
+#ifndef TRUE
+ #define TRUE 1
+#endif
+#ifndef FALSE
+ #define FALSE 0
+#endif
+#ifndef ALPHA_TEST_ENABLE
+ #define ALPHA_TEST_ENABLE 0
+#endif
+
+#ifndef FOG_TYPE_NONE
+ #define FOG_TYPE_NONE 0
+#endif
+
+#ifndef FOG_TYPE_LINEAR
+ #define FOG_TYPE_LINEAR 1
+#endif
+
+#ifndef FOG_TYPE_HEIGHT
+ #define FOG_TYPE_HEIGHT 2
+#endif
+
+#ifndef FOG_TYPE
+ #define FOG_TYPE FOG_TYPE_NONE
+#endif
+
+#ifndef SEPARATE_ALPHA_TEX
+ #define SEPARATE_ALPHA_TEX 0
+#endif
+
+#ifndef TEX_COUNT_1
+ #define TEX_COUNT_1 0
+#endif
+
+#ifndef TEX_COUNT_2
+ #define TEX_COUNT_2 1
+#endif
+
+#ifndef TEX_COUNT
+ #define TEX_COUNT TEX_COUNT_1
+#endif
+
+#ifndef VCOLOR_MODE_MUL
+ #define VCOLOR_MODE_MUL 0
+#endif
+
+#ifndef VCOLOR_MODE_ADD
+ #define VCOLOR_MODE_ADD 1
+#endif
+
+#ifndef VCOLOR_MODE_CHANGE
+ #define VCOLOR_MODE_CHANGE 2
+#endif
+
+#ifndef VCOLOR_MODE
+ #define VCOLOR_MODE VCOLOR_MODE_MUL
+#endif
+
+#ifndef MUL_RATIO_1
+ #define MUL_RATIO_1 1
+#endif
+
+#ifndef MUL_RATIO_2
+ #define MUL_RATIO_2 2
+#endif
+
+#ifndef MUL_RATIO_4
+ #define MUL_RATIO_4 4
+#endif
+
+#ifndef MUL_RATIO
+ #define MUL_RATIO MUL_RATIO_1
+#endif
+
+#ifndef HSV_CHANGE_HUE
+ #define HSV_CHANGE_HUE 1
+#endif
+
+int GlobalParameter: SasGlobal
+<
+  string SasEffectAuthoring = "liqinlin";
+  string SasEffectCategory = "common";
+  string SasEffectCompany = "";
+  string SasEffectDescription = "blendadd for particle";
+  string SasSuportedMacros = "UnSupported ALPHA_TEST_ENABLE UnSupported FALSE;UnSupported FOG_TYPE UnSupported FOG_TYPE_NONE;UnSupported SEPARATE_ALPHA_TEX UnSupported FALSE;UnSupported TEX_COUNT UnSupported TEX_COUNT_1;UnSupported VCOLOR_MODE UnSupported VCOLOR_MODE_MUL;UnSupported MUL_RATIO UnSupported MUL_RATIO_1;UnSupported HSV_CHANGE_HUE UnSupported TRUE;";
+  string SasEffectAttr = "";
+>;
+matrix4 WorldViewProjection : WorldViewProjection;
+matrix4 TexTransform0 : TexTransform0 = ((1.0f,0.0f,0.0f,0.0f),(0.0f,1.0f,0.0f,0.0f),(0.0f,0.0f,1.0f,0.0f),(0.0f,0.0f,0.0f,1.0f));
+float alphaRef : alphaRef;
+float4 FogColor : FogColor;
+matrix4 Projection : Projection;
+float4 FogInfo : FogInfo;
+matrix4 World : World;
+float hsv_offset_A = 0.25f;
+float hsv_offset_I = 0.0f;
+float alpha_add = 0.0f;
+float alpha_clamp_range = 1.0f;
+technique TShader
+<
+    string Description = "blendadd for particle";
+>
+{
+    pass p0
+    {
+        VertexShader = "blendadd.vs" vs_2_0 vs_main;
+        PixelShader	 = "blendadd.ps" ps_2_0 ps_main;	
+    }
+}

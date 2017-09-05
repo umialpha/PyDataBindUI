@@ -1,0 +1,31 @@
+using namespace metal;
+
+
+// VARYING
+struct VertexOutput
+{
+	float4 position [[position]];
+	float2 TexCoord0;
+};
+
+// UNIFORM
+struct PSConstants
+{
+    float4 screen_color;
+};
+
+fragment float4 ps_main (
+	VertexOutput in [[stage_in]]
+	, constant PSConstants &constants[[buffer(0)]]
+	, texture2d<float> texture0 [[texture(0)]]
+	, sampler sampler0 [[sampler(0)]]
+	)
+{
+	float4 output;
+	float4 org_clr = texture0.sample(sampler0, in.TexCoord0.xy);
+	float3 new_color = mix(org_clr.xyz, constants.screen_color.xyz, constants.screen_color.w);
+
+	output = float4(new_color.xyz, 1.0);
+	return output;
+
+}

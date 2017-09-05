@@ -1,0 +1,36 @@
+using namespace metal;
+
+
+// VARYING
+struct VertexOutput
+{
+	float4 position [[position]];
+	float4 UV0;
+//	float4 Color;
+};
+
+struct PSConstants
+{
+};
+
+fragment float4 metal_main (
+	VertexOutput in [[stage_in]],
+	constant PSConstants &constants[[buffer(0)]],
+	texture2d<float> texture0 [[texture(0)]],
+	sampler sampler0 [[sampler(0)]],
+	texture2d<float> texture1 [[texture(1)]],
+	sampler sampler1 [[sampler(1)]],
+	texture2d<float> texture2 [[texture(2)]],
+	sampler sampler2 [[sampler(2)]]
+	)
+{
+	float4 output;
+	float4 texColor0 = texture0.sample(sampler0, in.UV0.xy);
+	float4 texColor2 = texture2.sample(sampler2, in.UV0.xy);
+	float4 texAlpha = texture1.sample(sampler1, in.UV0.xy);
+
+	//output = texColor0 * in.Color * (1.0 - texAlpha.a) + texColor2 * texAlpha.a;
+	output = texColor0 * (1.0 - texAlpha.a) + texColor2 * texAlpha.a;
+	output.a = texColor2.a;
+	return output;
+}

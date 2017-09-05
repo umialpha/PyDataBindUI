@@ -1,0 +1,168 @@
+using namespace metal;
+
+// UNIFORM
+struct PSConstants
+{
+#if LIGHT_MAP_ENABLE
+	float4 LightMapScale;
+#endif
+	float4 CameraPos;
+	float FrameTime;
+	float4 WaterColor;
+	float4 NormalTilling; 
+	float4 NormalSpeed;
+	float4 PBRTest;
+	float4 BaseColor;
+	float4 WaterFaceColor;
+	float4 SunDir;
+
+#if FOG_ENABLE
+	float4 FogColor;
+#endif
+};
+
+
+// VARYING
+struct PixelInput
+{
+	float4 position [[position]];
+
+	float4 UV0;
+
+#ifdef NEED_POS_SCREEN
+	float4 PosScreen;
+	float4 RAWUV0;
+#endif
+
+#ifdef NEED_WORLD_INFO
+	float4 PosWorld;
+	float3 NormalWorld;
+	float3 TangentWorld;
+	float3 BinormalWorld;
+#endif
+
+#if LIT_ENABLE
+	float3 Lighting;
+#endif
+	
+};
+
+float3 CustomFogBlend(const float vsFogFactor, const float3 screen_clr, const float4 FogColor);
+float calc_shadow(const float4 pos, const float alpha, const depth2d<float> texture4);
+float raw_shadow(const float4 pos, const float alpha, const depth2d<float> texture4);
+
+#include "shaderlib/extension_metal.ps"
+#include "shaderlib/pbr_metal.ps"
+
+
+
+float Fresnel(float ndv)
+{
+	return 0.02 + 0.88 * pow(1.0 - ndv, 5.0);
+}
+
+float3 GetNormal(float4 normalMap, float3 TangentWorld, float3 BinormalWorld, float3 NormalWorld)
+{
+	float3 normalWorld = float3(0, 0, 1.0);
+	float2 normalOffset = normalMap.xy;
+	normalOffset = normalOffset * 2.0 - 1.0;
+	normalWorld.xy = normalOffset;
+	normalWorld= normalWorld.x * TangentWorld + normalWorld.y * BinormalWorld + normalWorld.z * NormalWorld;
+	return normalize(normalWorld);
+}
+
+float3 GetOffsetNor(float3 TangentWorld, float3 BinormalWorld, float3 NormalWorld, float4 RAWUV0, constant PSConstants &constants, 	sampler sampleNormalMap6, texture2d<float> texture6, sampler sampleWaveNormalMap5, texture2d<float> texture5)
+{
+	//float2 flowmap = texture2D(sampleFlowMap1, RAWUV0.xy).xy * 2.0 - 1.0;
+	float time = constants.FrameTime;
+	float2 fTime = fract(float2(time, time + 0.5));
+	float2 uv = RAWUV0.xy * constants.NormalTilling.x + constants.NormalSpeed.x * constants.FrameTime;
+	float3 normalInTex = texture6.sample(sampleNormalMap6, uv).xyz;
+	uv = RAWUV0.xy * constants.NormalTilling.y + constants.NormalSpeed.y * constants.FrameTime;
+	float3 normalWave_01 = texture5.sample(sampleWaveNormalMap5, uv).xyz;
+	normalInTex = normalize(float3(normalInTex.xy + normalWave_01.xy,normalInTex.z));
+	uv = RAWUV0.xy * constants.NormalTilling.z + constants.NormalSpeed.z * constants.FrameTime;
+	float3 normalWave_02 = texture5.sample(sampleWaveNormalMap5, uv).xyz;
+	normalInTex = normalize(float3(normalInTex.xy + normalWave_02.xy,normalInTex.z));
+	float3 normal_dir = GetNormal(float4(normalInTex,1.0), TangentWorld, BinormalWorld, NormalWorld);
+	return normal_dir;
+	/*float3 normal0 = GetNormal(texture2D(sampleNormalMap6, RAWUV0.xy ));
+	float3 normal1 = GetNormal(texture2D(sampleNormalMap6, RAWUV0.xy ));
+	return mix(normal0, normal1, abs(2.0 * (0.5 - fTime.x)));*/
+}
+
+
+fragment float4 metal_main(
+	PixelInput in[[stage_in]],
+	constant PSConstants &constants[[buffer(0)]],
+	sampler SamplerDiffuse0 [[sampler(0)]],
+	texture2d<float> texture0 [ [texture(0)] ],
+	
+	sampler sampleNormalMap6 [[sampler(6)]],
+	texture2d<float> texture6 [ [texture(6)] ],
+	
+	sampler sampleWaveNormalMap5 [[sampler(5)]],
+	texture2d<float> texture5 [ [texture(5)] ],
+
+	sampler sampleEnvironmentMap4 [[sampler(4)]],
+	texturecube<float> texture4 [ [texture(4)] ]
+#if LIGHT_MAP_ENABLE
+	, sampler SamplerLightmap1 [[sampler(1)]]
+	, texture2d<float> texture1 [ [texture(1)] ]
+#endif
+)
+{
+	float4 output = float4(0);
+
+	float3 pscreen = in.PosScreen.xyz/in.PosScreen.w;
+	float3 normal_dir = GetOffsetNor(in.TangentWorld, in.BinormalWorld, in.NormalWorld, in.RAWUV0, constants, sampleNormalMap6,texture6, sampleWaveNormalMap5, texture5);
+	float2 uv = pscreen.xy * 0.5 + 0.5;
+	float3 default_wcolor = constants.WaterColor.xyz;
+	float3 view_dir = normalize(constants.CameraPos.xyz - in.PosWorld.xyz);
+
+	// Reflection
+	//float4 env_color = textureCube(sampleEnvironmentMap4, reflectDir);
+
+	// Refraction
+	//attributes
+	float roughness = GetRoughness(1.0 - constants.PBRTest.r);
+	float3 base_map = constants.BaseColor.rgb;
+
+	float3 specular_color = float3(1.0);//GetSpecularColor(default_wcolor, 0.0);
+    //float depth = texture2D(sampleDepth5, refr_uv).r;
+	//depth = depth * 2.0 - 1.0;
+	//if (depth < pscreen.z)
+	//	refract_color.xyz = float3(1.0, 0.0, 0.0);
+	//DirectLighting parameters
+	float3 light_dir = normalize(constants.SunDir.xyz);
+	//vectors
+	float3 half_dir = normalize(view_dir + light_dir);
+	//Ks
+	float ndl = max(0.001,dot(normal_dir,light_dir));
+	float ndh = max(0.001,dot(normal_dir,half_dir));
+	float ndv = max(0.001,dot(normal_dir,view_dir));
+	float vdh = max(0.001,dot(view_dir,half_dir));
+	//Specular
+	float3 specular = GetBRDFSpecular(specular_color,roughness,ndh,ndv,ndl,vdh);
+	//Env Specular
+	float NdotV_origin = dot(in.NormalWorld.xyz,view_dir);
+	float3 ReflectVector = normalize(2.0 * NdotV_origin * normal_dir - view_dir);
+	float3 env = texture4.sample(sampleEnvironmentMap4, ReflectVector).xyz;
+	// Water color
+
+	// reflect_color.xyz = max(env_color, reflect_color.xyz);
+
+   	//output.xyz = mix(water_color, reflect_color.xyz, f);
+   //	output.xyz = reflect_color.xyz * f + water_color;
+	output.xyz = mix(constants.WaterFaceColor.rgb * (env + specular * base_map.xyz), constants.WaterColor.xyz,ndv ) ;//+ specular * base_map;
+
+#if LIGHT_MAP_ENABLE
+	float3 lightMapColor = texture1.sample(SamplerLightmap1, UV1.xy).xyz;
+	output.xyz *= lightMapColor * constants.LightMapScale.yzw;
+#endif
+#if FOG_ENABLE
+	output.xyz = CustomFogBlend(in.UV0.w, output.xyz, constants.FogColor);
+#endif
+
+	return output;
+}

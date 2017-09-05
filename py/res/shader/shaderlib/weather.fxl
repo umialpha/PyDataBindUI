@@ -1,0 +1,36 @@
+float MAX_Z_JUDE = 0.999999;
+
+float2 sun_pos;
+float2 clip_info<
+	string SasUiLabel = "clip信息";
+	float SasUiMin = 0.0f;
+> = float2(0.593f, 1.686341f);
+float4 edge_info<
+	string SasUiLabel = "边缘信息";
+	float SasUiMin = 0.0f;
+> = float4(0.0f, 0.66f, 0.33f, 3.030303f);
+float4 edge_power<
+	string SasUiLabel = "边缘强度";
+	float SasUiMin = 0.0f;
+	float SasUiMax = 1.0f;
+> = float4(0.3f, 0.3f, 0.3f, 0.857f);
+
+//***************************************************************************func
+
+float4 clac_cloud_edge_fade_vs(float2 texcoord)
+{
+	return float4(sun_pos - texcoord, texcoord - 0.5);
+}
+float clac_cloud_edge_fade_ps(float4 cloud_edge_dir)
+{
+	float d0 = length(cloud_edge_dir.xy);
+	float d1 = length(cloud_edge_dir.zw);
+	return max(d0, d1);
+}
+float4 clac_cloud_edge_ps(float fade, float color)
+{
+	color = abs(edge_info.z - (clamp(color, edge_info.x, edge_info.y))) * edge_info.w;
+	return (1 - color) * edge_power * (1 - fade * clip_info.y);
+}
+
+//***************************************************************************

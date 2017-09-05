@@ -1,0 +1,9 @@
+<NeoX>
+  <Effects>
+    <file
+			Name = "shader\character_x9.fx"
+			/>
+  </Effects>
+  <Depends>
+  </Depends>
+</NeoX>

@@ -1,0 +1,38 @@
+<FxGroup
+	Name = "MyFx"
+	LifeSpan = "0.000"
+	PreRunTime = "0.000"
+	Loop = "TRUE"
+	DefActive = "TRUE"
+	EndLessPlay = "FALSE"
+	UpdateAlways = "FALSE"
+	WorldBias = "0.000"
+	BillboardType = "0"
+	AffectedShaderCtrl = "TRUE">
+	<Model
+		Name = "模型特效"
+		PosOffset = "0.000000,0.000000,0.000000"
+		FxStartTime = "0.000"
+		FxLifeSpan = "1.000"
+		FxIgnore = "FALSE"
+		InheritEndLessPlay = "TRUE"
+		RenderLevel = "0"
+		RenderOrder = "0"
+		TrackType = "0"
+		TransparentMode = "0"
+		ModelName = "common\invalidres\sfx.gim"
+		AnimName = ""
+		AnimSeqName = ""
+		DirType = "0"
+		Scale = "FloatKeyFrame"
+		PostProcessKind = "0">
+		<TrackFixPoint
+			Forward = "0.000,0.000,1.000,0.000" />
+		<ScaleFrame
+			ChangeType = "2">
+			<Frame
+				Time = "0.500000"
+				Value = "1.000000" />
+		</ScaleFrame>
+	</Model>
+</FxGroup>

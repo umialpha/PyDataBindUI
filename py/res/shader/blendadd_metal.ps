@@ -1,0 +1,44 @@
+using namespace metal;
+
+struct VertexOutput
+{
+	float4 position [[position]];
+	float4 UV0;
+#if LIGHT_MAP_ENABLE
+	float4 UV1;
+#endif
+#ifdef NEED_WORLD_INFO
+	float4 PosWorld;
+	float3 NormalWorld;
+#endif
+#ifdef NEED_POS_SCREEN
+	float4 PosScreen;
+	float4 RAWUV0;
+#endif
+#if LIT_ENABLE
+	float3 Lighting;
+#endif
+};
+
+struct PSConstants
+{
+	float4 Alpha;
+//	float4 Color;
+};
+
+
+
+fragment float4 metal_main (
+	VertexOutput in [[stage_in]],
+	constant PSConstants &constants[[buffer(0)]],
+	texture2d<float> texture0 [[texture(0)]],
+	sampler sampler0 [[sampler(0)]]
+	)
+{
+	float4 output;
+	float4 tmpvar_1;
+	tmpvar_1 = texture0.sample(sampler0, in.UV0.xy);
+	//output = constants.Color * tmpvar_1 * constants.Alpha * 4.0;
+	output = tmpvar_1 * constants.Alpha * 4.0;
+	return output;
+}

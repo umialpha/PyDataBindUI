@@ -1,0 +1,110 @@
+#ifndef SEPARATE_ALPHA_TEX
+#define SEPARATE_ALPHA_TEX 0
+#endif
+
+#ifndef SEC_EMISSIVE_ADD
+#define SEC_EMISSIVE_ADD 0
+#endif
+
+#include "shaderlib/extension.ps"
+//Tectures
+uniform sampler2D SamplerEmissive0;
+
+#if SEC_EMISSIVE_ENABLE
+uniform sampler2D SamplerEmissive1;
+#endif
+#if DISSOLVE_ENABLE
+uniform sampler2D SamplerDissolve3;
+#endif
+uniform sampler2D SamplerMask4;
+//System Uniform
+uniform highp vec4 camera_pos;
+uniform highp float FrameTime;
+//User Uniform
+uniform lowp vec4 Emissive_color;
+uniform mediump vec4 Emissive_tilling;
+uniform mediump vec4 Emissive_speed;
+uniform mediump float Emissive_animation_ctrl;
+#if RIMLIGHT_ENABLE
+uniform lowp vec4 Rim_color; 
+uniform highp float Rim_pow;//diffuseÌùÍ¼¶¯»­
+#endif
+#if DISSOLVE_ENABLE
+uniform lowp vec4 Dissolve_color;
+uniform mediump float Dissolve_intensity;
+#endif
+uniform mediump vec4 Shader_Attributes;
+//VS to PS Varibles
+varying mediump vec4 UV0;
+varying mediump vec4 RAWUV0;
+varying highp vec4 PosWorld;
+varying highp vec3 NormalWorld;
+void main ()
+{
+	gl_FragColor = vec4(1.0);
+	lowp vec4 emissive_color1;
+	highp float frame_time = FrameTime * FRAMETIME_SCALE;
+	highp vec2 animation_speed = vec2(0.0);
+#if EMISSIVE_ANIMATION_ENABLE
+	animation_speed = vec2(Emissive_animation_ctrl);
+#else
+	animation_speed = vec2(frame_time);
+#endif
+	highp vec2 animation_uv = RAWUV0.xy + Emissive_speed.xy * animation_speed;
+	animation_uv *= Emissive_tilling.xy;
+	emissive_color1 = texture2D (SamplerEmissive0,animation_uv);
+#if SEC_EMISSIVE_ENABLE
+	animation_uv = RAWUV0.xy + Emissive_speed.zw * animation_speed;
+	animation_uv *= Emissive_tilling.zw;
+	lowp vec4 emissive_color2 = texture2D(SamplerEmissive1,animation_uv);
+#endif
+	lowp vec3 mask_color = texture2D(SamplerMask4,UV0.xy).rgb;
+	
+#if RIMLIGHT_ENABLE
+	//vectors
+	highp vec3 normal_dir = NormalWorld.xyz;
+	normal_dir = normalize(normal_dir);
+	lowp vec3 view_dir = normalize(camera_pos.xyz - PosWorld.xyz);
+	//Ks
+	lowp float ndotv = clamp(dot(normal_dir,view_dir), 0.0, 1.0);
+#endif
+
+#if SEC_EMISSIVE_ENABLE
+#if SEC_EMISSIVE_ADD
+	mediump vec3 emissive_color = emissive_color1.rgb + emissive_color2.rgb;
+#else
+	mediump vec3 emissive_color = min(emissive_color1.rgb,emissive_color2.rgb);
+#endif
+#else
+	mediump vec3 emissive_color = emissive_color1.rgb;
+#endif
+
+	emissive_color *= Shader_Attributes.w;
+	gl_FragColor.a = emissive_color.r;
+	emissive_color *= Emissive_color.rgb * Emissive_color.a * EMISSIVE_SCALE;
+#if RIMLIGHT_ENABLE
+	mediump vec3 rimlight_color =  vec3(Rim_color.a) * pow(1.0 - ndotv,Rim_pow);
+	gl_FragColor.a += rimlight_color.r;
+	rimlight_color *= Rim_color.rgb;
+	emissive_color = clamp(vec3(1.0) - (vec3(1.0) - emissive_color) * (vec3(1.0) - rimlight_color), 0.0, 1.0);
+#endif
+///////////////////////////////////////////////////////////////////////////
+#if DISSOLVE_ENABLE
+	//
+	mediump vec3 dissolve_color = texture2D(SamplerDissolve3,UV0.xy * Shader_Attributes.xy).rgb;
+	dissolve_color -= vec3(Dissolve_intensity);
+	dissolve_color = clamp(dissolve_color, 0.0, 1.0); 
+	lowp vec3 dissolve_attribute = texture2D(SamplerMask4,dissolve_color.rg).rgb * 2.0;
+    dissolve_attribute = clamp(dissolve_attribute, 0.0, 1.0);
+	dissolve_color = Dissolve_color.rgb * Dissolve_color.a * dissolve_attribute.b;
+	gl_FragColor.xyz = emissive_color * clamp(vec3(dissolve_attribute.g - dissolve_attribute.b), 0.0, 1.0) +  dissolve_color;
+#else
+	gl_FragColor.xyz = emissive_color;
+#endif
+#if DISSOLVE_ENABLE
+	gl_FragColor.a =  gl_FragColor.a * dissolve_attribute.g + dissolve_attribute.b ;
+#endif
+
+	gl_FragColor.a *= mask_color.r;
+}
+

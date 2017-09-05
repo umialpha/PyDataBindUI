@@ -1,0 +1,32 @@
+using namespace metal;
+
+// UNIFORM
+struct PSConstants
+{
+	// from vs
+	float4 flare_color;
+	float flare_alpha;
+};
+
+
+// VARYING
+struct PixelInput
+{
+	float4 position [[position]];
+
+	float2 UV0;
+};
+
+fragment float4 metal_main(
+	PixelInput in[[stage_in]],
+	constant PSConstants &constants[[buffer(0)]],
+	sampler SamplerTexture0 [[sampler(0)]],
+	texture2d<float> texture0 [ [texture(0)] ])
+{
+	float4 output = float4(0);
+
+	output = texture0.sample(SamplerTexture0, in.UV0) * constants.flare_color; 
+	output.a *= constants.flare_alpha;
+
+	return output;
+}

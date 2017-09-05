@@ -1,0 +1,53 @@
+#ifndef SEPARATE_ALPHA_TEX
+#define SEPARATE_ALPHA_TEX 0
+#endif
+
+#include "shaderlib/extension.ps"
+
+uniform sampler2D SamplerNormal0;
+
+#if SEPARATE_ALPHA_TEX
+uniform sampler2D SamplerSepAlphaTex7;
+#endif
+
+uniform lowp float blendValue;
+#if ALPHA_TEST_ENABLE
+uniform lowp float alphaRef;
+#endif
+
+uniform lowp float FrameTime;
+uniform lowp float u_speed;
+uniform lowp float edgealphaParams;
+
+varying lowp vec4 UV0;
+varying highp vec4 PosWorld;
+varying highp vec3 NormalWorld;
+
+#if LIGHT_MAP_ENABLE
+varying mediump vec4 UV1;
+#endif
+#if LIT_ENABLE
+varying lowp vec3 Lighting;
+#endif
+
+void main ()
+{
+	lowp vec4 result;
+
+	//float len = length(NormalWorld);
+	//float frenel = pow(len, edgealphaParams);
+	
+	lowp vec2 uv0 = vec2(u_speed, 0)* FrameTime;
+	uv0 += UV0.xy;
+	lowp vec4 diffuse_color0 = texture2D(SamplerNormal0, uv0);
+	lowp vec2 uv1 = vec2(-u_speed * 0.6, u_speed * 0.3)* FrameTime;
+	uv1 += UV0.xy;
+	lowp vec4 diffuse_color1 = texture2D(SamplerNormal0, uv1);
+	lowp vec4 diffuse_color = diffuse_color0 *  diffuse_color1;
+	diffuse_color = diffuse_color + diffuse_color;
+	result.rgb = diffuse_color.xyz;
+
+	gl_FragColor = result;
+	gl_FragColor.a = 1.0;
+}
+

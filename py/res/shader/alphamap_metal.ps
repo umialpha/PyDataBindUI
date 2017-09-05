@@ -1,0 +1,160 @@
+using namespace metal;
+
+#include "shaderlib/extension_metal.ps"
+
+// VARYING
+struct VertexOutput
+{
+	float4 position [[position]];
+	float4 UV0;
+#if LIGHT_MAP_ENABLE
+	float4 UV1;
+#endif
+#ifdef NEED_WORLD_INFO
+	float4 PosWorld;
+	float3 NormalWorld;
+#endif
+#ifdef NEED_POS_SCREEN
+	float4 PosScreen;
+	float4 RAWUV0;
+#endif
+#if LIT_ENABLE
+	float3 Lighting;
+#endif
+#if SHADOW_MAP_ENABLE
+	float4 PosLightProj;
+	float4 PosLight;
+#endif
+};
+
+struct PSConstants
+{
+	float change_color_bright;
+	float u_speed;
+	float v_speed;
+	float u_scale;
+	float v_scale;
+	float FrameTime;
+	float blendValue;
+	float4 WaterColor;
+#if FOG_ENABLE
+	float4 FogColor;
+#endif
+};
+
+struct TexCoords
+{
+	float2 VerticalUV;
+	float2 HorizonUV;
+}
+
+TexCoords GetTexCoord(
+	float2 orgCoord, 
+	constant PSConstants &constants)
+{
+	TexCoords res;
+	res.VerticalUV = (orgCoord  + constants.FrameTime * float2(0.0 , constants.v_speed))* float2(constants.u_scale, constants.v_scale);
+	res.HorizonUV = (orgCoord*2.0 + constants.FrameTime * float2(constants.u_speed , constants.v_speed  * 3.5))* float2(constants.u_scale, constants.v_scale);
+}
+
+float3 GetNormalOffset(
+	float4 texcoord, 
+	VertexOutput in, 
+	constant PSConstants &constants, 
+	texture2d<float> texture0, 
+	sampler sampler0, 
+	texture2d<float> texture1, 
+	sampler sampler1)
+{
+	TexCoords texCoords;
+	texCoords = GetTexCoord(texcoord.xy, constants);
+	
+	float3 f3Offset = texture1.sample(sampler1, texCoords.HorizonUV).xyz * 2.0 - float3(1.0); //[0,1] ->[-1, 1]
+	float3 f3Offset1 = texture0.sample(sampler0, texCoords.VerticalUV).xyz * 2.0 - float3(1.0); //[0,1] ->[-1, 1]
+
+	return f3Offset + f3Offset1;
+}
+
+float4 GetReflectColor(
+	float4 position, 
+	float4 texcoord, 
+	VertexOutput in, 
+	constant PSConstants &constants, 
+	texture2d<float> texture0, 
+	sampler sampler0, 
+	texture2d<float> texture1, 
+	sampler sampler1,
+	texture2d<float> texture2, 
+	sampler sampler2)
+{
+	float3 view_dir = position.xyz / position.w;	//从点到镜头的光线	
+	float3 normal_offset = GetNormalOffset(texcoord, in, constants, texture0, sampler0, texture1, sampler1);
+	float3 normal = float3(0.0, 0.0, 1.0);
+	normal.xy += normal_offset.xy;
+	normal = normalize(normal);
+	float3 reflect_dir = normal * 2.0 + view_dir;
+	float4 reflect_map_color = texture2.sample(sampler2, reflect_dir.xy);
+	reflect_map_color.a = dot(reflect_map_color.rgb, float3(0.299, 0.587, 0.114));
+	
+	return reflect_map_color;
+}
+
+float GetOpacity(
+	float4 color, 
+	VertexOutput in,
+	constant PSConstants &constants, 
+	texture2d<float> texture0, 
+	sampler sampler0, 
+	texture2d<float> texture1, 
+	sampler sampler1, 
+	texture2d<float> texture3, 
+	sampler sampler3)
+{
+
+	//基础流动透明度
+	TexCoords texCoords;
+	texCoords = GetTexCoord(UV0.xy, constants);
+	
+	float alpha0 = texture0.sample(sampler0, texCoords.HorizonUV).b;	
+	float alpha1 =  texture1.sample(sampler1, texCoords.VerticalUV).b;
+	float alpha = pow(alpha0 , 0.5) * alpha1;
+	
+	//反射视线造成的透明度
+	float4 reflect_color = color;
+	//求和之后再调节
+	float temp1 = alpha + reflect_color.a * 0.5 ;
+	float temp2 = pow(abs(temp1) , 2.5);
+
+	float4 alpha_mask =  texture3.sample(sampler3, in.RAWUV0.xy);
+	return temp2 * alpha_mask.r;
+}
+
+fragment float4 metal_main (
+	VertexOutput in [[stage_in]]
+	, constant PSConstants &constants[[buffer(0)]]
+	, texture2d<float> texture0 [[texture(0)]]
+	, sampler sampler0 [[sampler(0)]]
+	, texture2d<float> texture1 [[texture(1)]]
+	, sampler sampler1 [[sampler(1)]]
+	, texture2d<float> texture2 [[texture(2)]]
+	, sampler sampler2 [[sampler(2)]]
+	, texture2d<float> texture3 [[texture(3)]]
+	, sampler sampler3 [[sampler(3)]]
+	)
+{
+	float4 result = float4(0.0);
+	result = GetReflectColor(in.PosScreen, in.UV0, in, constants, texture0, sampler0, texture1, sampler1, texture2, sampler2);		
+	float al = GetOpacity(result, in, constants, texture0, sampler0, texture1, sampler1, texture3, sampler3);
+
+	result += constants.WaterColor;
+
+	//Emissive
+	result += result * constants.change_color_bright;
+#if FOG_ENABLE
+	result.xyz = CustomFogBlend(in.UV0.w, result.xyz);
+#endif
+	al *= constants.blendValue;
+	result.a = al;
+
+	return result;
+}

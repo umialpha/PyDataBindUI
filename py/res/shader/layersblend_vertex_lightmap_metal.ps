@@ -1,0 +1,203 @@
+using namespace metal;
+
+#include "shaderlib/extension_metal.ps"
+
+// UNIFORM
+struct PSConstants
+{
+#if RECEIVE_SHADOW
+	float ShadowAlpha;
+	float4x4 lightViewProj;
+#endif
+
+#if LIGHT_MAP_ENABLE
+	float4 LightMapScale;
+#endif
+
+
+	float4 Tex_scale;
+	
+#if CUBEMAP_ENABLE
+	float CubeMapPower;
+	float CubeMapRatio;
+	float4 cubemap_color;
+#endif
+
+
+	float blendValue;
+#if ALPHA_TEST_ENABLE
+	float alphaRef;
+#endif
+
+	float4 ShadowColor;
+	float4 CameraPos;
+	float dark_factor;
+
+#if FOG_ENABLE
+	float4 FogColor;
+#endif
+
+};
+
+
+
+struct PixelInput
+{
+	float4 PosLightProj;
+
+#if CUBEMAP_ENABLE
+	float4 PosScreen;
+#endif
+	
+	float4 UV0;
+#if LIGHT_MAP_ENABLE
+	float4 UV1;	
+#endif
+
+#if LIT_ENABLE
+	float3 Lighting;
+#endif
+
+// #if NEOX_MIX_TEX3_ENABLE
+	float4 Color;
+// #endif
+	float3 NormalWorld;
+	float4 PosWorld;
+};
+
+
+float3 my_lerp_vec3(float3 a, float3 b, float w)
+{
+	return a*(1.0-w) + b*w;
+}
+
+float my_lerp_float(float a, float b, float w)
+{
+	return a*(1.0-w) + b*w;
+}
+
+#if RECEIVE_SHADOW
+float UnpackRGBA2Float(float4 v)
+{
+	const float4 vUnpack = float4(1.0, 1.0/256.0, 1.0/65536.0, 1.0/16777216.0);	//1/2^0, 1/2^8, 1/2^16, 1/2^24
+	return dot(v, vUnpack);
+}
+#endif
+
+fragment float4 metal_main(
+	#if RECEIVE_SHADOW
+	sampler SamplerShadowmap2 [ [sampler(2)] ],
+	texture2d<float> texture2 [ [texture(2)] ],
+	#endif
+
+	#if LIGHT_MAP_ENABLE
+	sampler SamplerLightmap1 [ [sampler(1)] ],
+	texture2d<float> texture1 [ [texture(1)] ],
+	#endif
+
+	// #if NEOX_MIX_TEX3_ENABLE
+	sampler mix_tex_2_3 [ [sampler(3)] ],
+	texture2d<float> texture3 [ [texture(3)] ],
+	sampler mix_tex_3_4 [ [sampler(4)] ],
+	texture2d<float> texture4 [ [texture(4)] ],
+	//sampler2D mix_tex_4_5;
+
+	#if CUBEMAP_ENABLE
+	sampler cube_map_6 [ [sampler(6)] ],
+	texturecube<float> texture6 [ [texture(6)] ],
+	#endif
+
+	#if SEPARATE_ALPHA_TEX
+	sampler SamplerSepAlphaTex7 [ [sampler(7)] ],
+	texture2d<float> texture7 [ [texture(7)] ],
+	#endif
+	PixelInput in[[stage_in]],
+	constant PSConstants &constants[[buffer(0)]],
+	sampler SamplerDiffuse0 [[sampler(0)]],
+	texture2d<float> texture0 [ [texture(0)] ]
+)
+{
+	float4 gl_FragColor = float4(0);
+
+	float4 texColor1;
+	
+// #if NEOX_MIX_TEX3_ENABLE
+	float4 mix_tex1_color = texture0.sample(SamplerDiffuse0, in.UV0.xy * constants.Tex_scale.x);
+	float4 mix_tex2_color = texture3.sample(mix_tex_2_3, in.UV0.xy * constants.Tex_scale.y);
+	float4 mix_tex3_color = texture4.sample(mix_tex_3_4, in.UV0.xy *constants.Tex_scale.z);
+	
+	texColor1.xyz = my_lerp_vec3((((in.Color.r * mix_tex1_color.rgb) + (in.Color.g * mix_tex2_color.rgb)) + (in.Color.b * mix_tex3_color.rgb)), mix_tex1_color.rgb,(1.0-in.Color.a)); 
+	//texColor1.xyz = mix_tex4_color.xyz;
+	gl_FragColor = texColor1 * constants.dark_factor; // 增加压暗贴图的参数
+// #else
+	// texColor1 = texture2D (SamplerDiffuse0, in.UV0.xy);
+// #endif
+	
+#if SEPARATE_ALPHA_TEX
+	float sepAlpha = texture7.sample(SamplerSepAlphaTex7, in.UV0.xy).a;
+	texColor1 = float4(texColor1.r, texColor1.g, texColor1.b, sepAlpha);
+#endif
+
+#if ALPHA_TEST_ENABLE
+	float delta = texColor1.a - constants.alphaRef;
+	if (delta < 0.0) {
+		discard_fragment();
+	}
+#endif
+	gl_FragColor = texColor1;
+
+	float3 texColor2 = float3(0.0);
+#if LIGHT_MAP_ENABLE
+	texColor2 += texture1.sample(SamplerLightmap1, in.UV1.xy).xyz * constants.LightMapScale.yzw;
+#endif
+#if LIT_ENABLE
+	#if LIGHT_MAP_ENABLE
+		//不影响场景lightmap
+	#else
+		texColor2 += in.Lighting;
+	#endif
+#endif
+#if (LIGHT_MAP_ENABLE || LIT_ENABLE)
+	gl_FragColor.xyz *= texColor2;
+#endif
+
+#if CUBEMAP_ENABLE
+	float2 reflect_uv = in.PosScreen.xy * 0.5 + float2(0.5, 0.5);
+	reflect_uv.y = 1.0 - reflect_uv.y;
+	
+	// float4 vertex_color = ps_general.in.Color;
+	float cubemap_mask_r = texture6.sample(cube_map_6, in.UV0.xy*constants.Tex_scale.x).x; // 
+	float cubemap_mask_g = texture6.sample(cube_map_6, in.UV0.xy*constants.Tex_scale.y).y; // 
+	float cubemap_mask_b = texture6.sample(cube_map_6, in.UV0.xy*constants.Tex_scale.z).z; // 
+	float cubemap_shape = texture6.sample(cube_map_6, reflect_uv.xy).w;//
+	gl_FragColor.xyz += my_lerp_float(((in.Color.r * cubemap_mask_r) + (in.Color.g * cubemap_mask_g)), cubemap_mask_b, in.Color.b) * constants.CubeMapPower * constants.cubemap_color.xyz * cubemap_shape;
+#endif
+
+    float shadowFactor = 0.0;
+
+#if RECEIVE_SHADOW
+    float4 lightProjPos = in.PosLightProj;
+    float depthToLight =  lightProjPos.z;
+    float2 shadowMapCoord = lightProjPos.xy;
+    if ( 0.0 < shadowMapCoord.x && shadowMapCoord.x - 1.0 < 0.0 && 0.0 < shadowMapCoord.y && shadowMapCoord.y - 1.0 < 0.0 )
+    {
+        float depthInTex = texture2.sample(SamplerShadowmap2, shadowMapCoord).r;
+        shadowFactor = (depthInTex < depthToLight) ? 1.0 : 0.0;
+        // float depthShadowMap = UnpackRGBA2Float( texture2D(SamplerShadowmap2, shadowMapCoord) );
+        // shadowFactor = (depthToLight - depthShadowMap > 0.0) ? 1.0 : 0.0;
+    }
+
+    shadowFactor *= constants.ShadowAlpha;
+#endif
+	
+	gl_FragColor.xyz *= ( 1.0 - shadowFactor);
+
+#if FOG_ENABLE
+	gl_FragColor.xyz = CustomFogBlend(in.UV0.w, gl_FragColor.xyz, constants.FogColor);
+#endif
+
+	gl_FragColor.a *= constants.blendValue;
+
+	//gl_FragColor = mix_tex1_color;
+	return gl_FragColor;
+}

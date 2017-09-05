@@ -1,0 +1,24 @@
+precision lowp float;
+precision lowp int;
+
+uniform sampler2D tex0;
+uniform sampler2D tex1;
+uniform float reverse_factor;
+
+varying mediump vec2 TexCoord0;
+
+void ReverseColorPS()
+{
+	vec4 color = texture2D(tex0, TexCoord0.xy);
+	vec3 reverse_color = 1.0 - color.rgb;
+	reverse_color = mix(color.xyz, reverse_color, reverse_factor);
+	gl_FragColor = vec4(reverse_color.xyz, 1.0);
+}
+
+void BlendTexturePS()
+{
+	vec4 oriColor = texture2D(tex0, TexCoord0.xy);
+	vec4 stencilColor = texture2D(tex1, TexCoord0.xy);
+	//Stencil过滤掉的alpha值默认为0.0，用于区分Stencil处理的区域。
+	gl_FragColor.rgb = stencilColor.rgb * stencilColor.a + oriColor.rgb * (1.0 - stencilColor.a);
+}

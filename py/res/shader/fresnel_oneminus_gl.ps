@@ -1,0 +1,62 @@
+
+#ifndef GL_ES
+	#define texture2DLodEXT texture2DLod
+	#define textureCubeLodEXT textureCubeLod
+#else
+	#ifdef GL_EXT_shader_texture_lod 
+		#extension GL_EXT_shader_texture_lod : enable
+	#else
+		#define texture2DLodEXT texture2D
+		#define textureCubeLodEXT textureCube
+	#endif
+#endif
+// @Inputs: f4;-1:var_TEXCOORD10,f4;-1:var_TEXCOORD11,f2;-1:var_TEXCOORD0,f4;-1:var_TEXCOORD5,b1;-1:gl_FrontFacing
+// @Outputs: f4;-1:gl_FragColor
+// @Uniforms: f4[1];-1:VectorUniformExpressions,f4[1];-1:ScalarUniformExpressions,f1;-1:blendValue,f4;-1:CameraPos
+// @Samplers: t;-1:Tex0Sampler0
+//#version 100 
+precision mediump float;
+precision mediump int;
+
+
+uniform highp vec4 VectorUniformExpressions;
+uniform highp vec4 ScalarUniformExpressions;
+uniform highp sampler2D Tex0Sampler0;
+// uniform highp float blendValue;
+uniform highp vec4 CameraPos;
+// varying vec4 var_TEXCOORD10;
+varying vec4 var_TEXCOORD11;
+varying highp vec2 var_TEXCOORD0;
+varying highp vec4 var_TEXCOORD5;
+void main()
+{
+	vec4 v0;
+	vec2 v1;
+	v1.xy = var_TEXCOORD0;
+	v0.xyzw = texture2D(Tex0Sampler0,var_TEXCOORD0);
+	vec4 v2;
+	v2.xyzw = v0;
+	v2.xyz = (v0.xyz*v0.xyz);
+	vec4 v3;
+	highp vec3 v4;
+	v4.xyz = v2.xyz;
+	vec3 v5;
+	v5.xyz = ((VectorUniformExpressions.xyz*v4)*ScalarUniformExpressions.xxx);
+	v3.xyz = sqrt(max(v5,vec3(0.000000e+000,0.000000e+000,0.000000e+000)));
+	vec2 v6;
+	v6.xy = var_TEXCOORD0;
+	vec3 v7;
+	v7.xyz = normalize((CameraPos.xyz+(-var_TEXCOORD5.xyz)));
+	highp float f8;
+	f8 = dot(var_TEXCOORD11.xyz,v7);
+	float h9;
+	h9 = (f8+(-ScalarUniformExpressions.y));
+	highp float f10;
+	f10 = (texture2D(Tex0Sampler0,v6).w*h9);
+	float h11;
+	h11 = (f10*ScalarUniformExpressions.x);
+	v3.w = clamp(h11,0.000000e+000,1.000000e+000);
+	gl_FragColor.xyzw = v3;
+}
+
+

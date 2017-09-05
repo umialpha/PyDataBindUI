@@ -1,0 +1,125 @@
+int GlobalParameter : SasGlobal
+<
+	string SasEffectAuthoring = "hzwangchao2014";
+ 	string SasEffectCategory = "";
+ 	string SasEffectCompany = "Netease";
+ 	string SasEffectDescription = "charactor_x9_dissolve";
+	string SasSuportedMacros = "UnSupported NORMAL_MAP_ENABLE UnSupported FALSE;UnSupported HIGH_LEVEL_ENABLE UnSupported FALSE;UnSupported ALPHA_TEST_ENABLE UnSupported FALSE;UnSupported SHADOW_MAP_ENABLE UnSupported FALSE;UnSupported GLOSS_ENABLE UnSupported TRUE;UnSupported SEPARATE_ALPHA_TEX UnSupported FALSE;UnSupported RIMLIGHT_ENABLE UnSupported FALSE;UnSupported MENTAL_ENABLE UnSupported FALSE;UnSupported DISSOLVE_ENABLE UnSupported FALSE;UnSupported GPU_SKIN_ENABLE UnSupported FALSE;UnSupported FOG_ENABLE UnSupported FALSE;UnSupported MATCAP_ENABLE UnSupported FALSE;UnSupported EXTRA_ALPHA UnSupported FALSE;UnSupported TOON_ENABLE UnSupported FALSE;";
+	string SasEffectAttr = "INSTANCE_SUPPORTED=TRUE;";
+ >;
+
+#ifndef TOON_ENABLE
+#define TOON_ENABLE FALSE
+#endif
+
+#ifndef GLOSS_ENABLE
+#define GLOSS_ENABLE TRUE
+#endif
+
+#define NEED_POS_WORLD TRUE
+#define NEED_NORMAL TRUE
+#define NEED_NORMAL_WORLD TRUE
+#define LIT_ENABLE TRUE
+
+
+#include "common_defination.nfx"
+float4 camera_pos: CameraPosition;
+matrix4 wv : WorldView;
+matrix4 viewProjection : ViewProjection;
+float3 light_dir: LightDirection;
+
+texture	Tex0
+<
+	string SasUiLabel = "颜色贴图";
+	string SasUiControl = "FilePicker";
+>;
+texture	TexMatcap1
+<
+	string SasUiLabel = "MatCap"; 
+	string SasUiControl = "FilePicker";
+>;
+texture NormalMap
+<
+	string SasUiLabel = "法线贴图"; 
+	string SasUiControl = "FilePicker";
+>;
+#if DISSOLVE_ENABLE
+//Dissolve Textures
+texture TexDissolve3
+<
+	string SasUiLabel = "溶解贴图"; 
+	string SasUiControl = "FilePicker"; 
+>;
+//Dissolve Variables
+float4 Dissolve_color 
+<
+	string SasUiLabel = "溶解颜色"; 
+	string SasUiControl = "ColorPicker";
+>  = (1.0, 1.0, 1.0, 1.0);
+float Dissolve_color_intensity
+<
+	string SasUiLabel = "溶解颜色强度"; 
+	string SasUiControl = "FloatPicker";
+	string SasUiMin = "0.0";
+	string SasUiMax = "10.0";
+> = 2.0;
+float Dissolve_intensity
+<
+	string SasUiLabel = "溶解强度"; 
+	string SasUiControl = "FloatPicker";
+	string SasUiMin = "-1.0";
+	string SasUiMax = "1.0";
+> = -0.05;
+#endif
+///////
+float matcap_brightness
+<
+	string SasUiLabel = "环境光强度"; 
+	string SasUiControl = "FloatPicker";
+	string SasUiMin = "0.0";
+	string SasUiMax = "8.0";
+> = 1.0;
+float4 ExtraRimColor
+<
+	string SasUiLabel = "爆气颜色";
+	string SasUiControl = "ColorPicker";
+> = (0.0, 0.0, 0.0, 1.0);
+
+float3 model_offset
+<
+string SasUiLabel = "人物震动";
+> = (0.0, 0.0, 0.0);
+
+
+SamplerTexture[0] = Tex0;
+SamplerTexture[1] = TexMatcap1;
+
+#if DISSOLVE_ENABLE
+SamplerTexture[3] = TexDissolve3;
+SamplerAddressU[3] = ADDRESS_CLAMP;
+SamplerAddressV[3] = ADDRESS_CLAMP;
+#endif
+
+#if SHADOW_MAP_ENABLE
+SamplerTexture[6] = texShadowMap;
+#endif
+
+#if NORMAL_MAP_ENABLE
+SamplerTexture[4] = NormalMap;
+#endif
+
+#if SEPARATE_ALPHA_TEX
+SamplerTexture[7] = sepAlphaTex;
+#endif
+
+technique TShader
+<
+	string Description = "带溶解效果的角色材质";
+>
+{
+	pass p0
+	{
+		VertexShader = "character_x9.vs" vs_2_0 base_main;
+		PixelShader = "character_x9_dissolve.ps" ps_2_0 main;
+	}
+}

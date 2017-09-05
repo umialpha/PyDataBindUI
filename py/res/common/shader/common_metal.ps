@@ -1,0 +1,24 @@
+using namespace metal;
+struct VertexOutput
+{
+	float4 position [[position]];
+	float4 UV0;
+	float4 Color;
+};
+
+struct PSConstants
+{
+	float blendValue;
+};
+
+fragment float4 metal_main(
+	VertexOutput in [[stage_in]],
+	constant PSConstants &constants[[buffer(0)]],
+	texture2d<float> texture0 [[texture(0)]],
+	sampler sampler0 [[sampler(0)]])
+{
+	float4 texColor = texture0.sample(sampler0, in.UV0.xy);
+	float4 output = texColor * in.Color;
+	output.a *= constants.blendValue;
+	return output;
+}

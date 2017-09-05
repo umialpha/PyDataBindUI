@@ -1,0 +1,34 @@
+#define SHADE_MODE SHADE_GOURAND
+#define SHADOWMAP_TYPE SOFT_SHADOWMAP
+
+#ifndef LIT_ENABLE
+	#define LIT_ENABLE TRUE
+#endif
+
+#ifndef MAX_LIGHT_COUNT
+	#define MAX_LIGHT_COUNT 4
+#endif
+
+#ifndef SHADOW_MAP_ENABLE
+	#define SHADOW_MAP_ENABLE TRUE
+#endif
+
+#ifndef INSTANCE_TYPE
+	#define INSTANCE_TYPE INSTANCE_TYPE_NONE
+#endif
+
+#ifndef LIGHT_MAP_ENABLE
+	#define LIGHT_MAP_ENABLE FALSE
+#endif
+
+#ifndef SH_ENABLE
+	#define SH_ENABLE FALSE
+#endif
+
+#ifndef NEOX_DEFERED_LIGHTING_ENABLE
+	#define NEOX_DEFERED_LIGHTING_ENABLE FALSE
+#endif
+
+
+
+

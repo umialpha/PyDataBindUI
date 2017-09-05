@@ -1,0 +1,54 @@
+
+precision lowp float;
+
+uniform sampler2D tex0;
+
+uniform highp float fSampleStrength;   
+uniform lowp float radial_center_u;
+uniform lowp float radial_center_v;
+
+varying mediump vec2 TexCoord0;
+varying mediump vec2 TexCoord1;
+varying mediump vec2 TexCoord2;
+varying mediump vec2 TexCoord3;
+varying mediump vec2 TexCoord4;
+varying mediump vec2 TexCoord5;
+varying mediump vec2 TexCoord6;
+varying mediump vec2 TexCoord7;
+
+void ps_main()
+{
+
+   // 0.5,0.5 is the center of the screen   
+   // so substracting uv from it will result in   
+   // a vector pointing to the middle of the screen   
+   vec2 dir = vec2(radial_center_u, radial_center_v) - TexCoord0.xy;  
+   // calculate the distance to the center of the screen   
+   float dist = length(dir);  
+   // normalize the direction (reuse the distance)   
+   dir /= dist;  
+     
+   // this is the original colour of this pixel   
+   // using only this would result in a nonblurred version   
+   vec4 color = texture2D(tex0, TexCoord0);  
+     
+   mediump vec4 sum = color;  
+   // take 10 additional blur samples in the direction towards   
+   // the center of the screen   
+   sum += texture2D(tex0, TexCoord1);
+   sum += texture2D(tex0, TexCoord2);
+   sum += texture2D(tex0, TexCoord3);
+   sum += texture2D(tex0, TexCoord4);
+   sum += texture2D(tex0, TexCoord5);
+   sum += texture2D(tex0, TexCoord6);
+   sum += texture2D(tex0, TexCoord7);
+   // we have taken eleven samples   
+   sum /= 8.0;  
+     
+   // weighten the blur effect with the distance to the   
+   // center of the screen ( further out is blurred more)   
+   float t = clamp(dist * fSampleStrength, 0.0, 1.0);  
+     
+   //Blend the original color with the averaged pixels   
+   gl_FragColor = mix(color, sum, t);  
+}

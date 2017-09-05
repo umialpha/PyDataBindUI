@@ -1,0 +1,48 @@
+precision mediump float;
+#ifndef USE_SEPARATE_ALPHA
+ #define USE_SEPARATE_ALPHA 0
+#endif
+
+uniform sampler2D CC_Texture0;
+#if USE_SEPARATE_ALPHA
+uniform sampler2D CC_Texture1;
+#endif
+varying lowp vec4 v_diffuse;
+varying mediump vec2 v_texture0;
+void main()
+{
+float CC_Texture0_bias = 0.0;
+float CC_Texture1_bias = 0.0;
+lowp vec4 local_0 = texture2D(CC_Texture0, v_texture0, CC_Texture0_bias);
+lowp vec4 local_1;
+#if USE_SEPARATE_ALPHA
+lowp vec4 local_2 = texture2D(CC_Texture1, v_texture0, CC_Texture1_bias);
+lowp vec3 local_3 = local_0.xyz;
+lowp float local_4 = local_0.w;
+lowp float local_5 = local_2.x;
+lowp float local_6 = local_2.y;
+lowp float local_7 = local_2.z;
+lowp float local_8 = local_2.w;
+lowp vec4 local_9 = vec4(local_3.x, local_3.y, local_3.z, local_5);
+lowp vec4 local_10 = v_diffuse * local_9;
+local_1 = local_10;
+#else
+lowp vec4 local_11 = v_diffuse * local_0;
+local_1 = local_11;
+#endif
+const float local_12 = 0.2126;
+lowp float local_13 = local_1.x;
+lowp float local_14 = local_1.y;
+lowp float local_15 = local_1.z;
+lowp float local_16 = local_1.w;
+lowp float local_17 = local_12 * local_13;
+const float local_18 = 0.7152;
+lowp float local_19 = local_18 * local_14;
+lowp float local_20 = local_17 + local_19;
+const float local_21 = 0.0722;
+lowp float local_22 = local_21 * local_15;
+lowp float local_23 = local_20 + local_22;
+lowp vec3 local_24 = vec3(local_23, local_23, local_23);
+lowp vec4 local_25 = vec4(local_24.x, local_24.y, local_24.z, local_16);
+gl_FragColor = local_25;
+}

@@ -1,0 +1,120 @@
+int GlobalParameter : SasGlobal
+<
+  string SasEffectAuthoring = "hzliuran";
+  string SasEffectCategory = "";
+  string SasEffectCompany = "Netease";
+  string SasEffectDescription = "顶点偏移特效";
+  string SasSuportedMacros = "是否乘顶点色 VCOLOR_ENABLE BOOL FALSE;";
+  string SasEffectAttr = "INSTANCE_SUPPORTED=FALSE;";
+>;
+
+#ifndef VCOLOR_ENABLE
+#define VCOLOR_ENABLE 0
+#endif
+
+matrix4 wvp : WorldViewProjection;
+matrix4 texTrans0: TexTransform0;
+
+texture	Tex0
+<
+	string SasUiLabel = "颜色贴图"; 
+	string SasUiControl = "FilePicker";
+>;
+
+texture	Tex1
+<
+	string SasUiLabel = "ramp"; 
+	string SasUiControl = "FilePicker";
+>;
+
+float4 blend_color = (1.0, 1.0, 1.0, 1.0);
+float4 texuv_clamp
+<
+	string SasUiLabel = "UV范围，超出范围变为透明"; 
+> = (0.0, 0.0, 1.0, 1.0);
+
+float4 tFactor: TFactor;
+float time : FrameTime;
+
+float frequency
+<
+	string SasUiLabel = "波动频率";
+	string SasUiControl = "FloatPicker";
+	float SasUiMin = 0.0f;
+	float SasUiMax = 2.0f;
+> = 1.0;
+
+float amplitude
+<
+	string SasUiLabel = "波动幅度";
+	string SasUiControl = "FloatPicker";
+	float SasUiMin = 0.0f;
+	float SasUiMax = 10.0f;
+> = 1.0;
+
+float wave_size
+<
+	string SasUiLabel = "波动尺度";
+	string SasUiControl = "FloatPicker";
+	float SasUiMin = 0.0f;
+	float SasUiMax = 10.0f;
+> = 1.0;
+
+float displace_offset
+<
+	string SasUiLabel = "位移偏移";
+	string SasUiControl = "FloatPicker";
+> = 0.0;
+
+float ramp_scale
+<
+	string SasUiLabel = "ramp缩放";
+	string SasUiControl = "FloatPicker";
+> = 1.0;
+
+float ramp_offset
+<
+	string SasUiLabel = "ramp偏移";
+	string SasUiControl = "FloatPicker";
+> = -0.5;
+
+float dissolve
+<
+	string SasUiLabel = "消散";
+	string SasUiControl = "FloatPicker";
+> = 0.0;
+
+float dissolve_hardness
+<
+	string SasUiLabel = "消散硬度";
+	string SasUiControl = "FloatPicker";
+> = 10.0;
+
+bool is_multipy_vector
+<
+	string SasUiLabel = "是否乘顶点色"; 
+	string SasUiControl = "ListPicker_BOOL";
+> = 0;
+
+#if SEPARATE_ALPHA_TEX
+SamplerTexture[7] = sepAlphaTex;
+#endif
+
+technique TShader
+{
+	pass p0
+	{
+		CullMode = CULL_NONE;
+		BlendFactor = (BLEND_SRCALPHA, BLEND_ONE, 1.0, 0.0);
+		BlendOperation = (BLENDOP_ADD, BLENDOP_ADD);
+		
+		SamplerTexture[0] = Tex0;
+		SamplerAddressU[1] = ADDRESS_CLAMP;
+   		SamplerAddressV[1] = ADDRESS_CLAMP;
+		SamplerTexture[1] = Tex1;
+
+
+		VertexShader = "plasma.vs" vs_2_0 VS_OneTex;
+		PixelShader = "plasma.ps" ps_2_0 PS_OneTex1x; 
+	}
+}

@@ -1,0 +1,16 @@
+precision lowp float;
+
+uniform sampler2D samplerTex0;
+
+uniform lowp vec4 screen_color;
+
+varying mediump vec2 TexCoord0;
+
+void ps_main()
+{
+	vec4 org_clr = texture2D(samplerTex0, TexCoord0);
+	vec4 new_color = org_clr * screen_color;
+
+	gl_FragColor = vec4(new_color.xyz, 1.0);
+
+}

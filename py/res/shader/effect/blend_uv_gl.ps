@@ -1,0 +1,42 @@
+#ifndef SEPARATE_ALPHA_TEX
+#define SEPARATE_ALPHA_TEX 0
+#endif
+
+#ifndef MASK_ENABLE
+#define MASK_ENABLE 0
+#endif
+
+varying mediump vec4 UV0;
+#if MASK_ENABLE
+varying mediump vec4 UV1;
+#endif
+varying lowp vec4 Color;
+
+uniform lowp vec4 tFactor;
+
+uniform sampler2D Tex0;
+uniform sampler2D Tex1;
+uniform sampler2D Tex2;
+
+uniform mediump float amplitude1;
+uniform mediump float amplitude2;
+
+#if SEPARATE_ALPHA_TEX
+uniform sampler2D SamplerDiffuse7;
+#endif
+
+void PS_OneTex1x()
+{
+	lowp vec4 texColor0;
+	texColor0 = texture2D (Tex0, UV0.xy);
+	gl_FragColor = texColor0 * Color * tFactor;
+
+#if SEPARATE_ALPHA_TEX
+	gl_FragColor.a *= texture2D(SamplerDiffuse7, UV0.xy).a;
+#endif
+#if MASK_ENABLE
+	lowp vec4 mask;
+	mask = texture2D (Tex1, UV1.xy);
+	gl_FragColor.a *= mask.r;
+#endif
+}

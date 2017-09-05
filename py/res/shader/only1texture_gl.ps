@@ -1,0 +1,10 @@
+uniform sampler2D SamplerDiffuse0;
+uniform lowp float alpha;
+varying mediump vec4 UV0;
+
+void main ()
+{
+	highp vec4 tmp = texture2D(SamplerDiffuse0,UV0.xy);
+    gl_FragColor = tmp;
+}
+

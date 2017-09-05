@@ -1,0 +1,100 @@
+precision mediump float;
+precision lowp int;
+
+uniform float BloomIntensity; //控制bloom强度
+uniform float BloomThreshold; //控制bloom的阈值
+uniform int BloomFactor;	//控制bloom的宽度值
+
+uniform sampler2D tex0;
+uniform sampler2D tex1;
+
+
+varying mediump vec2 TexCoord0;
+varying mediump vec2 TexCoord1;
+varying mediump vec2 TexCoord2;
+varying mediump vec2 TexCoord3;
+// varying mediump vec2 TexCoord4;
+varying mediump vec2 TexCoord5;
+// varying mediump vec2 TexCoord6;
+// varying mediump vec2 TexCoord7;
+
+void DownSamplePass()
+{ 
+	mediump vec4 average = vec4(0.0, 0.0, 0.0, 0.0);
+	average += texture2D(tex0, TexCoord0);
+	average += texture2D(tex0, TexCoord1);
+	average += texture2D(tex0, TexCoord2);
+	average += texture2D(tex0, TexCoord3);
+	//average += texture2D(tex0, TexCoord4);
+	//average += texture2D(tex0, TexCoord5);
+	//average += texture2D(tex0, TexCoord6);
+	//average += texture2D(tex0, TexCoord7);
+	average *= 0.25;
+	
+	/*float luminance = dot( average.xyz, vec3( 0.299, 0.587, 0.114 ) );
+	
+	if(luminance < BloomThreshold)
+	{
+		average *= pow(abs(luminance / BloomThreshold), float(BloomFactor));
+	}*/
+	vec3 threshold = vec3(BloomThreshold,BloomThreshold,BloomThreshold);
+	average.xyz = max(vec3(0.0,0.0,0.0),(average.xyz - threshold));
+	gl_FragColor = average;
+}
+
+
+// uniform vec4 BrightnessSampleOffsets[4];
+
+void BrightnessPass()
+{
+	// mediump vec4 average = vec4(0.0, 0.0, 0.0, 0.0);
+	// for( int i = 0; i < 4; i++ )
+	// {
+	//    average += texture2D( tex0, TexCoord0.xy + vec2( BrightnessSampleOffsets[i].x, BrightnessSampleOffsets[i].y ) );
+	// }
+	// average *= 0.25;
+	mediump vec4 average = texture2D( tex0, TexCoord0.xy);
+	float luminance = dot( average.xyz, vec3( 0.299, 0.587, 0.114 ) );
+	
+	if(luminance < BloomThreshold)
+	{
+		average *= pow(abs(luminance / BloomThreshold), float(BloomFactor));
+	}
+	
+	gl_FragColor = average;
+}
+
+
+uniform float HorizontalBloomWeights[5];                   
+
+void HorizontalBlurPass()
+{
+	mediump vec4 color = vec4(0.0, 0.0, 0.0, 0.0);
+
+	color += texture2D(tex0, TexCoord0.xy) * HorizontalBloomWeights[0];
+	color += texture2D(tex0, TexCoord1.xy) * HorizontalBloomWeights[1];
+	color += texture2D(tex0, TexCoord2.xy) * HorizontalBloomWeights[2];
+	//color += texture2D(tex0, TexCoord3.xy) * HorizontalBloomWeights[3];
+	//color += texture2D(tex0, TexCoord4.xy) * HorizontalBloomWeights[4];
+	
+	gl_FragColor = vec4( color.xyz, 1.0 );
+}
+
+
+uniform float VerticalBloomWeights[5];            
+
+void VerticalBlurPass()
+{
+	mediump vec4 color = vec4(0.0, 0.0, 0.0, 0.0);
+
+	color += texture2D(tex0, TexCoord0.xy) * VerticalBloomWeights[0];
+	color += texture2D(tex0, TexCoord1.xy) * VerticalBloomWeights[1];
+	color += texture2D(tex0, TexCoord2.xy) * VerticalBloomWeights[2];
+	//color += texture2D(tex0, TexCoord3.xy) * VerticalBloomWeights[3];
+	//color += texture2D(tex0, TexCoord4.xy) * VerticalBloomWeights[4];
+
+	// lowp vec2 revUV = vec2(TexCoord0.x, 1.0 - TexCoord0.y);	
+	vec4 src = texture2D( tex1, TexCoord5.xy);
+	vec3 final = src.xyz + BloomIntensity * color.xyz;
+	gl_FragColor = vec4( final.xyz, 1.0 );    
+}

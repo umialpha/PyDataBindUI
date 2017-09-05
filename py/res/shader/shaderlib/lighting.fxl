@@ -1,0 +1,272 @@
+/*
+光照计算函数
+*/
+#ifndef __LIGHTING_FXL__
+#define __LIGHTING_FXL__
+
+#define NEED_SHADOW_BLEND_ALL
+
+#include "sh.fxl"
+#include "shadow.fxl"
+#include "vardefination.fxl"
+
+void PointGetShadowUV(inout PS_GENERAL ps_general);
+void DirGetShadowUV(inout PS_GENERAL ps_general);
+void GetShadowFactor(in PS_GENERAL ps_general, out float shadow_fac);
+void VsGetLightLit(in VS_GENERAL vs_general, out float3 light_ambient_clr, out float3 light_diffuse_clr, out float3 light_specular_clr, out float3 shadow_light_clr);
+void PsGetLightLit(inout PS_GENERAL ps_general, out float3 light_ambient_clr, out float3 light_diffuse_clr, out float3 light_specular_clr, out float3 shadow_light_clr);
+void AddDeferedLighting(in PS_GENERAL ps_general, inout float3 light_ambient_clr, inout float3 light_spec_clr);
+
+void _ShadowLightLit(
+					in float4 light_ambient,		 //ambient强度
+					in float4 light_diffuse_type, //diffuse和类型
+					in float4 light_specular,		 //高光
+					in float4 light_attr,			 //方向光xyz为方向，点光xyz为位置，w为范围
+					in float4 light_attr_custom,	 //点光特有的
+					in float3 position,			 //受光点的位置
+				    in float3 view_dir,			 //相机到当前点的射线
+				    in float3 normal_dir,			 //受光点的法线方向
+					in float3 transmission_fac,	 //用于做背面光照
+					in float shadow_frac, 		 //shadowmap计算出来的阴影因子
+					in int specular_power,		 //高光power
+					inout float3 color_ambient, //输出ambient
+				    inout float3 color_diffuse, 	 //输出diffuse
+				    inout float3 color_specular)	 //输出specular
+{
+
+		float3 light_dir = 0;
+		float light_atten = 1;	//距离衰减因子
+		if (light_diffuse_type.w == 3)
+		{
+			//方向光	
+			light_dir = light_attr.xyz; //点光的lightdir已经normal过的
+			color_ambient += light_ambient.xyz;
+		}else if (light_diffuse_type.w == 1)
+		{
+			//点光
+			light_dir = position.xyz - light_attr.xyz;
+		//	light_atten = saturate( 1 - dot(light_dir/light_attr.w,light_dir/light_attr.w)); 
+			light_atten = saturate( 1 - pow( abs(dot(light_dir/light_attr.w,light_dir/light_attr.w)), 2/(light_attr_custom.x))); 		//此处使用简化强度计算，按距离衰减
+			light_dir = normalize(light_dir);
+			color_ambient += light_ambient.xyz * light_atten;
+		}
+		
+		float normal_dot_light = saturate(dot(normal_dir, -light_dir));
+		color_diffuse += shadow_frac * light_atten * light_diffuse_type.xyz * lerp(normal_dot_light,transmission_fac,transmission_fac) ;
+		
+#if SPECULAR_ENABLE
+		float3 half_vec = normalize(view_dir - light_dir);
+		float half_dot_normal = saturate(dot(half_vec, normal_dir));
+		color_specular += shadow_frac * light_atten * light_specular * pow(half_dot_normal, specular_power);
+#endif	
+	
+
+}
+
+	
+void _DirLightLit(
+					in float4 light_ambient,		 //ambient强度
+					in float4 light_diffuse_type, //diffuse和类型
+					in float4 light_specular,		 //高光
+					in float4 light_attr,			 //方向光xyz为方向，点光xyz为位置，w为范围
+					in float4 light_attr_custom,	 //点光特有的
+					in float3 position,			 //受光点的位置
+				    in float3 view_dir,			 //相机到当前点的射线
+				    in float3 normal_dir,			 //受光点的法线方向
+					in float3 transmission_fac,	 //用于做背面光照
+					in float shadow_frac, 		 //shadowmap计算出来的阴影因子
+					in int specular_power,		 //高光power
+					inout float3 color_ambient, //输出ambient
+				    inout float3 color_diffuse, 	 //输出diffuse
+				    inout float3 color_specular)	 //输出specular
+{
+		float3 light_dir = 0;
+		float light_atten = 0;	//距离衰减因子
+		
+		light_atten = 1;
+		light_dir = light_attr.xyz; //点光的lightdir已经normal过的
+		color_ambient += light_ambient.xyz;
+		
+		float normal_dot_light = saturate(dot(normal_dir, -light_dir));
+		color_diffuse += shadow_frac * light_atten * light_diffuse_type.xyz * lerp(normal_dot_light,transmission_fac,transmission_fac) ;
+		
+#if SPECULAR_ENABLE
+		float3 half_vec = normalize(view_dir - light_dir);
+		float half_dot_normal = saturate(dot(half_vec, normal_dir));
+		color_specular += shadow_frac * light_atten * light_specular * pow(half_dot_normal, specular_power);
+#endif	
+		
+}
+
+//////////////////		
+void _PointLightLit(
+					in float4 light_ambient,		 //ambient强度
+					in float4 light_diffuse_type, //diffuse和类型
+					in float4 light_specular,		 //高光
+					in float4 light_attr,			 //方向光xyz为方向，点光xyz为位置，w为范围
+					in float4 light_attr_custom,	 //点光特有的
+					in float3 position,			 //受光点的位置
+				    in float3 view_dir,			 //相机到当前点的射线
+				    in float3 normal_dir,			 //受光点的法线方向
+					in float3 transmission_fac,	 //用于做背面光照
+					in float shadow_frac, 		 //shadowmap计算出来的阴影因子
+					in int specular_power,		 //高光power
+					inout float3 color_ambient, //输出ambient
+				    inout float3 color_diffuse, 	 //输出diffuse
+				    inout float3 color_specular)	 //输出specular
+{
+		float3 light_dir = 0;
+		float light_atten = 0;	//距离衰减因子
+		
+		light_dir = position.xyz - light_attr.xyz;
+		//	light_atten = saturate( 1 - dot(light_dir/light_attr.w,light_dir/light_attr.w)); 
+		light_atten =  saturate( 1 - dot(light_dir/light_attr.w,light_dir/light_attr.w)); 
+		light_atten = pow(light_atten, light_attr_custom.x + 0.001);
+		
+		light_dir = normalize(light_dir);
+		color_ambient += light_ambient.xyz * light_atten;
+		
+		float normal_dot_light = saturate(dot(normal_dir, -light_dir));
+		color_diffuse += shadow_frac * light_atten * light_diffuse_type.xyz * lerp(normal_dot_light,transmission_fac,transmission_fac) ;
+		
+#if SPECULAR_ENABLE
+		float3 half_vec = normalize(view_dir - light_dir);
+		float half_dot_normal = saturate(dot(half_vec, normal_dir));
+		color_specular += shadow_frac * light_atten * light_specular * pow(half_dot_normal, specular_power);
+#endif	
+		
+}
+
+
+
+#define NEED_AMBIENT
+#include "vardefination.fxl"	
+
+
+
+#ifndef CUSTOM_LIGHTING
+	
+//默认光照技术管线
+void GetCustomLighting(PS_GENERAL ps_general, out float3 color_ambient_diffuse, out float3 color_specular)
+{
+
+////////////////////////////实时光及sh	
+#if EQUAL(SHADE_MODE, SHADE_GOURAND)
+	color_ambient_diffuse = ps_general.VertexAmbientDiffuseColor;
+	color_specular = ps_general.VertexSpecularColor;
+	
+#elif EQUAL(SHADE_MODE, SHADE_PHONG)
+	float3 color_ambient = 0;
+	float3 color_diffuse = 0;
+
+	PsGetLightLit(ps_general, color_ambient, color_diffuse, color_specular, ps_general.VertexShadowLightColor);
+
+		
+	#if SH_ENABLE
+		color_diffuse += GetSHColor(ps_general.NormalWorld ); //sh的diffuse分量
+	#endif
+	
+	color_ambient_diffuse = color_ambient + color_diffuse;
+#elif EQUAL(SHADE_MODE, SHADE_NONE)
+	color_ambient_diffuse = 0;
+	color_specular = 0;
+	
+
+#endif
+
+	color_ambient_diffuse += Ambient.xyz;
+
+///////////////////////////lightmap计算
+#if LIGHT_MAP_ENABLE
+	float3 lightmap_clr = GetLightMapColor(ps_general);
+	color_ambient_diffuse += lightmap_clr;
+#endif
+	
+	float defered_shadow_fac = 0;
+//////////////////////////deferedlighting计算
+#if EQUAL(NEOX_DEFERED_LIGHTING_ENABLE, TRUE)
+	AddDeferedLighting(ps_general, color_ambient_diffuse, color_specular);	
+#endif
+
+	
+
+//////////////////////////影子计算，todo：blendall的情况是否应该只blend烘培的呢	
+	float shadow_fac = 1;
+#if EQUAL(SHADOW_MAP_ENABLE, TRUE)
+	//normalmap计算，削弱所有的diffuse的和
+	
+	if(ShadowInfo.x == 3)
+	{
+		DirGetShadowUV(ps_general);	
+	}
+	else
+	{
+		PointGetShadowUV(ps_general);
+	}
+
+	GetShadowFactor(ps_general, shadow_fac);		//只有第一个灯有影子
+#endif
+
+
+
+if(ShadowBlendAll.x == 1.0f)
+	{
+	color_ambient_diffuse *= shadow_fac;
+#if LIGHT_MAP_ENABLE
+	/*
+	//先统一将lightmap减去方向光
+	color_ambient_diffuse  -= ps_general.VertexShadowLightColor;
+	
+	if(shadow_fac < 1)
+	{
+		//真实影子里面
+		float3 test = saturate(lightmap_clr - ps_general.VertexShadowLightColor);
+		if(any(test))
+		{
+			//在烘培影子外
+			color_ambient_diffuse -=  ( 1- shadow_fac) * ps_general.VertexShadowLightColor;					
+		}
+	}
+*/
+#endif
+		
+		
+	}else
+	{
+		color_ambient_diffuse -= (1 - shadow_fac) * ps_general.VertexShadowLightColor;
+	}
+//////////////////////////////
+}
+#endif //customlighting
+
+
+
+
+float3 LightLit(PS_GENERAL ps_general)	
+{
+
+#if  EQUAL(NEOX_DEBUG_DEFERED_GBUFFER, TRUE)
+	return GetGBufferClr(ps_general).xyz;
+#endif
+
+	float3 result = 0;
+
+	float3 ambient_diffuse_color;
+	float3 specular_color;
+	GetCustomLighting(ps_general, ambient_diffuse_color,  specular_color);
+	
+
+	float3 diffuse_mtl = GetDiffuseMtl(ps_general);
+	float3 specular_mtl = GetSpecularMtl(ps_general);
+	
+	float3 color =  ambient_diffuse_color * diffuse_mtl.xyz ;
+	color += (specular_color + 0.15f)  * specular_mtl;
+	
+	MtlDebug(ambient_diffuse_color, diffuse_mtl.xyz, color);
+	
+	result.xyz += color;	//逐像素光照 
+	
+	return result;
+}
+
+#endif

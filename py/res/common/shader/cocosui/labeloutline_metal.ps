@@ -1,0 +1,28 @@
+using namespace metal;
+struct VertexOutput
+{
+	float4 gl_Position [ [position] ];
+	float2 v_texCoord;
+	float4 v_fragmentColor;
+};
+struct PSConstants
+{
+	float4 u_effectColor;
+	float4 u_textColor;
+};
+fragment float4 metal_main(
+	VertexOutput in [ [stage_in] ],
+    constant PSConstants &constants[ [buffer(0)] ],
+	texture2d<float> texture0 [ [texture(0)] ],
+	sampler sampler0 [ [sampler(0)] ])
+{
+	float4 texColor = texture0.sample(sampler0, in.v_texCoord);
+    float fontAlpha = texColor.g;
+    float outlineAlpha = texColor.r;
+    if (outlineAlpha > 0.0) {
+        float4 color = constants.u_textColor * fontAlpha + constants.u_effectColor * (1.0 - fontAlpha);
+        return in.v_fragmentColor * float4(color.rgb, max(fontAlpha, outlineAlpha) * color.a);
+    } else {
+        discard_fragment();
+    }
+}

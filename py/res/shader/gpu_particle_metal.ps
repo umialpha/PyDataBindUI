@@ -1,0 +1,157 @@
+#include <metal_stdlib>
+#include <metal_math>
+
+using namespace metal;
+
+#define EQUAL(x,y) !(x-y)
+
+//控制颜色混合方式
+#define COLOR_CONTROL_WHOLE_TIME				1
+#define COLOR_CONTROL_LIFESPAN					2
+#define COLOR_CONTROL_MULTIPLY_WHOLE_PARTICLE	3
+#define COLOR_CONTROL_INTRP_WHOLE_PARTICLE		4
+
+//变色开关
+#define USE_HSV_OFFSET_TRUE						1
+#define USE_HSV_OFFSET_FALSE					2
+
+//spr模式
+#define SPR_MODE_PARTICLE_LIFE					0
+#define SPR_MODE_SPR_LIFE						1
+#define SPR_MODE_NONE							2
+
+
+struct VertexOutput
+{
+	float4 Position [[position]];
+	float4 Color;
+	float4 Texcoord0;
+};
+
+
+struct PSConstants
+{
+	float4 blend_op;
+
+	float alpha_add;
+	float alpha_clamp_range;
+
+	//变色支持
+	float hsv_offset_A;
+	float hsv_offset_I;
+	bool hsv_change_h;
+};
+
+
+
+		
+//rgb hsv 转换
+
+static float rgb_min_channel(float3 v) 
+{ 
+    float t = (v.x<v.y) ? v.x : v.y; 
+    t = (t<v.z) ? t : v.z; 
+    return t; 
+} 
+ 
+static float rgb_max_channel(float3 v) 
+{ 
+    float t = (v.x>v.y) ? v.x : v.y; 
+    t = (t>v.z) ? t : v.z; 
+    return t; 
+} 
+
+static float3 rgb_to_hsv(float3 RGB) 
+{ 
+    float3 HSV = float3(0); 
+    float minVal = rgb_min_channel(RGB); 
+    float maxVal = rgb_max_channel(RGB); 
+    float delta = maxVal - minVal;             //Delta RGB value  
+    HSV.z = maxVal; 
+    if (delta != 0) {                    // If gray, leave H & S at zero 
+      HSV.y = delta / maxVal; 
+       float3 delRGB; 
+      delRGB = ( ( ( float3(maxVal) - RGB ) / 6.0 ) + ( delta / 2.0 ) ) / delta; 
+       if      ( RGB.x == maxVal ) HSV.x = delRGB.z - delRGB.y; 
+      else if ( RGB.y == maxVal ) HSV.x = ( 1.0/3.0) + delRGB.x - delRGB.z; 
+       else if ( RGB.z == maxVal ) HSV.x = ( 2.0/3.0) + delRGB.y - delRGB.x; 
+      if ( HSV.x < 0.0 ) { HSV.x += 1.0; } 
+       if ( HSV.x > 1.0 ) { HSV.x -= 1.0; } 
+   } 
+    return (HSV); 
+} 
+ 
+static float3 hsv_to_rgb(float3 HSV) 
+{ 
+    float3 RGB = HSV.z; 
+   if ( HSV.y != 0 ) { 
+       float var_h = HSV.x * 6; 
+      float var_i = floor(var_h);   // Or ... var_i = floor( var_h ) 
+       float var_1 = HSV.z * (1.0 - HSV.y); 
+      float var_2 = HSV.z * (1.0 - HSV.y * (var_h-var_i)); 
+      float var_3 = HSV.z * (1.0 - HSV.y * (1-(var_h-var_i))); 
+      if      (var_i == 0) { RGB = float3(HSV.z, var_3, var_1); } 
+      else if (var_i == 1) { RGB = float3(var_2, HSV.z, var_1); } 
+      else if (var_i == 2) { RGB = float3(var_1, HSV.z, var_3); } 
+      else if (var_i == 3) { RGB = float3(var_1, var_2, HSV.z); } 
+      else if (var_i == 4) { RGB = float3(var_3, var_1, HSV.z); } 
+      else                 { RGB = float3(HSV.z, var_1, var_2); } 
+  } 
+  return (RGB); 
+}	
+
+
+
+fragment float4 metal_main(
+	VertexOutput In [[stage_in]],
+	constant PSConstants &constants[[buffer(0)]],
+	texture2d<float> texture0 [[texture(0)]],
+	sampler SamplerDiffuse [[sampler(0)]],
+	texture2d<float> separate_alpha_tex [[texture(1)]],
+	sampler SeparateAlphaSampler [[sampler(1)]]
+	)
+{ 
+	float4 texcolor = texture0.sample(SamplerDiffuse, In.Texcoord0.xy);
+	if (constants.blend_op[3] == 0)
+	{
+#if EQUAL(USE_HSV_OFFSET_SWITCH, USE_HSV_OFFSET_FALSE)
+		texcolor.xyz *= In.Color.xyz;
+#else
+		float gray = texcolor.r * 0.299 + texcolor.g * 0.587 + texcolor.b * 0.114;
+		gray += constants.hsv_offset_I;
+		gray = saturate(gray);
+		float s = (0.5-abs(gray - 0.5))*2.0 * constants.hsv_offset_A;
+		if (constants.hsv_offset_A > 0.5)
+		{
+			gray += (constants.hsv_offset_A-0.5) * s;
+		}
+		float3 p_hsv = rgb_to_hsv(In.Color.xyz);
+		float3 hsv = float3(p_hsv.x, s, gray);
+		if (!constants.hsv_change_h)
+		{
+			float3 temp = rgb_to_hsv(texcolor.rgb);
+			hsv.x += temp.x;
+			hsv.x = fmod(hsv.x, 1.0);
+		}
+		texcolor.rgb = hsv_to_rgb(hsv);
+		texcolor.a *= In.Color.a;
+#endif
+	}
+	else
+	{
+		texcolor.xyz += In.Color.xyz;
+	}
+	
+	
+	texcolor.a *= In.Color.a;
+	texcolor *= constants.blend_op[2];
+	
+	//alpha效果
+	texcolor.a = min(texcolor.a, 1.0);
+	float re = texcolor.a + constants.alpha_add;
+	re = clamp(re, 0.0, constants.alpha_clamp_range);
+	texcolor.a = re / constants.alpha_clamp_range;
+	
+	return texcolor;
+}
+

@@ -1,0 +1,266 @@
+#ifdef GL_EXT_shader_texture_lod
+#extension GL_EXT_shader_texture_lod : enable
+#define GLOSS_SUPPORTED TRUE
+#endif
+
+precision mediump float;
+
+#ifndef GL_ES
+#define GLOSS_SUPPORTED TRUE
+#define texture2DLodEXT texture2DLod
+#endif
+
+#ifndef GLOSS_SUPPORTED
+#define GLOSS_SUPPORTED FALSE
+#endif
+
+#ifndef SEPARATE_ALPHA_TEX
+#define SEPARATE_ALPHA_TEX FALSE
+#endif
+
+#ifndef HIGH_LEVEL_ENABLE
+#define HIGH_LEVEL_ENABLE FALSE
+#endif
+
+#ifndef NEED_POS_WORLD
+#define NEED_POS_WORLD TRUE
+#endif
+
+#ifndef NEED_NORMAL_WORLD
+#define NEED_NORMAL_WORLD TRUE
+#endif
+
+#ifndef EXTRA_ALPHA
+#define EXTRA_ALPHA FALSE
+#endif
+
+#ifndef FOG_ENABLE
+#define FOG_ENABLE FALSE
+#endif
+
+#ifndef TOON_ENABLE
+#define TOON_ENABLE FALSE
+#endif
+
+// #include "shaderlib/extension.ps"
+
+uniform sampler2D SamplerDiffuse0;
+uniform sampler2D SamplerMatcap1;
+
+uniform lowp float melanism;
+
+#if SHADOW_MAP_ENABLE
+uniform sampler2D SamplerShadowmap6;
+#endif
+uniform mediump float matcap_brightness;
+//uniform lowp float ShadowAlpha;
+
+#ifdef NEED_NORMAL_WORLD
+uniform mediump vec3 light_dir;
+#endif
+
+#if HIGH_LEVEL_ENABLE
+uniform sampler2D SamplerNormalMap4;
+#endif
+
+
+#if NEED_NORMAL_WORLD
+varying highp vec3 TangentWorld;
+varying highp vec3 BinormalWorld;
+#endif
+
+#if HIGH_LEVEL_ENABLE
+uniform sampler2D SamplerRimMatcap2;
+uniform lowp vec4 rimlight_color;
+uniform highp float rimlight_brightness;
+#endif
+
+#if SEPARATE_ALPHA_TEX
+uniform sampler2D SamplerSepAlphaTex7;
+#endif
+
+uniform lowp float blendValue;
+
+#if ALPHA_TEST_ENABLE
+uniform lowp float alphaRef;
+#endif
+
+varying mediump vec4 UV0;
+uniform highp vec4 camera_pos;
+uniform highp mat4 view;
+
+uniform highp vec4 ShadowLightAttr[LIGHT_ATTR_ITEM_NUM];
+uniform mediump vec4 ExtraRimColor;
+uniform lowp float ExtraAlpha;
+
+#ifdef NEED_POS_WORLD
+varying highp vec4 PosWorld;
+#endif
+
+#ifdef NEED_NORMAL_WORLD
+varying highp vec3 NormalWorld;
+#endif
+
+#if LIT_ENABLE
+varying lowp vec3 Lighting;
+#endif
+
+#if SHADOW_MAP_ENABLE
+varying highp vec4 PosLightProj;
+#endif
+
+#if FOG_ENABLE
+varying highp vec4 FogResult;
+#endif
+
+#if SHADOW_MAP_ENABLE
+highp float UnpackRGBA2Float(highp vec4 v)
+{
+	const highp vec4 vUnpack = vec4(1.0, 1.0/256.0, 1.0/65536.0, 1.0/16777216.0);	//1/2^0, 1/2^8, 1/2^16, 1/2^24
+	
+	return dot(v, vUnpack);
+}
+#endif
+
+lowp vec4 getMatCapColor(mediump vec2 uv, lowp float gloss)
+{
+	lowp vec4 matcap;
+
+#if GLOSS_SUPPORTED && HIGH_LEVEL_ENABLE
+	matcap = texture2DLodEXT (SamplerMatcap1, uv, 8.0 - gloss * 8.0);
+#else
+	matcap = vec4(0.0);
+#endif
+
+	return matcap * gloss * matcap_brightness;
+}
+
+mediump vec2 getMatCapUV(mediump vec2 norm)
+{
+	return vec2(norm.x, -norm.y) * 0.5 + 0.5;
+}
+
+#if TOON_ENABLE
+void outline()
+{
+	lowp vec4 albedo = texture2D (SamplerDiffuse0, UV0.xy);
+#if ALPHA_TEST_ENABLE
+	lowp float delta = albedo.a - alphaRef;
+	if (delta <= 0.0) {
+		discard;
+	}
+#endif
+	gl_FragColor = vec4(0, 0, 0, albedo.a);
+	gl_FragColor.a *= (blendValue * 0.5);
+}
+#endif
+
+
+void base_main ()
+{
+	lowp vec4 albedo;
+	albedo = texture2D (SamplerDiffuse0, UV0.xy);
+
+#if SEPARATE_ALPHA_TEX
+	lowp float sepAlpha = texture2D(SamplerSepAlphaTex7, UV0.xy).a;
+	albedo = vec4(albedo.r, albedo.g, albedo.b, sepAlpha);
+#endif
+
+#if ALPHA_TEST_ENABLE
+	lowp float delta = albedo.a - alphaRef;
+	if (delta <= 0.0) {
+		discard;
+	}
+#endif
+
+	gl_FragColor = albedo;
+	//normal
+	highp vec3 normalWorld = NormalWorld.xyz;
+	lowp float gloss = 0.0;
+#if HIGH_LEVEL_ENABLE
+	normalWorld = vec3(0.0, 0.0, 1.0);
+	lowp vec4 normalMap = texture2D(SamplerNormalMap4,UV0.xy);
+	lowp vec2 normalOffset = normalMap.xy;
+	normalOffset = normalOffset * 2.0 - 1.0;
+	normalWorld.xy = vec2(normalOffset.x, -normalOffset.y);
+	normalWorld= normalWorld.x * TangentWorld + normalWorld.y * BinormalWorld + normalWorld.z * NormalWorld;
+
+#if GLOSS_SUPPORTED && HIGH_LEVEL_ENABLE
+	gloss = normalMap.z;
+#endif
+#endif
+
+	normalWorld = normalize(normalWorld);
+
+	lowp float shadowFactor = 0.0;
+#if SHADOW_MAP_ENABLE
+	mediump vec4 lightProjPos = PosLightProj;
+	
+	highp float depthToLight =  lightProjPos.z;
+	mediump vec2 shadowMapCoord = lightProjPos.xy;
+	
+	if ( 0.0 < shadowMapCoord.x && shadowMapCoord.x - 1.0 < 0.0 && 0.0 < shadowMapCoord.y && shadowMapCoord.y - 1.0 < 0.0 )
+	{
+		mediump float depthShadowMap = UnpackRGBA2Float( texture2D(SamplerShadowmap6, shadowMapCoord) );
+		shadowFactor = (depthToLight - depthShadowMap > 0.0) ? 1.0 : 0.0;
+	}
+#endif
+	
+	lowp float NdotL = 0.0;
+#ifdef NEED_NORMAL_WORLD
+	NdotL = clamp(dot(-light_dir, normalWorld),0.0,1.0);
+#endif
+
+#if SHADOW_MAP_ENABLE
+	NdotL *= (1.0 - shadowFactor);
+	NdotL = NdotL * 0.9 + 0.1;
+	mediump vec3 light = NdotL * ShadowLightAttr[1].xyz + Lighting + vec3(0.3);
+#else
+	mediump vec3 light = NdotL * ShadowLightAttr[1].xyz + Lighting + vec3(0.5);
+#endif
+	
+
+	highp vec3 viewDir = normalize(camera_pos.xyz - PosWorld.xyz);
+	lowp float NdotV = max(0.0, dot(normalWorld, viewDir));
+
+	lowp vec4 matcapColor = vec4(0.0);
+#if HIGH_LEVEL_ENABLE
+	//matcap
+	highp mat3 ViewMat = mat3(view);
+	highp vec3 normalView = ViewMat * normalWorld;
+	mediump vec2 matCapUV = getMatCapUV(normalView.xy);
+	matcapColor = getMatCapColor(matCapUV, gloss);
+#endif
+
+	gl_FragColor.rgb = albedo.rgb + matcapColor.rgb;
+
+#if TOON_ENABLE
+	mediump float toon_high_value = 1.0;
+	mediump float toon_low_value = 0.75;
+	mediump float toon_threshold = 0.75;
+	light = mix(vec3(toon_low_value), vec3(toon_high_value), vec3(clamp(sign(light- vec3(toon_threshold)), vec3(0.0), vec3(1.0))) );
+#endif
+
+	gl_FragColor.rgb *= light;
+
+	gl_FragColor.rgb *= (1.0 - melanism);
+
+#if HIGH_LEVEL_ENABLE
+	lowp vec4 rim = texture2D(SamplerRimMatcap2, matCapUV);
+	rim = rim * rimlight_color * rimlight_brightness;
+	gl_FragColor.rgb += rim.rgb;
+#endif
+	gl_FragColor.rgb += ExtraRimColor.rgb * (1.0 - NdotV) * ExtraRimColor.a;
+
+#if FOG_ENABLE
+	gl_FragColor.xyz = mix(gl_FragColor.xyz, FogResult.xyz, FogResult.a);
+#endif
+	gl_FragColor.a *= blendValue;
+
+#if EXTRA_ALPHA
+	if (NdotV > 0.5) {
+		gl_FragColor.a *= ExtraAlpha;
+	}
+#endif
+}
+

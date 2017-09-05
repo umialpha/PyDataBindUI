@@ -1,0 +1,68 @@
+
+#ifndef GL_ES
+	#define texture2DLodEXT texture2DLod
+	#define textureCubeLodEXT textureCubeLod
+#else
+	#ifdef GL_EXT_shader_texture_lod 
+		#extension GL_EXT_shader_texture_lod : enable
+	#else
+		#define texture2DLodEXT texture2D
+		#define textureCubeLodEXT textureCube
+	#endif
+#endif
+// @Inputs: f4;-1:var_TEXCOORD11,f2;-1:var_TEXCOORD0,f4;-1:var_TEXCOORD5
+// @Outputs: f4;-1:gl_FragColor
+// @Uniforms: f4[3];-1:VectorUniformExpressions,f4[1];-1:ScalarUniformExpressions,f4;-1:CameraPos
+// @Samplers: t;-1:Tex0Sampler0
+//#version 100 
+precision mediump float;
+precision mediump int;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+uniform highp vec4 VectorUniformExpressions[3];
+uniform highp vec4 ScalarUniformExpressions;
+uniform highp sampler2D Tex0Sampler0;
+uniform highp vec4 CameraPos;
+varying vec4 var_TEXCOORD11;
+varying highp vec2 var_TEXCOORD0;
+varying highp vec4 var_TEXCOORD5;
+void main()
+{
+	vec4 v0;
+	vec2 v1;
+	v1.xy = ((VectorUniformExpressions[0].xy+var_TEXCOORD0)*VectorUniformExpressions[1].xy);
+	v0.xyzw = texture2D(Tex0Sampler0,v1);
+	vec4 v2;
+	v2.xyzw = v0;
+	v2.xyz = (v0.xyz*v0.xyz);
+	vec4 v3;
+	v3.w = 1.000000e+000;
+	highp vec3 v4;
+	v4.xyz = var_TEXCOORD11.xyz;
+	vec3 v5;
+	v5.xyz = normalize(v4);
+	vec3 v6;
+	v6.xyz = normalize((CameraPos.xyz+(-var_TEXCOORD5.xyz)));
+	float h7;
+	h7 = ScalarUniformExpressions.x;
+	highp vec3 v8;
+	v8.xyz = (v2.xyz*vec3(pow(max(abs((1.000000e+000+(-max(0.000000e+000,dot(v5,v6))))),1.000000e-006),h7)));
+	vec3 v9;
+	v9.xyz = ((v8*VectorUniformExpressions[2].xyz)*ScalarUniformExpressions.yyy);
+	v3.xyz = sqrt(max(v9,vec3(0.000000e+000,0.000000e+000,0.000000e+000)));
+	    gl_FragColor.xyzw  = v3;
+}
+
+

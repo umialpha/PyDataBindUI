@@ -1,0 +1,18 @@
+sampler	SamplerDiffuse0;
+float blendValue;
+struct PS_INPUT
+{
+	float4 Color:		COLOR0;			
+	float4 Position:	POSITION;		
+	float4 TexCoord0:	TEXCOORD0;		
+};
+
+
+float4 main(PS_INPUT IN):COLOR
+{
+	float4 result = 0;
+	result = IN.Color * tex2D(SamplerDiffuse0, IN.TexCoord0.xy);	
+	result.a *= blendValue;
+
+	return result;
+}

@@ -1,0 +1,13 @@
+uniform sampler2D SamplerTexture0;
+// from vs
+uniform mediump vec4 flare_color;
+uniform mediump float flare_alpha;
+varying highp vec2 UV0;
+varying mediump vec2 color;
+
+void main ()
+{
+	//gl_FragColor = vec4(color, 0.0, 1.0);
+	gl_FragColor = texture2D(SamplerTexture0, UV0) * flare_color; 
+	gl_FragColor.a *= flare_alpha; 
+}

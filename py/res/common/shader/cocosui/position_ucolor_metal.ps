@@ -1,0 +1,18 @@
+#include <metal_graphics>
+#include <metal_texture>
+#include <metal_matrix>
+#include <metal_common>
+using namespace metal;
+struct PS_INPUT
+{
+float4 final_position [[position]];
+float4 v_texture0;
+};
+fragment float4 metal_main(
+PS_INPUT psIN[[stage_in]]
+)
+{
+float4 final_color;
+final_color = psIN.v_texture0;
+return final_color;
+}

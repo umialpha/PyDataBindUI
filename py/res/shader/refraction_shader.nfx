@@ -1,0 +1,67 @@
+int GlobalParameter : SasGlobal
+<
+  string SasEffectAuthoring = "wangchao";
+  string SasEffectCategory = "";
+  string SasEffectCompany = "Netease";
+  string SasEffectDescription = "Waterclean";
+  string SasSuportedMacros = "UnSupported LIGHT_MAP_ENABLE UnSupported FALSE;UnSupported ALPHA_TEST_ENABLE UnSupported FALSE;UnSupported SEPARATE_ALPHA_TEX UnSupported FALSE;";
+  string SasEffectAttr = "INSTANCE_SUPPORTED=False;";
+>;
+
+#define GPU_SKIN_ENABLE 0
+#define NEED_NORMAL TRUE
+#define NEED_WORLD_INFO TRUE
+#define NEED_FRAME_TIME
+
+#include "common_defination.nfx"
+
+float edgealphaParams
+<
+	string SasUiLabel = "边缘过渡";
+	string SasUiControl = "FloatPicker";
+> = 2.0;
+
+float u_speed
+<
+	string SasUiLabel = "速度";
+	string SasUiControl = "FloatPicker";
+> = 0.5;
+
+
+float FrameTime: FrameTime;
+
+texture	Tex0 
+<
+	string SasUiLabel = "法线贴图";
+	string SasUiControl = "FilePicker";
+>;
+
+SamplerTexture[0] = Tex0;
+
+#if SEPARATE_ALPHA_TEX
+SamplerTexture[7] = sepAlphaTex;
+#endif
+
+technique TShader
+<
+	string Description = "普通单层贴图";
+	string RenderTarget = "Distortion";
+>
+{
+	pass P0
+	{
+		//EnableAlphaBlend = true;
+		//BlendFactor = (BLEND_SRCALPHA, BLEND_ONE, BLEND_SRCALPHA, BLEND_ONE);
+		
+		//EnableStencilTest = true;
+        //StencilRef = 0xFF00FF;	//此处随便用了几位
+        //StencilMask = 0xFFFFFFFF;
+        //StencilWriteMask = 0xFFFFFFFF;
+
+		//StencilFunc = CMP_ALWAYS;
+        //StencilOperation = (STENCILOP_KEEP, STENCILOP_KEEP, STENCILOP_REPLACE);
+        
+		VertexShader = "common.vs" vs_2_0 main;
+		PixelShader = "refraction_shader.ps" ps_2_0 main;
+	}
+}

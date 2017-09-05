@@ -1,0 +1,123 @@
+/*
+描述：
+为了ITown而制作的逐像素光照shader模版
+
+支持的宏：
+#define MAX_LIGHT_COUNT 6		最大的支持灯的数目
+#define LIT_ENABLE				是否使用灯光照明
+#define SPECULAR_ENABLE			是否有高光
+#define FOG_ENABLE				是否受雾影响
+#define NORMAL_MAP_ENABLE		是否使用normalmap
+
+支持的自定义部分：
+void GetFog(VS_GENERAL vs_general);
+
+note:
+像素颜色值计算公式 = 全局ambient * ambientmtl + （灯光diffuse亮度和）* diffusemtl * 顶点色 + （灯光高光亮度和） * specularmtl + 自发光
+像素alpha = getopacity（）
+*/
+
+//宏的默认值
+#ifndef SHADE_MODE
+	#define SHADE_MODE SHADE_PHONG
+#endif
+
+#ifndef MAX_LIGHT_COUNT
+	#define MAX_LIGHT_COUNT 4
+#endif
+
+#ifndef LIT_ENABLE
+	#define LIT_ENABLE TRUE
+#endif
+
+#ifndef SPECULAR_ENABLE
+	#define SPECULAR_ENABLE TRUE
+#endif
+
+#ifndef FOG_ENABLE
+	#define FOG_ENABLE FALSE
+#endif
+
+#ifndef SHADOW_MAP_ENABLE
+	#define SHADOW_MAP_ENABLE TRUE
+#endif
+
+#ifndef NORMAL_MAP_ENABLE
+	#define NORMAL_MAP_ENABLE FALSE
+#endif
+
+#ifndef LIGHT_MAP_ENABLE
+	#define LIGHT_MAP_ENABLE FALSE
+#endif
+
+#ifndef SH_ENABLE
+	#define SH_ENABLE FALSE
+#endif
+
+#if FOG_ENABLE
+	#ifndef FOG_TYPE
+		#define FOG_TYPE FOG_TYPE_NONE	//默认没有雾
+	#endif
+#endif //FOG_ENABLE
+
+	
+///////////////////////////shader部分
+#include "struct.fxl"
+#include "debugfuc.fxl"
+#include "extension.fxl"
+#include "fog.fxl"
+#include "pslit.fxl"
+#include "vslit.fxl"
+#include "lighting.fxl"
+
+VS_OUTPUT vs_main(VS_INPUT IN)
+{
+	VS_OUTPUT result = (VS_OUTPUT)0;
+	VS_GENERAL vs_general = (VS_GENERAL)0;
+	VS_GENERAL_From_VS_INPUT(IN, vs_general);
+	VS_OUTPUT_From_VS_GENERAL(vs_general, result);
+	
+#if EQUAL(LIT_ENABLE, TRUE)	
+	#if EQUAL(SHADE_MODE, SHADE_GOURAND)
+		float3 ambient_color  = 0;
+		float3 diffuse_color = 0;
+		VsGetLightLit(vs_general, ambient_color, diffuse_color, result.SpecularColor.xyz,  result.ShadowLightColor.xyz);	//计算逐顶点光照
+		result.AmbientDiffuseColor = ambient_color + diffuse_color;
+	#endif
+#endif
+
+#if FOG_ENABLE
+	//result.PosWorld.w = GetFog(vs_general);
+#endif
+
+	return result;
+}
+
+
+float4 ps_main(VS_OUTPUT IN):COLOR
+{
+	PS_GENERAL ps_general = (PS_GENERAL)0;
+	PS_GENERAL_From_PS_INPUT(IN, ps_general);
+
+	float4 result = 0;
+	result.xyz = GetEmissiveMtl(ps_general);	//自发光
+	
+#if EQUAL(LIT_ENABLE, TRUE)
+	result.xyz += LightLit(ps_general);
+#endif
+
+#if FOG_ENABLE
+	if(ps_general.FogEnable)
+	{
+		//result.xyz = CustomFogBlend(ps_general, result.xyz);
+		result.xyz = lerp(result.xyz, FogColor.xyz, GetFogEx(IN.PosWorld, FogInfo, FogColor.a));
+	}
+#endif
+
+	result.a = GetCustomAlphaValue(ps_general);
+	BatchDebug(ps_general, result);
+
+	return result;
+	
+}
+	

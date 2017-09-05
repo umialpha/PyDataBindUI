@@ -1,0 +1,106 @@
+int GlobalParameter : SasGlobal
+<
+  string SasEffectAuthoring = "cky";
+  string SasEffectCategory = "";
+  string SasEffectCompany = "Netease";
+  string SasEffectDescription = "水面Shader";
+  string SasSuportedMacros = "UnSupported LIGHT_MAP_ENABLE UnSupported FALSE;";
+  string SasEffectAttr = "";
+>;
+#define GPU_SKIN_ENABLE 0
+#define FOG_ENABLE 1
+#define LIT_ENABLE 0
+#define NEED_POS_SCREEN
+#define NEED_NORMAL
+#define NEED_WORLD_INFO
+
+#define RECEIVE_SHADOW
+#ifndef SHADOW_MAP_ESM
+#define SHADOW_MAP_ESM FALSE 
+#endif
+
+matrix4 lightmapTrans: LightMapTransform;
+
+
+#include "common_defination.nfx"
+// texture TexDepth;
+
+texture	NormalMap
+<
+	string SasUiLabel = "NormalMap";
+	string SasUiControl = "FilePicker";
+>;
+texture	Tex0
+<
+	string SasUiLabel = "水小波纹法线贴图"; 
+	string SasUiControl = "FilePicker";
+>;
+
+texture	EnvironmentMap
+<
+	string SasUiLabel = "EnvironmentMap";
+	string SasUiControl = "FilePicker";
+>;
+float4 CameraPos : CameraPosition;
+float FrameTime: FrameTime;
+float4 LightMapScale : LightMapScale;
+
+float4 WaterColor
+<
+	string SasUiLabel = "水面颜色";
+	string SasUiControl = "ColorPicker";
+> = (0.156, 0.588, 0.784, 1.0);
+float4	NormalTilling 
+<
+	string SasUiLabel = "法线Tilling"; 
+	string SasUiControl = "FloatXPicker";
+> = (1.0,1.0,1.0,1.0);
+float4	NormalSpeed 
+<
+	string SasUiLabel = "法线Speed"; 
+	string SasUiControl = "FloatXPicker";
+> = (0.1,0.1,0.1,0.1);
+float4	PBRTest 
+<
+	string SasUiLabel = "PBRTest";
+	string SasUiControl = "FloatXPicker";
+> = (1.0, 1.0, 1.0, 1.0);
+float4 BaseColor
+<
+	string SasUiLabel = "Base颜色";
+	string SasUiControl = "ColorPicker";
+> = (1.0, 1.0, 1.0, 1.0);
+float4 WaterFaceColor
+<
+	string SasUiLabel = "水表面颜色";
+	string SasUiControl = "ColorPicker";
+> = (1.0, 1.0, 1.0, 1.0);
+float4	SunDir 
+<
+	string SasUiLabel = "阳光角度";
+	string SasUiControl = "FloatXPicker";
+> = (0.2, 0.8, 0.5, 1.0);
+
+
+#if LIGHT_MAP_ENABLE
+SamplerTexture[1] = TexLightmap;
+#endif
+SamplerTexture[5] = Tex0;
+SamplerTexture[6] = NormalMap;
+//SamplerTexture[1] = FlowMap;
+SamplerTexture[4] = EnvironmentMap;
+#if SEPARATE_ALPHA_TEX
+SamplerTexture[7] = sepAlphaTex;
+#endif
+
+technique TShader
+<
+	string Description = "水流";
+>
+{
+	pass p0
+	{
+		VertexShader = "sea.vs" vs_2_0 main;
+		PixelShader = "sea.ps" ps_2_0 main;
+	}
+}

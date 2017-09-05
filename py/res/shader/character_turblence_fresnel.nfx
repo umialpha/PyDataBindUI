@@ -1,0 +1,203 @@
+        
+int GlobalParameter : SasGlobal
+<
+	string SasSuportedMacros = "UnSupported GPU_SKIN_ENABLE UnSupported TRUE;UnSupported TOON_ENABLE UnSupported FALSE;";
+>;
+#define NO_SEMANTIC       0   
+#define NEOX_NFX        1   
+#define TEXCOORDPRECISIONWORKAROUND        0   
+
+// -----------------------------------------------------------------------------
+// Section: Platform constant availability
+// -----------------------------------------------------------------------------
+#define CONSTANT_VIEWPROJECTION			1
+#define LIGHT_ATTR_ITEM_NUM				5
+
+#if GPU_SKIN_ENABLE
+	#ifndef MAX_BONES
+		#define MAX_BONES 90
+	#endif
+	float4 worldPalette[MAX_BONES * 2] : SkinBones ;
+#endif
+
+#if NEOX_NFX
+	#define DirectionalLightColor   ShadowLightAttr[1].rgb
+#else
+	#define DirectionalLightColor   DirLightAttr[1].rgb
+#endif
+
+#ifndef TOON_ENABLE
+#define TOON_ENABLE FALSE
+#endif
+
+// -----------------------------------------------------------------------------
+// Section: Constant remapping in each engine
+// -----------------------------------------------------------------------------
+
+matrix4	World									: World ;
+matrix4	View									: View ;
+matrix4	InvWorld								: InverseWorld ;
+matrix4	InvView									: InverseView ;
+matrix4	Projection								: Projection ;
+matrix4	ViewProjection							: ViewProjection ;
+float4		CameraPos								: CameraPosition ;
+float4		PlayerPos								: PlayerPosition ;
+float4		ShadowLightAttr[LIGHT_ATTR_ITEM_NUM]	: ShadowLightAttr ;
+float4		DirLightAttr[LIGHT_ATTR_ITEM_NUM]		: DirLightAttr ;
+float4		Ambient									: Ambient ;
+float4		ScreenSize4								: ScreenSize ;
+float4		FogInfo									: FogInfo ;
+float4		FogColor								: FogColor ;
+bool		FogEnable								: FogEnable ;
+
+#if NEEDS_LIGHTMAP
+	float4 LightMapScale : LightMapScale ;
+	matrix4 LightMapTransform : LightMapTransform ;
+#endif
+
+matrix4 LightViewProjMatrix	: LightViewProj ;
+//float ShadowAlpha = 0.625;
+
+float3 LightDir : LightDirection ;
+
+#define ScreenSize      ScreenSize4.xy
+#define InvScreenSize   ScreenSize4.zw
+#define CameraPosition	CameraPos.xyz
+#define PlayerPosition  PlayerPos.xyz
+
+float FarPlane;
+float InvFarPlane;
+
+#if TOON_ENABLE
+float outline_width = 0.03;
+#endif
+
+#define FOG_ENABLE 1
+
+#if !NEOX_NFX
+	#define LightDir -LightDir
+	#include "NeoXInclude/Fog.hlsl"
+#endif
+float4 ScalarUniformExpressions;
+float4 VectorUniformExpressions[4];
+float ScalarParameter1
+<
+string SasUiLabel = "speed";
+string SasUiControl = "FloatPicker";
+> = 2;
+
+float turblence_intensity
+<
+string SasUiLabel = "turblence_intensity";
+string SasUiControl = "FloatPicker";
+> = 0.2;
+
+float color_intensity
+<
+string SasUiLabel = "color_intensity";
+string SasUiControl = "FloatPicker";
+> = 2;
+
+float ScalarParameter4
+<
+string SasUiLabel = "fresnel_exponent";
+string SasUiControl = "FloatPicker";
+> = 15;
+
+float turblence_tilling
+<
+string SasUiLabel = "turblence_tilling";
+string SasUiControl = "FloatPicker";
+> = 1;
+
+float4 VectorParameter1
+<
+string SasUiLabel = "color";
+string SasUiControl = "ColorPicker";
+> = (1, 1, 1, 1);
+
+float4 VectorParameter2
+<
+string SasUiLabel = "VectorParameter2";
+string SasUiControl = "ColorPicker";
+> = (1, 1, 1, 0);
+
+texture Tex0
+<
+string SasUiLabel = "tex1";
+string SasUiControl = "FilePicker";
+>;
+
+texture Tex1
+<
+string SasUiLabel = "tex2";
+string SasUiControl = "FilePicker";
+>;
+
+texture Tex2
+<
+string SasUiLabel = "texture_mask";
+string SasUiControl = "FilePicker";
+>;
+
+texture Tex3
+<
+string SasUiLabel = "diffuse";
+string SasUiControl = "FilePicker";
+>;
+
+texture SMAP : ShadowMap;
+SamplerTexture[0] = Tex0;
+SamplerTexture[1] = Tex1;
+SamplerTexture[2] = Tex2;
+SamplerTexture[3] = Tex3;
+SamplerTexture[4] = SMAP;
+
+SamplerAddressU[0] = ADDRESS_WRAP;
+SamplerAddressV[0] = ADDRESS_WRAP;
+SamplerFilter[0] = FILTER_TRILINEAR;
+SamplerMipBias[0] = -1.0;
+
+
+SamplerAddressU[1] = ADDRESS_WRAP;
+SamplerAddressV[1] = ADDRESS_WRAP;
+SamplerFilter[1] = FILTER_TRILINEAR;
+SamplerMipBias[1] = -1.0;
+
+
+SamplerAddressU[2] = ADDRESS_WRAP;
+SamplerAddressV[2] = ADDRESS_WRAP;
+SamplerFilter[2] = FILTER_TRILINEAR;
+SamplerMipBias[2] = -1.0;
+
+
+SamplerAddressU[3] = ADDRESS_WRAP;
+SamplerAddressV[3] = ADDRESS_WRAP;
+SamplerFilter[3] = FILTER_TRILINEAR;
+SamplerMipBias[3] = -1.0;
+
+
+SamplerAddressU[4] = ADDRESS_CLAMP;
+SamplerAddressV[4] = ADDRESS_CLAMP;
+SamplerFilter[4] = FILTER_TRILINEAR;
+SamplerMipBias[4] = -1.0;
+
+         
+technique TShader
+{
+	pass p0
+	{
+		
+		VertexShader = "character_turblence_fresnel.vs" ps_2_0 base_main;
+		PixelShader = "character_turblence_fresnel.ps" ps_2_0 base_main;
+	}
+
+#if TOON_ENABLE
+	pass p1
+	{	
+		CullMode = CULL_FRONT;
+		VertexShader = "character_turblence_fresnel.vs" vs_2_0 outline;
+		PixelShader = "character_turblence_fresnel.ps" ps_2_0 outline;
+	}
+#endif
+}

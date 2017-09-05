@@ -1,0 +1,46 @@
+#include <metal_graphics>
+#include <metal_texture>
+#include <metal_matrix>
+#include <metal_common>
+using namespace metal;
+#ifndef USE_SEPARATE_ALPHA
+ #define USE_SEPARATE_ALPHA 0
+#endif
+
+struct PS_INPUT
+{
+float4 final_position [[position]];
+float4 use_color;
+float2 v_texture1;
+};
+fragment float4 metal_main(
+PS_INPUT psIN[[stage_in]]
+, texture2d<float> CC_Texture0 [[texture(0)]]
+, sampler CC_Texture0_state [[sampler(0)]]
+#if USE_SEPARATE_ALPHA
+, texture2d<float> CC_Texture1 [[texture(1)]]
+, sampler CC_Texture1_state [[sampler(1)]]
+#endif
+)
+{
+float4 final_color;
+float4 local_0 = CC_Texture0.sample(CC_Texture0_state, psIN.v_texture1);
+float4 local_1;
+#if USE_SEPARATE_ALPHA
+float4 local_2 = CC_Texture1.sample(CC_Texture1_state, psIN.v_texture1);
+float local_3 = local_2.x;
+float local_4 = local_2.y;
+float local_5 = local_2.z;
+float local_6 = local_2.w;
+float3 local_7 = local_0.xyz;
+float local_8 = local_0.w;
+float4 local_9 = {local_7.x, local_7.y, local_7.z, local_3};
+float4 local_10 = psIN.use_color * local_9;
+local_1 = local_10;
+#else
+float4 local_11 = psIN.use_color * local_0;
+local_1 = local_11;
+#endif
+final_color = local_1;
+return final_color;
+}

@@ -1,0 +1,12 @@
+float4 screen_color = (1.0f, 1.0f, 1.0f, 0.0f);
+float4 dynamicRT:DynamicResolutionRT;
+
+technique ScreenFilter
+{
+	pass T0
+	{
+		VertexShader = "bloom.vs" vs_2_0 VSMain;
+		PixelShader = "screen_filter_multiply.ps" ps_2_0 ps_main;
+		
+	}
+}

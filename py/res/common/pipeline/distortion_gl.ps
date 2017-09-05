@@ -1,0 +1,18 @@
+
+precision lowp float;
+
+uniform sampler2D tex0;
+uniform sampler2D tex1;
+
+
+varying mediump vec2 TexCoord0;
+
+void ps_main()
+{
+	vec2 distort = texture2D(tex0, TexCoord0).xy - 0.5;
+	distort = distort * 0.02;
+	vec4 result = texture2D(tex1, TexCoord0 - distort);
+
+    gl_FragColor = result;
+    gl_FragColor.a = 1.0;
+}

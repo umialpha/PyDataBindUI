@@ -1,0 +1,71 @@
+using namespace metal;
+
+//#include "shaderlib/extension_metal.ps"
+
+// VARYING
+struct VertexOutput
+{
+	float4 position [[position]];
+	float4 UV0;
+#if LIGHT_MAP_ENABLE
+	float4 UV1;
+#endif
+#ifdef NEED_WORLD_INFO
+	float4 PosWorld;
+	float3 NormalWorld;
+#endif
+#ifdef NEED_POS_SCREEN
+	float4 PosScreen;
+	float4 RAWUV0;
+#endif
+#if LIT_ENABLE
+	float3 Lighting;
+#endif
+};
+
+struct PSConstants
+{
+	float tFactor;
+	float blendValue;
+	float4 Alpha;
+#if ALPHA_TEST_ENABLE
+	float alphaRef;
+#endif
+#if LIGHT_MAP_ENABLE
+	float4 LightMapScale;
+#endif
+};
+
+fragment float4 metal_main (
+	VertexOutput in [[stage_in]],
+	constant PSConstants &constants[[buffer(0)]],
+	texture2d<float> texture0 [[texture(0)]],
+	sampler sampler0 [[sampler(0)]]
+#if LIGHT_MAP_ENABLE
+	, texture2d<float> texture1 [[texture(1)]]
+	, sampler sampler1 [[sampler(1)]]
+#endif
+	)
+{
+	float4 output;
+	float4 texColor1 = texture0.sample(sampler0, in.UV0.xy);
+
+#if ALPHA_TEST_ENABLE
+	float delta = texColor1.a - constants.alphaRef;
+	if (delta < 0.0) {
+		discard_fragment();
+	}
+#endif
+	output = texColor1 * constants.Alpha;
+#if LIGHT_MAP_ENABLE
+	float4 texColor2;
+	texColor2 =  texture1.sample(sampler1, in.UV1.xy);
+	output.xyz *= texColor2.xyz * constants.LightMapScale.yzw;
+#endif
+#if FOG_ENABLE
+	//output.xyz = CustomFogBlend(in.UV0.w, output.xyz);
+#endif
+	output.a *= constants.blendValue;
+	return output;
+}
+

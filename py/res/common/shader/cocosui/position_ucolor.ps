@@ -1,0 +1,11 @@
+struct PS_INPUT
+{
+float4 final_position: POSITION;
+float4 v_diffuse: TEXCOORD0;
+};
+float4 main(PS_INPUT psIN) : COLOR
+{
+float4 final_color;
+final_color = psIN.v_diffuse;
+return final_color;
+}

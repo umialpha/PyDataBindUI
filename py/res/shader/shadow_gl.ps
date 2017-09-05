@@ -1,0 +1,38 @@
+#ifndef SEPARATE_ALPHA_TEX
+#define SEPARATE_ALPHA_TEX 0
+#endif
+
+uniform sampler2D SamplerDiffuse0;
+
+#if SEPARATE_ALPHA_TEX
+uniform sampler2D SamplerSepAlphaTex7;
+#endif
+
+#if ALPHA_TEST_ENABLE
+uniform lowp float alphaRef;
+#endif
+
+varying mediump vec4 UV0;
+
+highp vec4 PackFloat2RGBA(highp float f)
+{
+	const highp vec4 vPack = vec4(1.0, 256.0, 65536.0, 16777216.0);	//2^0, 2^8, 2^16, 2^24
+	return f * vPack;
+}
+
+void main ()
+{
+	lowp float alpha = texture2D (SamplerDiffuse0, UV0.xy).a;
+#if SEPARATE_ALPHA_TEX
+	alpha = texture2D(SamplerSepAlphaTex7, UV0.xy).a;
+#endif
+
+#if ALPHA_TEST_ENABLE
+	lowp float delta = alpha - alphaRef;
+	if (delta < 0.0) {
+		discard;
+	}
+#endif
+
+	gl_FragColor = PackFloat2RGBA(gl_FragCoord.z);
+}

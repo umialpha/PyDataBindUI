@@ -1,0 +1,56 @@
+#ifndef SEPARATE_ALPHA_TEX
+#define SEPARATE_ALPHA_TEX FALSE
+#endif
+
+using namespace metal;
+
+// VARYING
+struct PixelInput
+{
+	float4 UV0;
+	float4 UV1;
+	float4 UV2;
+	float4 Color;
+};
+
+// UNIFORM
+struct PSConstants
+{
+	float4 tFactor;
+	float amplitude1;
+	float amplitude2;
+	float4 Alpha;
+};
+
+fragment float4 PS_OneTex1x(
+	PixelInput in[[stage_in]],
+	constant PSConstants &constants[[buffer(0)]],
+	sampler Tex0[[sampler(0)]],
+	texture2d<float> texture0 [ [texture(0)] ],
+	sampler Tex1[[sampler(1)]],
+	texture2d<float> texture1 [ [texture(1)] ],
+	sampler Tex2[[sampler(2)]],
+	texture2d<float> texture2 [ [texture(2)] ]
+#if SEPARATE_ALPHA_TEX
+	, sampler SamplerSepAlphaTex7 [[sampler(7)]]
+	, texture2d<float> texture7 [ [texture(7)] ]
+#endif
+	)
+{
+	float4 output;
+	
+	float4 texColor0;
+
+	float4 tex1 = texture1.sample(Tex1, in.UV1.xy) - 0.5;
+	float4 tex2 = texture2.sample(Tex2, in.UV2.xy) - 0.5;
+	float2 newUV = in.UV0.xy + tex1.xy * constants.amplitude1 + tex2.xy * constants.amplitude2;
+	texColor0 = texture0.sample(Tex0, newUV);
+#if SEPARATE_ALPHA_TEX
+	texColor0.a = texture7.sample(SamplerSepAlphaTex7, newUV).a;
+#endif
+	output = texColor0 * in.Color * constants.tFactor;
+
+	output *= constants.Alpha * 2.0;
+
+	return output;
+}

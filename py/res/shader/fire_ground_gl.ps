@@ -1,0 +1,52 @@
+#ifndef SEPARATE_ALPHA_TEX
+#define SEPARATE_ALPHA_TEX 0
+#endif
+
+#include "shaderlib/extension.ps"
+
+uniform sampler2D SamplerMask0;
+uniform sampler2D SamplerDistortion1;
+uniform sampler2D SamplerAlbedo3;
+
+#if SEPARATE_ALPHA_TEX
+uniform sampler2D SamplerSepAlphaTex7;
+#endif
+
+uniform highp float FrameTime;
+uniform highp float Speed;
+uniform lowp float Intensity;
+uniform lowp vec3 Color;
+uniform lowp float blendValue;
+
+varying mediump vec4 RAWUV0;
+
+highp float GetCycleValue(highp float time)
+{
+	return sin(time) * 1.57075;
+}
+
+highp float GetDistortUV()
+{
+	highp vec4 distort_map = texture2D(SamplerDistortion1, RAWUV0.xy);
+	highp float cycle_time = FrameTime * Speed;
+	highp vec3 cycle_array = vec3(GetCycleValue(cycle_time + 4.0), GetCycleValue(cycle_time + 0.0), GetCycleValue(cycle_time + 2.0));
+	highp float uv = dot(distort_map.xyz, cycle_array);
+	return uv;
+}
+
+void main ()
+{
+	highp float uv = GetDistortUV();
+	lowp vec4 albedo = texture2D(SamplerAlbedo3, vec2(uv, 1.0 - uv));
+	lowp vec3 emissive = albedo.rgb * Intensity * Color.rgb;
+	gl_FragColor.xyz = emissive;
+
+	lowp vec4 mask_color = texture2D(SamplerMask0, RAWUV0.xy);
+#if SEPARATE_ALPHA_TEX
+	mask_color.a = texture2D(SamplerSepAlphaTex7, RAWUV0.xy).a;
+#endif
+	gl_FragColor.a = (1.0 - uv) * mask_color.a;
+
+	gl_FragColor.a *= blendValue;
+}
+

@@ -1,0 +1,27 @@
+float4 rtSize : RTSize;
+
+float sigma = 3.0;
+#define HORIZONTAL_BLUR_9
+#define VERTICAL_BLUR_9
+
+
+technique VerBlur
+{
+	pass T0
+	{
+        EnableZTest = false;
+		VertexShader = "gaussblur.vert" vs_2_0 main;
+		PixelShader = "gaussblur_v5.frag" ps_2_0 main;
+	}
+}
+
+
+technique HorBlur
+{
+	pass T0
+	{
+        EnableZTest = false;
+        VertexShader = "gaussblur.vert" vs_2_0 main;
+		PixelShader = "gaussblur_h5.frag" ps_2_0 main;
+	}
+}

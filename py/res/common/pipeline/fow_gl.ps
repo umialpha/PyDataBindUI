@@ -1,0 +1,85 @@
+#define BLUR_OPEN 0
+
+
+precision lowp float;
+precision lowp int;
+
+varying mediump vec2 TexCoord0;
+varying mediump vec2 TexCoord1;
+varying mediump vec2 TexCoord2;
+varying mediump vec2 TexCoord3;
+varying mediump vec2 TexCoord4;
+varying mediump vec3 vdir;
+
+uniform highp sampler2D tex0; 
+uniform highp sampler2D tex1; 
+uniform highp sampler2D tex2; 
+
+
+uniform highp sampler2D tex3; 
+uniform highp sampler2D tex4; 
+
+
+uniform highp vec4 CameraPos;
+uniform highp float FowFactor;
+uniform highp float TimeFactor;
+// uniform highp vec4 FowParameter;
+uniform highp vec4 SceneParameter;
+uniform highp vec4 ZParams;
+
+// Z buffer to linear 0..1 depth (0 at eye, 1 at far plane)
+highp float Linear01Depth( highp float z )
+{
+	return 1.0 / (ZParams.x * z + ZParams.y);
+}
+
+void FOWPS()
+{
+	vec4 color = texture2D(tex0, TexCoord0.xy);
+	highp float depth = Linear01Depth(texture2D(tex2, TexCoord0.xy).r);
+
+	// if (depth > 0.99) discard;
+
+	vec4 fow = texture2D(tex3, vec2(TexCoord0.x, 1.0 - TexCoord0.y));
+	vec4 former_fow = texture2D(tex4, vec2(TexCoord0.x, 1.0 - TexCoord0.y));
+
+	vec3 world_pos = vdir * depth + CameraPos.xyz;
+	highp float ori_x = SceneParameter.x;
+	highp float ori_z = SceneParameter.y;
+	highp float scene_size_x = SceneParameter.z;
+	highp float scene_size_z = SceneParameter.w;
+	vec2 fow_uv = vec2(world_pos.x + ori_x, world_pos.z + ori_z) / vec2(scene_size_x, scene_size_z);
+
+	
+	if (fow_uv.x < 0.0 || fow_uv.x > 1.0 || fow_uv.y < 0.0 || fow_uv.y > 1.0) 
+	{
+		vec4 fow_color = mix(vec4(0.0, 0.0, 0.0, 1.0), vec4(1.0, 1.0, 1.0, 1.0), FowFactor);
+		gl_FragColor = fow_color * color;
+		// gl_FragColor = color;
+	}
+	else
+	{
+#if BLUR_OPEN
+		vec4 fow_color = texture2D(tex1, fow_uv);
+#else
+
+		mediump vec4 fow_value = texture2D(tex3, fow_uv);
+		mediump float c = fow_value.g;
+		mediump float former_c = fow_value.b;
+
+		c = mix(former_c, c, TimeFactor);
+
+		vec4 fow_color = vec4(c,c,c,1.0);
+#endif
+
+		fow_color = mix(fow_color, vec4(1.0, 1.0, 1.0, 1.0), FowFactor);
+
+		gl_FragColor = fow_color * color;
+
+		// float temp = fow.a;
+		// gl_FragColor = vec4(temp,temp,temp, 1.0);
+	}
+
+	
+
+}

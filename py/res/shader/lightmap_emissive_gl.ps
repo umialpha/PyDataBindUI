@@ -1,0 +1,87 @@
+#ifndef SEPARATE_ALPHA_TEX
+#define SEPARATE_ALPHA_TEX 0
+#endif
+
+#include "shaderlib/extension.ps"
+
+#if FOG_ENABLE
+uniform highp mat4 view;
+#endif
+
+uniform sampler2D SamplerDiffuse0;
+#if LIGHT_MAP_ENABLE
+uniform sampler2D SamplerLightmap1;
+uniform mediump vec4 LightMapScale;
+#endif
+
+#if SEPARATE_ALPHA_TEX
+uniform sampler2D SamplerSepAlphaTex7;
+#endif
+
+uniform lowp float blendValue;
+#if ALPHA_TEST_ENABLE
+uniform lowp float alphaRef;
+#endif
+
+varying mediump vec4 UV0;
+// varying mediump vec4 RAWUV0;
+#if LIGHT_MAP_ENABLE
+varying mediump vec4 UV1;	
+#endif
+
+#if LIT_ENABLE
+varying lowp vec3 Lighting;
+#endif
+
+#if NEED_POS_WORLD
+varying highp vec4 PosWorld;
+#endif
+// varying lowp vec4 Color;
+
+#if NEED_NORMAL_WORLD
+    varying highp vec3 NormalWorld;
+    #if USE_NORMAL_MAP
+        varying highp vec3 TangentWorld;
+        varying highp vec3 BinormalWorld;
+    #endif
+#endif
+
+#if RECEIVE_SHADOW
+    varying highp vec4 PosLightProj;
+#endif
+
+void main ()
+{
+	lowp vec4 texColor1;
+	texColor1 = texture2D (SamplerDiffuse0, UV0.xy);
+	
+#if SEPARATE_ALPHA_TEX
+	lowp float sepAlpha = texture2D(SamplerSepAlphaTex7, UV0.xy).a;
+	texColor1 = vec4(texColor1.r, texColor1.g, texColor1.b, sepAlpha);
+#endif
+
+#if ALPHA_TEST_ENABLE
+	lowp float delta = texColor1.a - alphaRef;
+	if (delta < 0.0) {
+		discard;
+	}
+#endif
+	gl_FragColor = texColor1;
+
+
+	lowp vec3 texColor2 = vec3(0.0);
+#if LIGHT_MAP_ENABLE
+	texColor2 += texture2D (SamplerLightmap1, UV1.xy).xyz * LightMapScale.yzw;
+#endif
+#if (LIGHT_MAP_ENABLE || LIT_ENABLE)
+	gl_FragColor.xyz *= texColor2;
+#endif
+#if FOG_ENABLE
+	highp vec4 PosView = view * PosWorld;
+	highp vec4 FogResult = GetFogEx(PosWorld, PosView);
+	gl_FragColor.xyz = mix(gl_FragColor.xyz, FogResult.xyz, FogResult.a);
+	// gl_FragColor.xyz = CustomFogBlend(0.8, gl_FragColor.xyz);
+#endif
+	gl_FragColor.a *= blendValue;
+}
+

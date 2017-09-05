@@ -1,0 +1,68 @@
+float BloomIntensity <
+	string SasUiLabel = "BloomIntensity";
+	string SasUiControl = "FloatPicker";
+	float SasUiMin = 0.0f;
+	float SasUiMax = 1.0f;
+	float SasUiSteps = 0.1f;
+> = 0.4f; //控制bloom强度
+
+float BloomThreshold <		
+	string SasUiLabel = "BloomThreshold";
+	string SasUiControl = "FloatPicker";
+	float SasUiMin = 0.0f;
+	float SasUiMax = 1.0f;
+	float SasUiSteps = 0.05f;
+> = 0.3f; //控制bloom的阈值
+	
+int BloomFactor <
+	string SasUiLabel = "BloomFactor";
+	string SasUiControl = "IntPicker";
+	int SasUiMin = 1;
+	int SasUiMax = 10;
+	int SasUiSteps = 0.1;
+> = 2;	//控制bloom的宽度值
+
+int BloomWidth <
+	string SasUiLabel = "BloomWidth";
+	string SasUiControl = "IntPicker";
+	int SasUiMin = 1;
+	int SasUiMax = 6;
+	int SasUiSteps = 0.1;
+> = 4;	//控制bloom的宽度
+
+float4 DownSampleOffsets[16];
+float4 BrightnessSampleOffsets[4]; 
+
+float HorizontalBloomWeights[5];             
+float HorizontalBloomSampleOffsets[5]; 
+
+float VerticalBloomWeights[5];
+float VerticalBloomSampleOffsets[5];   
+float4 dynamicRT:DynamicResolutionRT;
+
+technique DownSample
+{
+	pass T0
+	{
+		VertexShader = "bloom.vs" vs_2_0 DownSamplePass;
+		PixelShader = "bloom.ps" ps_2_0 DownSamplePass;
+	}
+}
+
+technique HorzBlur
+{
+	pass T0
+	{
+		VertexShader = "bloom.vs" vs_2_0 HorizontalBlurPass;
+		PixelShader = "bloom.ps" ps_2_0 HorizontalBlurPass;
+	}
+}
+
+technique VertBlur
+{
+	pass T0
+	{
+		VertexShader = "bloom.vs" vs_2_0 VerticalBlurPass;
+		PixelShader = "bloom.ps" ps_2_0 VerticalBlurPass;
+	}
+}

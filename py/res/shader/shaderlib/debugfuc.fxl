@@ -1,0 +1,132 @@
+/*
+各种debug函数
+*/
+
+#if EQUAL(NEOX_DEBUG_MODE, NEOX_DEBUG_MODE_BATCH) 
+int NEOX_DEBUG_BATCH = 10000;
+	
+texture debug_tex_batch1
+<
+	string TextureFile = "common\\textures\\batch1.dds"; 
+	int TextureType = 1;
+>;
+sampler debug_bath_samp1 = sampler_state
+{
+	Texture = (debug_tex_batch1);
+	MagFilter = LINEAR;
+	MinFilter = LINEAR;
+	MipFilter = LINEAR;
+};	
+	
+	
+texture debug_tex_batch2
+<
+	string TextureFile = "common\\textures\\batch2.dds"; 
+	int TextureType = 1;
+>;
+sampler debug_bath_samp2 = sampler_state
+{
+	Texture = (debug_tex_batch2);
+	MagFilter = LINEAR;
+	MinFilter = LINEAR;
+	MipFilter = LINEAR;
+};	
+	
+
+texture debug_tex_batch3
+<
+	string TextureFile = "common\\textures\\batch3.dds"; 
+	int TextureType = 1;
+>;
+sampler debug_bath_samp3 = sampler_state
+{
+	Texture = (debug_tex_batch3);
+	MagFilter = LINEAR;
+	MinFilter = LINEAR;
+	MipFilter = LINEAR;
+};	
+	
+
+texture debug_tex_batch4
+<
+	string TextureFile = "common\\textures\\batch4.dds"; 
+	int TextureType = 1;
+>;
+sampler debug_bath_samp4 = sampler_state
+{
+	Texture = (debug_tex_batch4);
+	MagFilter = LINEAR;
+	MinFilter = LINEAR;
+	MipFilter = LINEAR;
+};	
+	
+#endif
+
+void BatchDebug(in PS_GENERAL ps_general, inout float4 result)
+{
+#if EQUAL(NEOX_DEBUG_MODE, NEOX_DEBUG_MODE_BATCH) 
+	if( NEOX_DEBUG_BATCH == 0)
+	{
+		result =  float4(1,0,0,1);//不能patch的常常由于alpha引起，所以强制设为不透明
+	}
+	else if( NEOX_DEBUG_BATCH == 1)
+	{
+		float4 debug_map =  tex2D( debug_bath_samp1, ps_general.TexCoord0);
+		result = debug_map;
+
+	}else if( NEOX_DEBUG_BATCH == 2)
+	{
+		float4 debug_map =  tex2D( debug_bath_samp2, ps_general.TexCoord0);
+		result = debug_map;
+	}else if( NEOX_DEBUG_BATCH == 3)
+	{
+		float4 debug_map =  tex2D( debug_bath_samp3, ps_general.TexCoord0);
+		result = debug_map;
+	}else if( NEOX_DEBUG_BATCH == 4)
+	{
+		float4 debug_map =  tex2D( debug_bath_samp4, ps_general.TexCoord0);
+		result = debug_map;
+	}
+#endif	
+}
+
+float3  MtlDebug(float3 diffuse_clr, float3 diffuse_mtl, inout float3 final_clr)
+{
+#if EQUAL(NEOX_DEBUG_MODE, NEOX_DEBUG_MODE_NONE) || EQUAL(NEOX_DEBUG_MODE, NEOX_DEBUG_MODE_BATCH)
+	//正常模式
+	return final_clr;
+
+#elif EQUAL(NEOX_DEBUG_MODE, NEOX_DEBUG_MODE_MTL) 
+	//只显示diffuse材质
+	final_clr = diffuse_mtl;
+	return diffuse_mtl;
+	
+#elif EQUAL(NEOX_DEBUG_MODE, NEOX_DEBUG_MODE_LIT) 
+	//只显示diffuse光照
+	final_clr =  diffuse_clr;
+	return diffuse_clr;
+#endif
+
+}
+
+#if  EQUAL(NEOX_DEBUG_DEFERED_GBUFFER, TRUE)
+texture TexGBuffer:DepthMap
+<
+>;
+sampler sampler_gbuffer = sampler_state
+{
+	Texture = (TexGBuffer);
+	MagFilter = LINEAR;
+	MinFilter = LINEAR;
+	MipFilter = LINEAR;
+};
+
+float4 GetGBufferClr(in PS_GENERAL ps_general )
+{
+	float2 g_buffer_uv = ps_general.PosScreen.xy * 0.5 + 0.5;
+	g_buffer_uv.y = 1.0 - g_buffer_uv.y;
+	
+	float4 g_buffer_color = tex2D(sampler_gbuffer, g_buffer_uv);
+	return g_buffer_color;
+}
+#endif

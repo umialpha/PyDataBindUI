@@ -1,0 +1,146 @@
+int GlobalParameter : SasGlobal
+<
+  string SasEffectAuthoring = "hzwangchao2014";
+  string SasEffectCategory = "";
+  string SasEffectCompany = "Netease";
+  string SasEffectDescription = "common";
+  string SasSuportedMacros = "UnSupported FOG_ENABLE UnSupported FALSE;UnSupported GPU_SKIN_ENABLE UnSupported FALSE;UnSupported SEC_EMISSIVE_ENABLE UnSupported FALSE;UnSupported DISSOLVE_ENABLE UnSupported FALSE;UnSupported RIMLIGHT_ENABLE UnSupported FALSE;UnSupported EMISSIVE_ANIMATION_ENABLE UnSupported FALSE;";
+  string SasEffectAttr = "INSTANCE_SUPPORTED=TRUE;";
+>;
+
+#ifndef SEC_EMISSIVE_ENABLE
+#define SEC_EMISSIVE_ENABLE FALSE
+#endif
+
+#ifndef DISSOLVE_ENABLE
+#define DISSOLVE_ENABLE FALSE
+#endif
+
+#ifndef RIMLIGHT_ENABLE
+#define RIMLIGHT_ENABLE FALSE
+#endif
+
+#ifndef EMISSIVE_ANIMATION_ENABLE
+#define EMISSIVE_ANIMATION_ENABLE FALSE
+#endif
+
+#include "common_defination.nfx"
+#define FRAMETIME_SCALE 0.1
+#define EMISSIVE_SCALE 4.0
+float4 camera_pos: CameraPosition;
+float FrameTime: FrameTime ;
+texture	Tex0
+<
+	string SasUiLabel = "滚动贴图1"; 
+	string SasUiControl = "FilePicker";
+>;
+#if SEC_EMISSIVE_ENABLE
+texture Tex2
+<
+	string SasUiLabel = "滚动贴图2"; 
+	string SasUiControl = "FilePicker"; 
+>;
+#endif
+#if DISSOLVE_ENABLE
+//Dissolve Textures
+texture Tex3
+<
+	string SasUiLabel = "溶解贴图"; 
+	string SasUiControl = "FilePicker"; 
+>;
+#endif
+texture Tex4
+<
+	string SasUiLabel = "遮罩贴图"; 
+	string SasUiControl = "FilePicker"; 
+>;
+
+//////////////////////////////////////////////////////////////////////////////////
+float4 Emissive_color 
+<
+	string SasUiLabel = "流动光颜色"; 
+	string SasUiControl = "ColorPicker";
+>  = (1, 1, 1, 1);
+float4 Emissive_tilling
+<
+	string SasUiLabel = "流动光参数:XY:第一张Tilling;ZW:第二Tilling"; 
+	string SasUiControl = "FloatXPicker";
+>  = (1, 1, 1, 1);
+float4 Emissive_speed
+<
+	string SasUiLabel = "流动光速度参数:XY:第一张UV;ZW:第二UV"; 
+	string SasUiControl = "FloatXPicker";
+>  = (1, 1, 1, 1);
+#if EMISSIVE_ANIMATION_ENABLE
+float Emissive_animation_ctrl 
+<
+	string SasUiLabel = "自发光流动控制"; 
+	string SasUiControl = "FloatPicker";
+	string SasUiMin = "0.0";
+	string SasUiMax = "1.0";
+> = 0.0;
+#endif
+#if RIMLIGHT_ENABLE
+//Rim Variables
+float4 Rim_color 
+<
+	string SasUiLabel = "边缘光颜色"; 
+	string SasUiControl = "ColorPicker";
+>  = (1.0,1.0,1.0, 1);
+float Rim_pow//diffuse贴图动画
+<
+	string SasUiLabel = "边缘光范围控制"; 
+	string SasUiControl = "FloatPicker";
+	string SasUiMin = "0.0";
+	string SasUiMax = "2.0";
+> = 2.0;
+#endif
+#if DISSOLVE_ENABLE
+//Dissolve Variables
+float4 Dissolve_color 
+<
+	string SasUiLabel = "溶解颜色"; 
+	string SasUiControl = "ColorPicker";
+>  = (1.0,1.0,1.0, 1);
+float Dissolve_intensity
+<
+	string SasUiLabel = "溶解强度"; 
+	string SasUiControl = "FloatPicker";
+	string SasUiMin = "-1.0";
+	string SasUiMax = "1.0";
+> = 0.0;
+#endif
+float4 Shader_Attributes
+<
+	string SasUiLabel = "其余调节参数:XY:DissolveTilling;Z:AnimationSpeed1;W:AnimationSpeed2"; 
+	string SasUiControl = "FloatXPicker";
+	string SasUiMin = "0.0";
+	string SasUiMax = "16.0";
+> = (1.0,1.0,1.0,1.0);
+
+
+SamplerTexture[0] = Tex0;
+#if SEC_EMISSIVE_ENABLE
+SamplerTexture[1] = Tex2;
+#endif
+#if DISSOLVE_ENABLE
+SamplerTexture[3] = Tex3;
+#endif
+SamplerTexture[4] = Tex4;
+SamplerAddressU[4] = ADDRESS_CLAMP;
+SamplerAddressV[4] = ADDRESS_CLAMP;
+
+
+
+technique TShader
+<
+	string Description = "带溶解效果的两层流动uvEffect";
+>
+{
+	pass p0
+	{
+        EnableZWritable = false;
+		VertexShader = "dissolve.vs" vs_2_0 main;
+		PixelShader = "dissolve.ps" ps_2_0 main;
+	}
+}

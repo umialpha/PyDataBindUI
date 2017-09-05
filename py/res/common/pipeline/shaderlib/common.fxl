@@ -1,0 +1,244 @@
+/*
+用于定义各种预定义的宏开关
+
+*/
+
+#define EQUAL(x,y) !(x-y)
+
+#define TRUE		 		1
+#define FALSE 				0
+
+#define MAX_BONES 90
+
+//着色类型
+#define SHADE_NONE		0
+#define SHADE_GOURAND		1
+#define SHADE_PHONG			2
+
+//混合类型
+#define ALPHA_UNKONWN		0
+#define OPAQUE 				1
+#define ALPHA_BLEND			2
+#define ALPHA_TEST			3	
+#define ALPHA_BLEND_WRITE_Z	4
+
+//fog 类型
+#define FOG_TYPE_NONE 		0
+#define FOG_TYPE_LINER 		1
+#define FOG_TYPE_HEIGHT 	2
+
+//shadowmap类型
+
+#define HARD_SHADOWMAP		1
+#define SOFT_SHADOWMAP 		2
+
+//地形用到的枚举类型
+#define	TERRAIN_SINGLE_LAYER 			1
+#define	TERRAIN_SINGLE_LAYER_LIGHTMAP 	2
+#define	TERRAIN_VCOLOR 					3
+#define	TERRAIN_VCOLOR_LIGHTMAP 		4
+#define	TERRAIN_ALPHAMAP_2 				5
+#define	TERRAIN_ALPHAMAP_LIGHTMAP_2 	6
+#define	TERRAIN_ALPHAMAP_3 				7
+#define	TERRAIN_ALPHAMAP_LIGHTMAP_3 	8
+#define	TERRAIN_ALPHAMAP_4 				9
+#define	TERRAIN_ALPHAMAP_LIGHTMAP_4 	10
+
+//用于编辑器和其他需要表达effect信息的地方
+#define NEOX_SASEFFECT_SUPPORT_MACRO_BEGIN string SasSuportedMacros = ""
+#define NEOX_SASEFFECT_SUPPORT_MACRO_END "";
+#define NEOX_SASEFFECT_MACRO(_LABEL, _MACRO, _TYPE, _DEFAULT) _LABEL " " _MACRO " " _TYPE " " _DEFAULT ";"
+
+#define NEOX_SASEFFECT_ATTR_BEGIN string SasEffectAttr = ""
+#define NEOX_SASEFFECT_ATTR_END "";
+#define NEOX_SASEFFECT_ATTR(X, Y) X "=" Y ";"
+
+//NEOX_DEBUG_MODE 定义，用于开启各种debug模式
+#define NEOX_DEBUG_MODE_NONE 0
+#define NEOX_DEBUG_MODE_MTL 1
+#define NEOX_DEBUG_MODE_LIT 2
+#define NEOX_DEBUG_MODE_BATCH 3
+#define NEOX_DEBUG_MODE_TRI_NUM 5
+
+//用于instance的类型控制
+#define INSTANCE_TYPE_NONE 0
+#define INSTANCE_TYPE_PRS 1 
+#define INSTANCE_TYPE_PRS_LM 2
+#define INSTANCE_TYPE_VEGETATION 3
+#define INSTANCE_TYPE_SKELETAL 8
+
+/*
+混合状态的初始化声明
+由DEFAULT_BLEND_MODE的值决定，只影响初始状态，在mtl中还能后期改变
+
+*/
+#if EQUAL(DEFAULT_BLEND_MODE, OPAQUE)
+	#define BLEND_STATE_VAR
+	
+	#define BLEND_STATE_OPTION \
+	ZEnable = TRUE;\
+	ZFunc = LESS;\
+	ZWriteEnable = TRUE;\
+\
+	AlphaTestEnable = FALSE;\
+	AlphaFunc = GREATER;\
+	AlphaRef = 155;\
+\
+	AlphaBlendEnable = FALSE;\
+	SrcBlend = SRCALPHA;\
+	DestBlend = INVSRCALPHA;
+	
+#elif EQUAL(DEFAULT_BLEND_MODE, ALPHA_BLEND)
+	#define BLEND_STATE_VAR
+	
+	#define BLEND_STATE_OPTION \
+	ZEnable = TRUE;\
+	ZFunc = LESS;\
+	ZWriteEnable = FALSE;\
+\
+	AlphaTestEnable = FALSE;\
+	AlphaFunc = GREATER;\
+	AlphaRef = 155;\
+\
+	AlphaBlendEnable = TRUE;\
+	SrcBlend = SRCALPHA;\
+	DestBlend = INVSRCALPHA;
+	
+#elif EQUAL(DEFAULT_BLEND_MODE, ALPHA_TEST)
+	#define BLEND_STATE_VAR \
+	int alpha_test_ref<\
+	string SasUiLabel = "alpha test 阈值";\
+	string SasUiControl = "IntPicker";\
+	int SasUiMin = 0;\
+	int SasUiMax = 255;\
+	> = 155;
+	
+	#define BLEND_STATE_OPTION \
+	ZEnable = TRUE;\
+	ZFunc = LESS;\
+	ZWriteEnable = TRUE;\
+\
+	AlphaTestEnable = TRUE;\
+	AlphaFunc = GREATER;\
+	AlphaRef = 155;\
+\
+	AlphaBlendEnable = FALSE;\
+	SrcBlend = SRCALPHA;\
+	DestBlend = INVSRCALPHA;
+	
+#elif EQUAL(DEFAULT_BLEND_MODE, ALPHA_BLEND_WRITE_Z)	
+	#define BLEND_STATE_VAR
+	
+	#define BLEND_STATE_OPTION \
+	ZEnable = TRUE;\
+	ZFunc = LESS;\
+	ZWriteEnable = TRUE;\
+\
+	AlphaTestEnable = FALSE;\
+	AlphaFunc = GREATER;\
+	AlphaRef = 155;\
+\
+	AlphaBlendEnable = TRUE;\
+	SrcBlend = SRCALPHA;\
+	DestBlend = INVSRCALPHA;
+	
+#else
+	#define BLEND_STATE_VAR
+	
+	#define BLEND_STATE_OPTION \
+	ZEnable = TRUE;\
+	ZFunc = LESS;\
+	ZWriteEnable = TRUE;\
+\
+	AlphaTestEnable = FALSE;\
+	AlphaFunc = GREATER;\
+	AlphaRef = 119;\
+\
+	AlphaBlendEnable = FALSE;\
+	SrcBlend = SRCALPHA;\
+	DestBlend = INVSRCALPHA;
+		
+#endif
+
+
+//公共函数
+#define LOG(a,b) (log((b))/log((a)))
+#define HDR_EXP_OFFSET 128
+#define HDR_EXP_BASE   1.06
+
+float4 EncodeHDR_RGB_RGBE8(in float3 rgb)
+{
+  float fLen = dot(rgb.rgb, 1.0);		//rgb相加求和
+  float fExp = LOG(HDR_EXP_BASE, fLen);
+
+  float4 ret;
+  ret.a = (fExp + HDR_EXP_OFFSET) / 256;
+  ret.rgb = rgb / fLen;
+
+  return ret;
+}
+
+
+float3 DecodeHDR_RGBE8_RGB(in float4 rgbe)
+{
+	float fExp = rgbe.a * 256 - HDR_EXP_OFFSET;
+	float fScale = pow(HDR_EXP_BASE, fExp);
+
+	return rgbe.rgb * fScale;
+}
+		
+		
+//rgb hsv 转换
+
+float rgb_min_channel(float3 v) 
+{ 
+    float t = (v.x<v.y) ? v.x : v.y; 
+    t = (t<v.z) ? t : v.z; 
+    return t; 
+} 
+ 
+float rgb_max_channel(float3 v) 
+{ 
+    float t = (v.x>v.y) ? v.x : v.y; 
+    t = (t>v.z) ? t : v.z; 
+    return t; 
+} 
+
+float3 rgb_to_hsv(float3 RGB) 
+{ 
+    float3 HSV = (0.0).xxx; 
+    float minVal = rgb_min_channel(RGB); 
+    float maxVal = rgb_max_channel(RGB); 
+    float delta = maxVal - minVal;             //Delta RGB value  
+    HSV.z = maxVal; 
+    if (delta != 0) {                    // If gray, leave H & S at zero 
+      HSV.y = delta / maxVal; 
+       float3 delRGB; 
+      delRGB = ( ( ( maxVal.xxx - RGB ) / 6.0 ) + ( delta / 2.0 ) ) / delta; 
+       if      ( RGB.x == maxVal ) HSV.x = delRGB.z - delRGB.y; 
+      else if ( RGB.y == maxVal ) HSV.x = ( 1.0/3.0) + delRGB.x - delRGB.z; 
+       else if ( RGB.z == maxVal ) HSV.x = ( 2.0/3.0) + delRGB.y - delRGB.x; 
+      if ( HSV.x < 0.0 ) { HSV.x += 1.0; } 
+       if ( HSV.x > 1.0 ) { HSV.x -= 1.0; } 
+   } 
+    return (HSV); 
+} 
+ 
+float3 hsv_to_rgb(float3 HSV) 
+{ 
+    float3 RGB = HSV.z; 
+   if ( HSV.y != 0 ) { 
+       float var_h = HSV.x * 6; 
+      float var_i = floor(var_h);   // Or ... var_i = floor( var_h ) 
+       float var_1 = HSV.z * (1.0 - HSV.y); 
+      float var_2 = HSV.z * (1.0 - HSV.y * (var_h-var_i)); 
+      float var_3 = HSV.z * (1.0 - HSV.y * (1-(var_h-var_i))); 
+      if      (var_i == 0) { RGB = float3(HSV.z, var_3, var_1); } 
+      else if (var_i == 1) { RGB = float3(var_2, HSV.z, var_1); } 
+      else if (var_i == 2) { RGB = float3(var_1, HSV.z, var_3); } 
+      else if (var_i == 3) { RGB = float3(var_1, var_2, HSV.z); } 
+      else if (var_i == 4) { RGB = float3(var_3, var_1, HSV.z); } 
+      else                 { RGB = float3(HSV.z, var_1, var_2); } 
+  } 
+  return (RGB); 
+}	

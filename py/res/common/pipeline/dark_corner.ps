@@ -1,0 +1,26 @@
+sampler Sampler0 : register(s0)
+{
+	MagFilter = LINEAR;
+	MinFilter = LINEAR;
+	MipFilter = LINEAR;
+};
+
+sampler Sampler1 = sampler_state
+{
+	MagFilter = LINEAR;
+	MinFilter = LINEAR;
+	MipFilter = LINEAR;
+};
+
+float DarkIntensity;
+float DarkBegin;
+
+static const float halfpi = 3.1415926 * 0.5f;
+
+float4 ps_main(float2 texCoord  : TEXCOORD0 ) : COLOR
+{  
+   float4 org_clr = tex2D(Sampler0, texCoord);
+   float4 mask_clr = tex2D(Sampler1, texCoord);
+
+   return org_clr * pow( abs(sin( saturate(mask_clr.a + DarkBegin) * halfpi)), DarkIntensity);
+}

@@ -1,0 +1,47 @@
+// some const, tweak for best look   
+float fSampleDist
+<
+	string SasUiLabel = "采样间隔";
+	string SasUiControl = "FloatPicker";
+	float SasUiMin = 0.0f;
+	float SasUiMax = 10.0f;
+	float SasUiSteps = 0.1f;
+> = 0.5f;  
+
+float fSampleStrength
+<
+	string SasUiLabel = "模糊力度";
+	string SasUiControl = "FloatPicker";
+	float SasUiMin = 0.0f;
+	float SasUiMax = 10.0f;
+	float SasUiSteps = 0.1f;
+> = 4.0f;   
+  
+//static const float2 radial_center = float2(0.2f, 0.8f);
+
+float radial_center_u
+<
+	string SasUiLabel = "模糊中心u坐标";
+	string SasUiControl = "FloatPicker";
+	float SasUiMin = 0.0f;
+	float SasUiMax = 1.0f;
+	float SasUiSteps = 0.1f;
+> = 0.5f;
+
+float radial_center_v
+<
+	string SasUiLabel = "模糊中心v坐标";
+	string SasUiControl = "FloatPicker";
+	float SasUiMin = 0.0f;
+	float SasUiMax = 1.0f;
+	float SasUiSteps = 0.1f;
+> = 0.5f;
+float4 dynamicRT:DynamicResolutionRT;
+technique TShader
+{
+	pass P0
+	{
+		VertexShader = "radial_blur.vs" vs_2_0 VSMain;
+		PixelShader	 = "radial_blur.ps" ps_2_0 ps_main;
+	}
+}

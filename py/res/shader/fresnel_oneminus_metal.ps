@@ -1,0 +1,20 @@
+using namespace metal;
+struct VertexOutput
+{
+	float4 position [ [position] ];
+	float4 UV0;
+};
+struct PSConstants
+{
+	float4 tFactor;
+};
+fragment float4 metal_main(
+	VertexOutput in [ [stage_in] ],
+	constant PSConstants &constants[ [buffer(0)] ],
+	texture2d<float> texture0 [ [texture(0)] ],
+	sampler sampler0 [ [sampler(0)] ])
+{
+	float4 output = texture0.sample(sampler0, in.UV0.xy);
+	output.a = 1.0;
+	return output;
+}

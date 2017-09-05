@@ -1,0 +1,67 @@
+using namespace metal;
+
+// UNIFORM
+struct PSConstants
+{
+	float fSampleStrength;   
+	float radial_center_u;
+	float radial_center_v;
+};
+
+
+// VARYING
+struct VertexOutput
+{
+	float4 position [[position]];
+	float2 TexCoord0;
+	float2 TexCoord1;
+	float2 TexCoord2;
+	float2 TexCoord3;
+	float2 TexCoord4;
+	float2 TexCoord5;
+	float2 TexCoord6;
+	float2 TexCoord7;
+};
+
+fragment float4 ps_main (
+	VertexOutput in [[stage_in]]
+	, constant PSConstants &constants[[buffer(0)]]
+	, texture2d<float> texture0 [[texture(0)]]
+	, sampler sampler0 [[sampler(0)]]
+	)
+{
+	float4 output;
+   // 0.5,0.5 is the center of the screen   
+   // so substracting uv from it will result in   
+   // a vector pointing to the middle of the screen   
+   float2 dir = float2(constants.radial_center_u, constants.radial_center_v) - in.TexCoord0.xy;  
+   // calculate the distance to the center of the screen   
+   float dist = length(dir);  
+   // normalize the direction (reuse the distance)   
+   dir /= dist;  
+     
+   // this is the original colour of this pixel   
+   // using only this would result in a nonblurred version   
+   float4 color = texture0.sample(sampler0, in.TexCoord0.xy);  
+     
+   float4 sum = color;  
+   // take 10 additional blur samples in the direction towards   
+   // the center of the screen   
+   sum += texture0.sample(sampler0, in.TexCoord1.xy);
+   sum += texture0.sample(sampler0, in.TexCoord2.xy);
+   sum += texture0.sample(sampler0, in.TexCoord3.xy);
+   sum += texture0.sample(sampler0, in.TexCoord4.xy);
+   sum += texture0.sample(sampler0, in.TexCoord5.xy);
+   sum += texture0.sample(sampler0, in.TexCoord6.xy);
+   sum += texture0.sample(sampler0, in.TexCoord7.xy);
+   // we have taken eleven samples   
+   sum /= 8.0;  
+     
+   // weighten the blur effect with the distance to the   
+   // center of the screen ( further out is blurred more)   
+   float t = clamp(dist * constants.fSampleStrength, 0.0, 1.0);  
+     
+   //Blend the original color with the averaged pixels   
+   output = mix(color, sum, t);  
+   return output;
+}

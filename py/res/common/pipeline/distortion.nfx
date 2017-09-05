@@ -1,0 +1,17 @@
+// some const, tweak for best look   
+float4 dynamicRT:DynamicResolutionRT;
+technique Distortion
+{
+	pass P0
+	{
+		//EnableStencilTest = true;
+        //StencilRef = 0xFF00FF;	//此处随便用了几位
+        //StencilMask = 0xFF00FF;
+        //
+		//StencilFunc = CMP_EQUAL;
+        //StencilOperation = (STENCILOP_KEEP, STENCILOP_KEEP, STENCILOP_KEEP);
+
+		VertexShader = "distortion.vs" vs_2_0 vs_main;
+		PixelShader	 = "distortion.ps" ps_2_0 ps_main;
+	}
+}

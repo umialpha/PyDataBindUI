@@ -1,0 +1,21 @@
+using namespace metal;
+
+
+// VARYING
+struct VertexOutput
+{
+	float4 position [[position]];
+	float2 TexCoord0;
+
+};
+
+fragment float4 LutPS (
+	VertexOutput in [[stage_in]]
+	, texture2d<float> texture0 [[texture(0)]]
+	, sampler sampler0 [[sampler(0)]]
+	)
+{	
+	float4 color = texture0.sample(sampler0, in.TexCoord0.xy);
+
+	return color;
+}

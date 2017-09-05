@@ -1,0 +1,88 @@
+using namespace metal;
+
+
+// VARYING
+struct VertexOutput
+{
+	float4 position [[position]];
+	float2 TexCoord0;
+	float2 TexCoord1;
+	float2 TexCoord2;
+	float2 TexCoord3;
+	float2 TexCoord4;
+};
+
+struct PSConstants
+{
+    float horBlurGaussOffset[5];
+    float verBlurGaussOffset[5];
+    float horBlurWeight[5];
+    float verBlurWeight[5];
+    float brightness;
+};
+
+
+fragment float4 VerBlurPS (
+	VertexOutput in [[stage_in]]
+	, constant PSConstants &constants[[buffer(0)]]
+	, texture2d<float> texture0 [[texture(0)]]
+	, sampler sampler0 [[sampler(0)]]
+	, texture2d<float> texture1 [[texture(1)]]
+	, sampler sampler1 [[sampler(1)]]
+	, texture2d<float> texture2 [[texture(2)]]
+	, sampler sampler2 [[sampler(2)]]
+	)
+{ 
+	float4 output;
+	float4 blurryColor= texture0.sample(sampler0, in.TexCoord0.xy) * constants.verBlurWeight[0];	
+	blurryColor += texture0.sample(sampler0, in.TexCoord1.xy) * constants.verBlurWeight[1];
+	blurryColor += texture0.sample(sampler0, in.TexCoord2.xy) * constants.verBlurWeight[2];
+	blurryColor += texture0.sample(sampler0, in.TexCoord3.xy) * constants.verBlurWeight[3];
+	blurryColor += texture0.sample(sampler0, in.TexCoord4.xy) * constants.verBlurWeight[4];
+	output = blurryColor;
+	return output;
+}             
+
+fragment float4 HorBlurPS (
+	VertexOutput in [[stage_in]]
+	, constant PSConstants &constants[[buffer(0)]]
+	, texture2d<float> texture0 [[texture(0)]]
+	, sampler sampler0 [[sampler(0)]]
+	, texture2d<float> texture1 [[texture(1)]]
+	, sampler sampler1 [[sampler(1)]]
+	, texture2d<float> texture2 [[texture(2)]]
+	, sampler sampler2 [[sampler(2)]]
+	)
+{
+	float4 output;
+	float4 blurryColor= texture0.sample(sampler0, in.TexCoord0.xy) * constants.horBlurWeight[0];	
+	blurryColor += texture0.sample(sampler0, in.TexCoord1.xy) * constants.horBlurWeight[1];
+	blurryColor += texture0.sample(sampler0, in.TexCoord2.xy) * constants.horBlurWeight[2];
+	blurryColor += texture0.sample(sampler0, in.TexCoord3.xy) * constants.horBlurWeight[3];
+	blurryColor += texture0.sample(sampler0, in.TexCoord4.xy) * constants.horBlurWeight[4];
+	output = blurryColor;
+	return output;
+}
+
+fragment float4 BlendPS (
+	VertexOutput in [[stage_in]]
+	, constant PSConstants &constants[[buffer(0)]]
+	, texture2d<float> texture0 [[texture(0)]]
+	, sampler sampler0 [[sampler(0)]]
+	, texture2d<float> texture1 [[texture(1)]]
+	, sampler sampler1 [[sampler(1)]]
+	, texture2d<float> texture2 [[texture(2)]]
+	, sampler sampler2 [[sampler(2)]]
+	)
+{ 
+	float4 output;
+	float4 c0 = texture0.sample(sampler0, in.TexCoord0.xy);
+	float4 c1 = texture1.sample(sampler1, in.TexCoord0.xy);
+	float4 c2 = texture2.sample(sampler2, in.TexCoord0.xy);
+
+	float3 outline = c0.xyz - c1.xyz;
+	outline = clamp(outline,float3(0.0,0.0,0.0),float3(1.0,1.0,1.0));
+	output.xyz = c2.xyz + outline * constants.brightness;
+	output.w = 1.0;
+	return output;
+}      

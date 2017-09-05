@@ -1,0 +1,57 @@
+int GlobalParameter : SasGlobal
+<
+  string SasEffectAuthoring = "lqzh";
+  string SasEffectCategory = "";
+  string SasEffectCompany = "Netease";
+  string SasEffectDescription = "common";
+  string SasSuportedMacros = "UnSupported SEPARATE_ALPHA_TEX UnSupported FALSE;";
+  string SasEffectAttr = "INSTANCE_SUPPORTED=TRUE;";
+>;
+
+#include "common_defination.nfx"
+texture	Tex0
+<
+	string SasUiLabel = "颜色贴图"; 
+	string SasUiControl = "FilePicker";
+>;
+float alpha
+<
+	string SasUiLabel = "alpha";
+	string SasUiControl = "FloatPicker";
+	string SasUiMin = "0.0";
+	string SasUiMax = "1.0";
+> = 1.0;
+
+SamplerTexture[0] = Tex0;
+
+#if SEPARATE_ALPHA_TEX
+SamplerTexture[7] = sepAlphaTex;
+#endif
+
+technique TShaderMirror
+<
+	string Description = "倒影模型材质";
+>
+{
+	pass p0
+	{	
+		VertexShader = "common.vs" vs_2_0 main;
+		PixelShader = "only1texture_mirror.ps" ps_2_0 main;
+	}
+}
+
+technique TShader
+<
+	string Description = "普通单层贴图";
+>
+{
+	pass p0
+	{	
+		VertexShader = "common.vs" vs_2_0 main;
+		PixelShader = "only1texture.ps" ps_2_0 main;
+	}
+}
+
+
+
+

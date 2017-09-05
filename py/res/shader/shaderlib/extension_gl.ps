@@ -1,0 +1,93 @@
+#if FOG_ENABLE
+uniform lowp vec4 FogColor;
+uniform mediump vec4 FogInfo;
+uniform lowp float HeightFogDensity;
+
+lowp vec3 CustomFogBlend(lowp float vsFogFactor, lowp vec3 screen_clr)
+{
+	lowp float fogFactor = vsFogFactor * FogColor.a;
+	lowp vec3 result = mix(screen_clr, FogColor.xyz, fogFactor);
+	// lowp vec3 result = screen_clr * (1.0 - fogFactor) + FogColor.xyz * fogFactor;
+	return result;
+}
+
+#ifndef NO_LIGHT_FOG
+#define NO_LIGHT_FOG FALSE
+#endif
+
+mediump vec4 GetFogEx(highp vec4 PositionWorld, highp vec4 PositionView)
+{
+	lowp float cam_pos = PositionView.z / PositionView.w;
+	lowp float distance_factor = clamp((cam_pos - FogInfo.x) / (FogInfo.y - FogInfo.x), 0.0, 1.0) * FogColor.a;
+#if NO_LIGHT_FOG
+	//lowp float start_dis = FogInfo.z * cam_pos / 800.0;
+	//lowp float end_dis = FogInfo.w * cam_pos / 800.0;
+	lowp float height_factor = 0.0;
+#else
+	lowp float height_factor = clamp((PositionWorld.y - FogInfo.z) / (FogInfo.w - FogInfo.z), 0.0, 1.0) * HeightFogDensity;
+#endif
+
+	lowp float den_factor = max(height_factor, distance_factor);
+	return vec4(FogColor.x, FogColor.y, FogColor.z, den_factor);
+}
+#endif
+
+// #if SHADOW_MAP_ENABLE
+// uniform sampler2D ShadowMap2;
+// // varying highp vec4 PosLightProj;
+// uniform lowp float ShadowAlpha;
+
+// mediump float calc_shadow_alpha( in highp float shadowmap_z, in highp float pos_z )
+// {
+// 	mediump float ref = 0.02;
+// 	mediump float shadow_factor = smoothstep( pos_z - ref, pos_z, shadowmap_z );
+// 	return ShadowAlpha + (1.0-ShadowAlpha)*shadow_factor;
+// }
+
+// #if SHADOW_MAP_ENABLE_DEPTH_TEX
+// uniform highp vec4 CameraZPlanes;
+
+// mediump float calc_shadow(in mediump vec4 pos)
+// {
+// 	highp vec4 lPos = pos;//lvp * pos;
+// 	lPos.xyz /= lPos.w;    
+// 	lPos.x = 0.5 * lPos.x + 0.5;
+// 	lPos.y = 0.5 * lPos.y + 0.5;
+
+//     highp float depthInTex = texture2D(ShadowMap2, lPos.xy).r;
+// 	depthInTex = 2.0 * depthInTex - 1.0;
+//     if (lPos.x > 0.0 && lPos.x < 1.0 && lPos.y > 0.0 && lPos.y < 1.0)
+// 	{
+// 		return calc_shadow_alpha( depthInTex, lPos.z );
+// 	}
+// 	else
+// 		return 1.0;
+
+// }
+// #else
+// highp vec4 bit_shift = vec4(1.0/(256.0*256.0*256.0), 1.0/(256.0*256.0), 1.0/256.0, 1.0);
+// highp float unpack_depth(in highp vec4 rgba_depth)
+// {
+//     highp float depth = dot(rgba_depth, bit_shift);    
+//     return depth;
+// }
+
+// mediump float calc_shadow(in mediump vec4 pos)
+// {
+// 	mediump vec4 lPos = pos;//lvp * pos;
+// 	lPos.xyz /= lPos.w;
+// 	lPos.x = 0.5 * lPos.x + 0.5;
+// 	lPos.y = 0.5 * lPos.y + 0.5;
+// 	if (lPos.x > 0.0 && lPos.x < 1.0 && lPos.y > 0.0 && lPos.y < 1.0)
+// 	{		
+// 		highp vec4 rgba_depth = texture2D(ShadowMap2, lPos.xy);
+// 		highp float SAMPz = unpack_depth(rgba_depth);
+// 		//return ( SAMPz < lPos.z ) ? ShadowAlpha : 1.0;
+// 		return calc_shadow_alpha( SAMPz, lPos.z );
+// 	}
+// 	else
+// 		return 1.0;
+
+// }
+// #endif
+// #endif

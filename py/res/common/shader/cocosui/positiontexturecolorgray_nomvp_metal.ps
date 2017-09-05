@@ -1,0 +1,60 @@
+#include <metal_graphics>
+#include <metal_texture>
+#include <metal_matrix>
+#include <metal_common>
+using namespace metal;
+#ifndef USE_SEPARATE_ALPHA
+ #define USE_SEPARATE_ALPHA 0
+#endif
+
+struct PS_INPUT
+{
+float4 final_position [[position]];
+float4 use_color;
+float2 v_texture1;
+};
+fragment float4 metal_main(
+PS_INPUT psIN[[stage_in]]
+, texture2d<float> CC_Texture0 [[texture(0)]]
+, sampler CC_Texture0_state [[sampler(0)]]
+#if USE_SEPARATE_ALPHA
+, texture2d<float> CC_Texture1 [[texture(1)]]
+, sampler CC_Texture1_state [[sampler(1)]]
+#endif
+)
+{
+float4 final_color;
+const float local_0 = 0.0722f;
+float4 local_1 = CC_Texture0.sample(CC_Texture0_state, psIN.v_texture1);
+float4 local_2;
+#if USE_SEPARATE_ALPHA
+float4 local_3 = CC_Texture1.sample(CC_Texture1_state, psIN.v_texture1);
+float local_4 = local_3.x;
+float local_5 = local_3.y;
+float local_6 = local_3.z;
+float local_7 = local_3.w;
+float3 local_8 = local_1.xyz;
+float local_9 = local_1.w;
+float4 local_10 = {local_8.x, local_8.y, local_8.z, local_4};
+float4 local_11 = psIN.use_color * local_10;
+local_2 = local_11;
+#else
+float4 local_12 = psIN.use_color * local_1;
+local_2 = local_12;
+#endif
+float local_13 = local_2.x;
+float local_14 = local_2.y;
+float local_15 = local_2.z;
+float local_16 = local_2.w;
+float local_17 = local_0 * local_15;
+const float local_18 = 0.7152f;
+float local_19 = local_18 * local_14;
+const float local_20 = 0.2126f;
+float local_21 = local_20 * local_13;
+float local_22 = local_21 + local_19;
+float local_23 = local_22 + local_17;
+float3 local_24 = {local_23, local_23, local_23};
+float4 local_25 = {local_24.x, local_24.y, local_24.z, local_16};
+final_color = local_25;
+return final_color;
+}

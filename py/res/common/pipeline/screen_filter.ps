@@ -1,0 +1,15 @@
+sampler Sampler0 : register(s0)
+{
+	MagFilter = LINEAR;
+	MinFilter = LINEAR;
+	MipFilter = LINEAR;
+};
+
+float4 screen_color;
+
+float4 ps_main(float2 texCoord  : TEXCOORD0 ) : COLOR
+{  
+   float4 color = tex2D(Sampler0, texCoord);
+	float3 new_color = lerp(color.rgb, screen_color.rgb, screen_color.w);
+	return float4(new_color.rgb, 1.0f);
+}

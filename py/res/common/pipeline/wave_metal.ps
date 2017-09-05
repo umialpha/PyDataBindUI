@@ -1,0 +1,50 @@
+using namespace metal;
+
+// UNIFORM
+struct PSConstants
+{
+	float distortionScale;  
+    float distortionSpeed;
+	float distortionLength;
+	float distortionBegin;
+	float distortionPower;
+	float FrameTime;
+};
+
+// VARYING
+struct VertexOutput
+{
+	float4 position [[position]];
+	float2 TexCoord0;
+};
+
+
+fragment float4 ps_main (
+	VertexOutput in [[stage_in]]
+	, constant PSConstants &constants[[buffer(0)]]
+	, texture2d<float> texture0 [[texture(0)]]
+	, sampler sampler0 [[sampler(0)]]
+	, texture2d<float> texture1 [[texture(1)]]
+	, sampler sampler1 [[sampler(1)]]
+	)
+{
+	float4 output;
+	const float halfpi = 3.1415926 * 0.5;
+
+	float4 mask_clr = texture1.sample(sampler1, in.TexCoord0.xy);
+    float distor_factor = pow( 1.0 - abs(sin( clamp(mask_clr.a + constants.distortionBegin, 0.0, 1.0) * halfpi)), constants.distortionPower);
+
+	//扰动部分
+	float2 backgroundUv = in.TexCoord0.xy;
+
+	float temp1 = constants.FrameTime * constants.distortionSpeed;
+	float temp2 = 10.0 * constants.distortionLength;
+	float temp3 = constants.distortionScale * 0.1 * distor_factor;
+
+	backgroundUv.x += sin(temp1 + backgroundUv.x * temp2) * temp3;
+	backgroundUv.y += cos(temp1 + backgroundUv.y * temp2) * temp3;
+
+	output = texture0.sample(sampler0, backgroundUv);
+	
+	return output;
+}

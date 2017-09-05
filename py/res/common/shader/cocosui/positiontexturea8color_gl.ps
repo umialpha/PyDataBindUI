@@ -1,0 +1,16 @@
+precision mediump float;
+uniform sampler2D CC_Texture0;
+varying lowp vec4 v_diffuse;
+varying mediump vec2 v_texture0;
+void main()
+{
+float CC_Texture0_bias = 0.0;
+lowp vec4 local_0 = texture2D(CC_Texture0, v_texture0, CC_Texture0_bias);
+lowp vec3 local_1 = v_diffuse.xyz;
+lowp float local_2 = v_diffuse.w;
+lowp vec3 local_3 = local_0.xyz;
+lowp float local_4 = local_0.w;
+lowp float local_5 = local_2 * local_4;
+lowp vec4 local_6 = vec4(local_1.x, local_1.y, local_1.z, local_5);
+gl_FragColor = local_6;
+}

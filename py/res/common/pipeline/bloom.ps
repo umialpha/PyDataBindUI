@@ -1,0 +1,81 @@
+float BloomIntensity; //控制bloom强度
+float BloomThreshold; //控制bloom的阈值
+int BloomFactor;	//控制bloom的宽度值
+int BloomWidth;	//控制bloom的宽度
+
+sampler tex0;
+sampler tex1;
+
+float4 DownSampleOffsets[16]; 
+
+float4 DownSamplePass( in float2 t : TEXCOORD0 ) : COLOR
+{ 
+	float4 average = { 0.0f, 0.0f, 0.0f, 0.0f };
+	for( int i = 0; i < 16; i++ )
+	{
+	    average += tex2D( tex0, t + float2(DownSampleOffsets[i].x, DownSampleOffsets[i].y) );
+	}   
+	average *= ( 1.0f / 16.0f );
+
+	float luminance = dot( average.rgb, float3( 0.299f, 0.587f, 0.114f ) );
+	
+	if(luminance < BloomThreshold)
+	{
+		average *= pow(abs(luminance / BloomThreshold), BloomFactor);
+
+	}
+	
+	return average;
+}
+
+
+float4 BrightnessSampleOffsets[4];
+
+float4 BrightnessPass( in float2 t : TEXCOORD0 ) : COLOR
+{
+	float4 average = { 0.0f, 0.0f, 0.0f, 0.0f };
+	for( int i = 0; i < 4; i++ )
+	{
+	   average += tex2D( tex0, t + float2( BrightnessSampleOffsets[i].x, BrightnessSampleOffsets[i].y ) );
+	}
+	average *= 0.25f;
+	float luminance = dot( average.rgb, float3( 0.299f, 0.587f, 0.114f ) );
+	
+	if(luminance < BloomThreshold)
+	{
+		average *= pow(abs(luminance / BloomThreshold), BloomFactor);
+
+	}
+	
+	return average;
+}
+
+
+float HorizontalBloomWeights[5];             
+float HorizontalBloomSampleOffsets[5];            
+
+float4 HorizontalBlurPass( in float2 t : TEXCOORD0 ) : COLOR
+{
+	float4 color = { 0.0f, 0.0f, 0.0f, 0.0f };
+	for( int i = 0; i < 5; i++ )
+	{
+	    color += (tex2D( tex0, t + float2( HorizontalBloomSampleOffsets[i] * BloomWidth, 0.0f ) ) * HorizontalBloomWeights[i] );
+	}
+	return float4( color.rgb, 1.0f );
+}
+
+
+float VerticalBloomWeights[5];
+float VerticalBloomSampleOffsets[5];               
+
+float4 VerticalBlurPass( in float2 t : TEXCOORD0 ) : COLOR
+{
+	float4 color = { 0.0f, 0.0f, 0.0f, 0.0f };
+	for( int i = 0; i < 5; i++ )
+	{
+	    color += (tex2D( tex0, t + float2( 0.0f, VerticalBloomSampleOffsets[i] * BloomWidth ) ) * VerticalBloomWeights[i] );
+	}
+	float4 src = tex2D( tex1, t);
+	float3 final = src.rgb + BloomIntensity * color.rgb;
+	return float4( final.rgb, 1.0f );    
+}

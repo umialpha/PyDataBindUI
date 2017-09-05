@@ -1,0 +1,15 @@
+<NeoX
+	CompatibleMask = "0"
+	TriSortMethod = "0"
+	TangentEnable = "false"
+	AnimAccumEnable = "true"
+	BoundingInfo = "(0,4.8507,0),(12.8818,6.2143,0),13.8897">
+	<SubMesh>
+		<Sub0
+			Name = "Text01"
+			MtlIdx = "0"
+			BoundingCenter = "0,4.8507,0"
+			BoundingHalf = "12.8818,6.2143,0"
+			BoundingInfo = "(0,4.8507,0),(12.8818,6.2143,0),13.8897" />
+	</SubMesh>
+</NeoX>

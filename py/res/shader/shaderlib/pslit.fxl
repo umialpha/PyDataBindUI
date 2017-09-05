@@ -1,0 +1,113 @@
+/*
+描述：
+逐像素光照的库
+
+支持的宏：
+#define LIT_ENABLE			//是否使用光照
+#define SPECULAR_ENABLE		//是否打开高光
+#define SHADOWMAP_ENABLE	//是否使用shadowmap
+#define NORMALMAP_ENABLE	//是否使用normalmap
+
+*/
+
+#if EQUAL(SHADE_MODE, SHADE_PHONG) 
+#if LIT_ENABLE
+
+#if NORMAL_MAP_ENABLE
+void GetNormal(inout PS_GENERAL ps_general)
+{
+	float3 f3Offset         = GetNormalOffset(ps_general);
+	f3Offset                = f3Offset.x * ps_general.TangentWorld + f3Offset.y * ps_general.BinormalWorld;
+	ps_general.NormalWorld  = normalize( ps_general.NormalWorld + f3Offset );
+}
+#else
+//没有normal_map,此处为了效率省下一次normalize
+void GetNormal(inout PS_GENERAL ps_general)
+{
+	
+}
+#endif //normalmapenable
+
+//todo: spec并非总是需要传递的
+#define NEED_CAMERA_POS
+#define NEED_AMBIENT
+
+#define NEED_LIGHT_COUNT
+#define NEED_POINT_LIGHT_ATTRS
+#define NEED_DIR_LIGHT_ATTRS
+#define NEED_SHADOW_LIGHT_ATTRS
+
+#include "vardefination.fxl"	
+#include "lighting.fxl"
+
+
+void PsGetLightLit(inout PS_GENERAL ps_general,
+		out float3 light_ambient_clr, out float3 light_diffuse_clr, out float3 light_specular_clr, out float3 shadow_light_clr)
+{
+
+#if EQUAL(SHADE_MODE, SHADE_PHONG)	
+	light_ambient_clr = 0;
+	light_diffuse_clr = 0;
+	light_specular_clr = 0; 
+	shadow_light_clr = 0;
+	
+	GetNormal(ps_general);	//计算normal
+	
+	float3 view_dir	  = normalize(CameraPos.xyz - ps_general.PosWorld.xyz);		
+		
+	int specular_power = GetSpecularPower();	
+	float3 transmission_fac = GetTransmissionColor(ps_general) * GetTransmissionMask(ps_general);
+	
+	_ShadowLightLit(ShadowLightAttr[0], ShadowLightAttr[1], ShadowLightAttr[2], ShadowLightAttr[3],  ShadowLightAttr[4], ps_general.PosWorld.xyz, view_dir, ps_general.NormalWorld, transmission_fac, 1.0, specular_power,
+				    light_ambient_clr, light_diffuse_clr, light_specular_clr);
+	
+	shadow_light_clr = light_diffuse_clr;
+	
+	_DirLightLit(DirLightAttr[0], DirLightAttr[1], DirLightAttr[2], DirLightAttr[3],  DirLightAttr[4], ps_general.PosWorld.xyz, view_dir, ps_general.NormalWorld, transmission_fac, 1.0, specular_power,
+				    light_ambient_clr, light_diffuse_clr, light_specular_clr);	
+			
+	int index_base = 0;		
+	
+#if MAX_LIGHT_COUNT > 0
+	_PointLightLit(PointLightAttrs[index_base], PointLightAttrs[index_base+1], PointLightAttrs[index_base+2], PointLightAttrs[index_base+3],  PointLightAttrs[index_base+4], ps_general.PosWorld.xyz, view_dir, ps_general.NormalWorld, transmission_fac, 1.0, specular_power,
+				    light_ambient_clr, light_diffuse_clr, light_specular_clr);
+	index_base += 5;
+#endif	
+	/*	
+#if MAX_LIGHT_COUNT > 1
+	_PointLightLit(PointLightAttrs[index_base], PointLightAttrs[index_base+1], PointLightAttrs[index_base+2], PointLightAttrs[index_base+3],  PointLightAttrs[index_base+4], ps_general.PosWorld.xyz, view_dir, ps_general.NormalWorld, transmission_fac, 1.0, specular_power,
+				    light_ambient_clr, light_diffuse_clr, light_specular_clr);
+	index_base += 5;
+#endif
+
+#if MAX_LIGHT_COUNT > 2
+	_PointLightLit(PointLightAttrs[index_base], PointLightAttrs[index_base+1], PointLightAttrs[index_base+2], PointLightAttrs[index_base+3],  PointLightAttrs[index_base+4], ps_general.PosWorld.xyz, view_dir, ps_general.NormalWorld, transmission_fac, 1.0, specular_power,
+				    light_ambient_clr, light_diffuse_clr, light_specular_clr);
+	index_base += 5;
+#endif
+
+#if MAX_LIGHT_COUNT > 3
+	_PointLightLit(PointLightAttrs[index_base], PointLightAttrs[index_base+1], PointLightAttrs[index_base+2], PointLightAttrs[index_base+3],  PointLightAttrs[index_base+4], ps_general.PosWorld.xyz, view_dir, ps_general.NormalWorld, transmission_fac, 1.0, specular_power,
+				    light_ambient_clr, light_diffuse_clr, light_specular_clr);
+	index_base += 5;
+#endif	
+
+#if MAX_LIGHT_COUNT > 4
+	_PointLightLit(PointLightAttrs[index_base], PointLightAttrs[index_base+1], PointLightAttrs[index_base+2], PointLightAttrs[index_base+3],  PointLightAttrs[index_base+4], ps_general.PosWorld.xyz, view_dir, ps_general.NormalWorld, transmission_fac, 1.0, specular_power,
+				    light_ambient_clr, light_diffuse_clr, light_specular_clr);
+	index_base += 5;
+#endif	
+
+#if MAX_LIGHT_COUNT > 5
+	_PointLightLit(PointLightAttrs[index_base], PointLightAttrs[index_base+1], PointLightAttrs[index_base+2], PointLightAttrs[index_base+3],  PointLightAttrs[index_base+4], ps_general.PosWorld.xyz, view_dir, ps_general.NormalWorld, transmission_fac, 1.0, specular_power,
+				    light_ambient_clr, light_diffuse_clr, light_specular_clr);
+	index_base += 5;
+#endif	
+*/
+#endif //phong	
+}
+
+
+#endif //phong
+#endif	//litenable
+

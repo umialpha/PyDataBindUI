@@ -1,0 +1,57 @@
+#ifndef SEPARATE_ALPHA_TEX
+#define SEPARATE_ALPHA_TEX 0
+#endif
+
+using namespace metal;
+
+// UNIFORM
+struct PSConstants
+{
+	float4 tFactor;
+	bool is_multipy_vector;
+
+	float ramp_scale;
+	float ramp_offset;
+	float dissolve;
+	float dissolve_hardness;
+};
+
+
+// VARYING
+struct PixelInput
+{
+	float4 position [[position]];
+
+	float4 UV0;
+	float4 Color;
+	float4 weight;
+};
+
+fragment float4 PS_OneTex1x(
+	PixelInput in[[stage_in]],
+	constant PSConstants &constants[[buffer(0)]],
+	sampler Tex0 [[sampler(0)]],
+	texture2d<float> texture0 [[texture(0)]],
+	sampler Tex1 [[sampler(1)]],
+	texture2d<float> texture1 [[texture(1)]]
+#if SEPARATE_ALPHA_TEX
+	, sampler SamplerDiffuse7 [[sampler(7)]]
+	, texture2d<float> texture7 [[texture(7)]] 
+#endif
+
+	)
+{
+	float4 output = float4(0);
+	
+	float4 texColor0 = texture0.sample(Tex0, in.UV0.xy);
+	float level = dot(in.weight.xyz, texColor0.xyz) + in.weight.w;
+	float4 texColor1 = texture1.sample(Tex1, float2(level, 0.5) * constants.ramp_scale + constants.ramp_offset);
+
+#if VCOLOR_ENABLE
+	output *= in.Color;
+#endif
+	output = texColor1;
+	output.a = (level - constants.dissolve) * constants.dissolve_hardness;
+
+	return output;
+}

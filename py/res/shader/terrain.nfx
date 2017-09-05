@@ -1,0 +1,41 @@
+int GlobalParameter : SasGlobal
+<
+  string SasEffectAuthoring = "lulu";
+  string SasEffectCategory = "";
+  string SasEffectCompany = "Netease";
+  string SasEffectDescription = "terrain";
+  string SasSuportedMacros = "UnSupported TERRAIN_TECH_TYPE UnSupported TERRAIN_ALPHAMAP_3;UnSupported FOG_ENABLE UnSupported FALSE;UnSupported LIT_ENABLE UnSupported FALSE;";
+>;
+
+texture TexLightmap : LightMap
+<
+	string SasUiLabel = "烘培贴图";
+	string SasUiControl = "FilePicker";
+>;
+
+#ifndef TERRAIN_TECH_TYPE
+#define TERRAIN_TECH_TYPE 9
+#endif
+
+#define LIGHT_MAP_ENABLE 1
+#define GPU_SKIN_ENABLE 0
+#include "common_defination.nfx"
+
+matrix4 lightmapTrans: LightMapTransform;
+float4 LightMapScale : LightMapScale;
+
+float4 uv_transform;
+
+SamplerTexture[7] = TexLightmap;
+
+technique TerrainTech
+<
+	string Description = "地形shader版本";
+>
+{
+	pass p0
+	{	
+		VertexShader = "common.vs" vs_2_0 main;
+		PixelShader	 = "terrain.ps" ps_2_0 main; 
+	}
+}

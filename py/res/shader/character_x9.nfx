@@ -1,0 +1,156 @@
+int GlobalParameter : SasGlobal
+<
+	string SasEffectAuthoring = "jwh";
+ 	string SasEffectCategory = "";
+ 	string SasEffectCompany = "Netease";
+ 	string SasEffectDescription = "character shader for h36";
+	string SasSuportedMacros = "UnSupported ALPHA_TEST_ENABLE UnSupported FALSE;UnSupported SHADOW_MAP_ENABLE UnSupported FALSE;UnSupported RECEIVE_SHADOW UnSupported FALSE;UnSupported HIGH_LEVEL_ENABLE UnSupported TRUE;UnSupported SEPARATE_ALPHA_TEX UnSupported FALSE;UnSupported GPU_SKIN_ENABLE UnSupported FALSE;UnSupported EXTRA_ALPHA UnSupported FALSE; UnSupported FOG_ENABLE UnSupported FALSE;UnSupported TOON_ENABLE UnSupported FALSE;";
+	string SasEffectAttr = "INSTANCE_SUPPORTED=TRUE;";
+ >;
+
+#ifndef TOON_ENABLE
+#define TOON_ENABLE FALSE
+#endif
+
+#define NEED_POS_WORLD TRUE
+#define NEED_NORMAL TRUE
+#define NEED_NORMAL_WORLD TRUE
+#define SHADOW_MAP_ENABLE_DEPTH_TEX TRUE
+
+#define LIT_ENABLE TRUE
+#include "common_defination.nfx"
+float4 camera_pos: CameraPosition;
+matrix4 wv : WorldView;
+matrix4 viewProjection : ViewProjection;
+float3 light_dir: LightDirection;
+
+texture	Tex0
+<
+	string SasUiLabel = "颜色贴图";
+	string SasUiControl = "FilePicker";
+>;
+texture	TexMatcap1
+<
+	string SasUiLabel = "MatCap"; 
+	string SasUiControl = "FilePicker";
+>;
+#if HIGH_LEVEL_ENABLE
+texture TexRimMatcap2
+<
+	string SasUiLabel = "RimLight"; 
+	string SasUiControl = "FilePicker"; 
+>;
+#endif
+
+texture NormalMap
+<
+	string SasUiLabel = "法线贴图"; 
+	string SasUiControl = "FilePicker";
+>;
+///////
+#if HIGH_LEVEL_ENABLE
+float rimlight_brightness
+<
+	string SasUiLabel = "边缘光亮度"; 
+	string SasUiControl = "FloatPicker";
+	string SasUiMin = "0.0";
+	string SasUiMax = "32.0";
+> = 1.0;
+
+float4 rimlight_color
+<
+	string SasUiLabel = "边缘光颜色"; 
+	string SasUiControl = "ColorPicker";
+>  = (1.0, 1.0, 1.0, 0.0);
+
+#endif
+float matcap_brightness
+<
+	string SasUiLabel = "环境光强度"; 
+	string SasUiControl = "FloatPicker";
+	string SasUiMin = "0.0";
+	string SasUiMax = "8.0";
+> = 1.0;
+// float ShadowAlpha
+// <
+// 	string SasUiLabel = "实时阴影透明度";
+// 	string SasUiControl = "FloatPicker";
+// 	string SasUiMin = "0.0";
+// 	string SasUiMax = "1.0";
+// > = 0.2;
+
+float4 ExtraRimColor
+<
+	string SasUiLabel = "爆气颜色";
+	string SasUiControl = "ColorPicker";
+> = (0.0, 0.0, 0.0, 1.0);
+
+float ExtraAlpha
+<
+	string SasUiLabel = "模型透明度";
+	string SasUiControl = "FloatPicker";
+> = 1.0;
+
+float3 model_offset
+<
+string SasUiLabel = "人物震动";
+> = (0.0, 0.0, 0.0);
+
+
+float melanism
+<
+	string SasUiLabel = "melanism";
+	string SasUiControl = "FloatPicker";
+	string SasUiMin = "0.0";
+	string SasUiMax = "1.0";
+> = 0.0;
+
+#if TOON_ENABLE
+float outline_width = 0.03;
+#endif
+
+SamplerTexture[0] = Tex0;
+SamplerMipBias[0] = -15;
+SamplerTexture[1] = TexMatcap1;
+SamplerMipBias[1] = -15;
+
+#if HIGH_LEVEL_ENABLE
+SamplerTexture[2] = TexRimMatcap2;
+SamplerMipBias[2] = -15;
+#endif
+
+#if SHADOW_MAP_ENABLE
+SamplerTexture[6] = texShadowMap;
+SamplerMipBias[6] = -15;
+#endif
+
+#if HIGH_LEVEL_ENABLE
+SamplerTexture[4] = NormalMap;
+SamplerMipBias[4] = -15;
+#endif
+
+#if SEPARATE_ALPHA_TEX
+SamplerTexture[7] = sepAlphaTex;
+SamplerMipBias[7] = -15;
+#endif
+
+technique TShader
+<
+	string Description = "H36角色材质";
+>
+{
+	pass p0
+	{
+		VertexShader = "character_x9.vs" vs_2_0 base_main;
+		PixelShader = "character_x9.ps" ps_2_0 base_main;
+	}
+
+#if TOON_ENABLE
+	pass p1
+	{	
+		CullMode = CULL_FRONT;
+		VertexShader = "character_x9.vs" vs_2_0 outline;
+		PixelShader = "character_x9.ps" ps_2_0 outline;
+	}
+#endif
+}
