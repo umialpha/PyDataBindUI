@@ -1,4 +1,4 @@
-mport weakref
+import weakref
 
 from dispatch import saferef
 
