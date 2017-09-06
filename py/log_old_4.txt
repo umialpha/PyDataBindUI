@@ -1,0 +1,305 @@
+[21:04:59.075]   [CLIENT] Exe module file: C:\Users\lln1551\Documents\GitHub\PyDataBindUI\py\game\client.exe
+[21:04:59.075]   [CLIENT] Current directory: C:\Users\lln1551\Documents\GitHub\PyDataBindUI\py
+[21:04:59.075]   [CLIENT] Initializing client....
+[21:04:59.075]   [CLIENT] Init utils.dll (1671665312)
+WARNING ***************************************************************************
+[21:05:01.094] M [WARNING] NXDiscreteFileLoader opener cfile, root C:\Users\lln1551\Documents\GitHub\PyDataBindUI\py\Documents\res is not existence or directory.
+[21:05:01.094] M Succeeded to create FileLoader, opener os, loader discrete, root C:\Users\lln1551\Documents\GitHub\PyDataBindUI\py\Documents\res, depth 0
+[21:05:01.094] M Succeeded to create FileLoader, opener os, loader npk, root C:\Users\lln1551\Documents\GitHub\PyDataBindUI\py\Documents\res, depth 0
+[21:05:01.094] M Succeeded to create FileLoader, opener os, loader discrete, root C:\Users\lln1551\Documents\GitHub\PyDataBindUI\py\res, depth 0
+[21:05:01.094] M Succeeded to create FileLoader, opener os, loader npk, root C:\Users\lln1551\Documents\GitHub\PyDataBindUI\py\res, depth 0
+WARNING ***************************************************************************
+[21:05:01.094] M [WARNING] NXDiscreteFileLoader opener cfile, root C:\Users\lln1551\Documents\GitHub\PyDataBindUI\py\Documents\script is not existence or directory.
+[21:05:01.094] M Succeeded to create FileLoader, opener os, loader discrete, root C:\Users\lln1551\Documents\GitHub\PyDataBindUI\py\Documents\script, depth 0
+[21:05:01.094] M Succeeded to create FileLoader, opener os, loader npk, root C:\Users\lln1551\Documents\GitHub\PyDataBindUI\py\Documents\script, depth 0
+[21:05:01.094] M Succeeded to create FileLoader, opener os, loader discrete, root C:\Users\lln1551\Documents\GitHub\PyDataBindUI\py\script, depth 0
+[21:05:01.094] M Succeeded to create FileLoader, opener os, loader npk, root C:\Users\lln1551\Documents\GitHub\PyDataBindUI\py\script, depth 0
+[21:05:01.094] M Start log.dll
+[21:05:01.094] M Init utils.dll (1671665312)
+[21:05:01.094] M [UTILS] Start utils.dll
+[21:05:01.094] M [UTILS] Init render.dll (2487404089)
+[21:05:01.094] M [UTILS] CPU Name Intel(R) Core(TM) i5-4590 CPU @ 3.30GHz, core count of this device is: 4
+[21:05:01.094] M [UTILS] device model is pc
+[21:05:01.094] M [UTILS] enable_render_thread is 0
+[21:05:01.094] M [RENDER] Init python.dll (1335575602)
+[21:05:01.095] M [RENDER] Init audio.dll (1092544220)
+[21:05:01.095] M [RENDER] Init c_mapper.dll (3143862676)
+[21:05:01.095] M [RENDER] Init world.dll (2648298854)
+[21:05:01.095] M [RENDER] Init terrain.dll (2572047601)
+[21:05:01.095] M [RENDER] Init collision.dll (209534444)
+[21:05:01.095] M [RENDER] Init detour.dll (3413454381)
+[21:05:01.095] M [RENDER] Init cocosui.dll (1144999243)
+[21:05:01.095] M [RENDER] Init social.dll (688878058)
+[21:05:01.095] M [RENDER] Init world2d.dll (3593080187)
+[21:05:01.095] M [RENDER] Init physics2d.dll (323376087)
+[21:05:01.095] M [RENDER] Start render.dll
+[21:05:01.095] M [RENDER] Start python.dll
+[21:05:01.095] M [PYTHON] Start audio.dll
+[21:05:01.095] M [AUDIO] Start c_mapper.dll
+[21:05:01.095] M [AUDIO] Start world.dll
+[21:05:01.095] M [WORLD] Start terrain.dll
+[21:05:01.095] M [TERRAIN] Start collision.dll
+[21:05:01.095] M [COLLISION] Start detour.dll
+[21:05:01.095] M [DETOUR] Start cocosui.dll
+[21:05:01.095] M [COCOSUI] Start social.dll
+[21:05:01.095] M [COCOSUI] Start world2d.dll
+[21:05:01.095] M [WORLD2D] Start physics2d.dll
+[21:05:01.214] M GLES Support Extensions GL_AMD_multi_draw_indirect GL_AMD_seamless_cubemap_per_texture GL_ARB_arrays_of_arrays GL_ARB_base_instance GL_ARB_bindless_texture GL_ARB_blend_func_extended GL_ARB_buffer_storage GL_ARB_clear_buffer_object GL_ARB_clear_texture GL_ARB_clip_control GL_ARB_color_buffer_float GL_ARB_compatibility GL_ARB_compressed_texture_pixel_storage GL_ARB_conservative_depth GL_ARB_compute_shader GL_ARB_compute_variable_group_size GL_ARB_conditional_render_inverted GL_ARB_copy_buffer GL_ARB_copy_image GL_ARB_cull_distance GL_ARB_debug_output GL_ARB_depth_buffer_float GL_ARB_depth_clamp GL_ARB_depth_texture GL_ARB_derivative_control GL_ARB_direct_state_access GL_ARB_draw_buffers GL_ARB_draw_buffers_blend GL_ARB_draw_indirect GL_ARB_draw_elements_base_vertex GL_ARB_draw_instanced GL_ARB_enhanced_layouts GL_ARB_ES2_compatibility GL_ARB_ES3_compatibility GL_ARB_ES3_1_compatibility GL_ARB_explicit_attrib_location GL_ARB_explicit_uniform_location GL_ARB_fragment_coord_conventions GL_ARB_fragment_layer_viewport GL_ARB_fragment_program GL_ARB_fragment_program_shadow GL_ARB_fragment_shader GL_ARB_framebuffer_no_attachments GL_ARB_framebuffer_object GL_ARB_framebuffer_sRGB GL_ARB_geometry_shader4 GL_ARB_get_program_binary GL_ARB_get_texture_sub_image GL_ARB_gpu_shader5 GL_ARB_gpu_shader_fp64 GL_ARB_half_float_pixel GL_ARB_half_float_vertex GL_ARB_imaging GL_ARB_indirect_parameters GL_ARB_instanced_arrays GL_ARB_internalformat_query GL_ARB_internalformat_query2 GL_ARB_invalidate_subdata GL_ARB_map_buffer_alignment GL_ARB_map_buffer_range GL_ARB_multi_bind GL_ARB_multi_draw_indirect GL_ARB_multisample GL_ARB_multitexture GL_ARB_occlusion_query GL_ARB_occlusion_query2 GL_ARB_pipeline_statistics_query GL_ARB_pixel_buffer_object GL_ARB_point_parameters GL_ARB_point_sprite GL_ARB_program_interface_query GL_ARB_provoking_vertex GL_ARB_query_buffer_object GL_ARB_robust_buffer_access_behavior GL_ARB_robustness GL_ARB_sample_shading GL_ARB_sampler_objects GL_ARB_seamless_cube_map GL_ARB_seamless_cubemap_per_texture GL_ARB_separate_shader_objects GL_ARB_shader_atomic_counters GL_ARB_shader_bit_encoding GL_ARB_shader_draw_parameters GL_ARB_shader_group_vote GL_ARB_shader_image_load_store GL_ARB_shader_image_size GL_ARB_shader_objects GL_ARB_shader_precision GL_ARB_shader_storage_buffer_object GL_ARB_shader_subroutine GL_ARB_shader_texture_image_samples GL_ARB_shader_texture_lod GL_ARB_shading_language_100 GL_ARB_shading_language_420pack GL_ARB_shading_language_include GL_ARB_shading_language_packing GL_ARB_shadow GL_ARB_sparse_buffer GL_ARB_sparse_texture GL_ARB_stencil_texturing GL_ARB_sync GL_ARB_tessellation_shader GL_ARB_texture_barrier GL_ARB_texture_border_clamp GL_ARB_texture_buffer_object GL_ARB_texture_buffer_object_rgb32 GL_ARB_texture_buffer_range GL_ARB_texture_compression GL_ARB_texture_compression_bptc GL_ARB_texture_compression_rgtc GL_ARB_texture_cube_map GL_ARB_texture_cube_map_array GL_ARB_texture_env_add GL_ARB_texture_env_combine GL_ARB_texture_env_crossbar GL_ARB_texture_env_dot3 GL_ARB_texture_float GL_ARB_texture_gather GL_ARB_texture_mirror_clamp_to_edge GL_ARB_texture_mirrored_repeat GL_ARB_texture_multisample GL_ARB_texture_non_power_of_two GL_ARB_texture_query_levels GL_ARB_texture_query_lod GL_ARB_texture_rectangle GL_ARB_texture_rg GL_ARB_texture_rgb10_a2ui GL_ARB_texture_stencil8 GL_ARB_texture_storage GL_ARB_texture_storage_multisample GL_ARB_texture_swizzle GL_ARB_texture_view GL_ARB_timer_query GL_ARB_transform_feedback2 GL_ARB_transform_feedback3 GL_ARB_transform_feedback_instanced GL_ARB_transform_feedback_overflow_query GL_ARB_transpose_matrix GL_ARB_uniform_buffer_object GL_ARB_vertex_array_bgra GL_ARB_vertex_array_object GL_ARB_vertex_attrib_64bit GL_ARB_vertex_attrib_binding GL_ARB_vertex_buffer_object GL_ARB_vertex_program GL_ARB_vertex_shader GL_ARB_vertex_type_10f_11f_11f_rev GL_ARB_vertex_type_2_10_10_10_rev GL_ARB_viewport_array GL_ARB_window_pos GL_ATI_draw_buffers GL_ATI_texture_float GL_ATI_texture_mirror_once GL_S3_s3tc GL_EXT_texture_env_add GL_EXT_abgr GL_EXT_bgra GL_EXT_bindable_unif
+[21:05:01.214] M Maximum vertex attribs is 16
+[21:05:01.214] M -------------- shader precision start --------------------
+[21:05:01.214] M Fragment shader high precision float range: 127 127 precision: 23
+[21:05:01.214] M Fragment shader medium precision float range: 127 127 precision: 23
+[21:05:01.214] M Fragment shader low precision float range: 127 127 precision: 23
+[21:05:01.214] M Fragment shader high precision int range: 31 30 precision: 0
+[21:05:01.214] M Fragment shader medium precision int range: 31 30 precision: 0
+[21:05:01.214] M Fragment shader low precision int range: 31 30 precision: 0
+[21:05:01.214] M Vertex shader high precision float range: 127 127 precision: 23
+[21:05:01.214] M Vertex shader medium precision float range: 127 127 precision: 23
+[21:05:01.214] M Vertex shader low precision float range: 127 127 precision: 23
+[21:05:01.214] M Vertex shader high precision int range: 31 30 precision: 0
+[21:05:01.214] M Vertex shader medium precision int range: 31 30 precision: 0
+[21:05:01.214] M Vertex shader low precision int range: 31 30 precision: 0
+[21:05:01.214] M -------------- shader precision stop --------------------
+[21:05:01.214] M Maximum uniform vector is 1024
+[21:05:01.214] M Supported Compress Format 0x83f0
+[21:05:01.214] M Supported Compress Format 0x83f2
+[21:05:01.214] M Supported Compress Format 0x83f3
+[21:05:01.214] M Supported Compress Format 0x8b90
+[21:05:01.214] M Supported Compress Format 0x8b91
+[21:05:01.214] M Supported Compress Format 0x8b92
+[21:05:01.214] M Supported Compress Format 0x8b93
+[21:05:01.214] M Supported Compress Format 0x8b94
+[21:05:01.214] M Supported Compress Format 0x8b95
+[21:05:01.214] M Supported Compress Format 0x8b96
+[21:05:01.214] M Supported Compress Format 0x8b97
+[21:05:01.214] M Supported Compress Format 0x8b98
+[21:05:01.214] M Supported Compress Format 0x8b99
+[21:05:01.214] M Supported Compress Format 0x9274
+[21:05:01.214] M Supported Compress Format 0x9275
+[21:05:01.214] M Supported Compress Format 0x9276
+[21:05:01.214] M Supported Compress Format 0x9277
+[21:05:01.214] M Supported Compress Format 0x9278
+[21:05:01.214] M Supported Compress Format 0x9279
+[21:05:01.214] M Supported Compress Format 0x9270
+[21:05:01.214] M Supported Compress Format 0x9271
+[21:05:01.214] M Supported Compress Format 0x9272
+[21:05:01.214] M Supported Compress Format 0x9273
+[21:05:01.214] M Supported Compress Format 0x93b0
+[21:05:01.214] M Supported Compress Format 0x93b1
+[21:05:01.214] M Supported Compress Format 0x93b2
+[21:05:01.214] M Supported Compress Format 0x93b3
+[21:05:01.214] M Supported Compress Format 0x93b4
+[21:05:01.214] M Supported Compress Format 0x93b5
+[21:05:01.214] M Supported Compress Format 0x93b6
+[21:05:01.214] M Supported Compress Format 0x93b7
+[21:05:01.214] M Supported Compress Format 0x93b8
+[21:05:01.214] M Supported Compress Format 0x93b9
+[21:05:01.214] M Supported Compress Format 0x93ba
+[21:05:01.214] M Supported Compress Format 0x93bb
+[21:05:01.214] M Supported Compress Format 0x93bc
+[21:05:01.214] M Supported Compress Format 0x93bd
+[21:05:01.214] M Supported Compress Format 0x93d0
+[21:05:01.214] M Supported Compress Format 0x93d1
+[21:05:01.214] M Supported Compress Format 0x93d2
+[21:05:01.214] M Supported Compress Format 0x93d3
+[21:05:01.214] M Supported Compress Format 0x93d4
+[21:05:01.214] M Supported Compress Format 0x93d5
+[21:05:01.214] M Supported Compress Format 0x93d6
+[21:05:01.214] M Supported Compress Format 0x93d7
+[21:05:01.214] M Supported Compress Format 0x93d8
+[21:05:01.214] M Supported Compress Format 0x93d9
+[21:05:01.214] M Supported Compress Format 0x93da
+[21:05:01.214] M Supported Compress Format 0x93db
+[21:05:01.214] M Supported Compress Format 0x93dc
+[21:05:01.214] M Supported Compress Format 0x93dd
+[21:05:01.214] M WGLES2Context::SetCurrent: 0x10000
+[21:05:01.215] M -----------------------------------------------------------
+[21:05:01.215] M Driver: OpenGLES2
+[21:05:01.215] M Description: GeForce GTX 750/PCIe/SSE2
+[21:05:01.215] M Version: 4.5.0 NVIDIA 355.82
+[21:05:01.215] M Vendor: NVIDIA Corporation
+[21:05:01.215] M Width: 1334, Height: 750, BitDepth: 32
+[21:05:01.215] M -----------------------------------------------------------
+[21:05:01.215] M GeForce GTX 750/PCIe/SSE2
+[21:05:01.215] L WGLES2Context::SetCurrent: 0x10001
+[21:05:01.215] M Try to compile shader: 
+[21:05:01.219] M Try to compile shader: 
+[21:05:01.223] M Try to compile shader: 
+[21:05:01.223] M Try to compile shader: 
+[21:05:01.223] M Try to compile shader: 
+[21:05:01.223] M Try to compile shader: 
+[21:05:01.223] M Try to compile shader: 
+[21:05:01.223] M Try to compile shader: 
+[21:05:01.223] M Try to compile shader: 
+[21:05:01.224] M Try to compile shader: 
+[21:05:01.224] M Try to compile shader: 
+[21:05:01.224] M Try to compile shader: 
+[21:05:01.224] M Try to compile shader: 
+[21:05:01.224] M Try to compile shader: 
+[21:05:01.224] M Try to compile shader: 
+[21:05:01.224] M Try to compile shader: 
+[21:05:01.224] M Try to compile shader: 
+[21:05:01.224] M Try to compile shader: 
+[21:05:01.224] M Try to compile shader: 
+[21:05:01.224] M Try to compile shader: 
+[21:05:01.224] M Try to compile shader: 
+[21:05:01.224] M Try to compile shader: 
+[21:05:01.224] M Try to compile shader: 
+[21:05:01.224] M Try to compile shader: 
+[21:05:01.224] M Try to compile shader: 
+[21:05:01.234] M Set render mode: 1334 750 32 1 4
+[21:05:01.237] M Try to compile shader: shader\common_gl.vs
+[21:05:01.238] M Try to compile shader: shader\only1texture_mirror_gl.ps
+[21:05:01.238] M Try to compile shader: shader\only1texture_gl.ps
+[21:05:01.240] M Try to compile shader: shader\common_gl.vs
+[21:05:01.240] M Try to compile shader: shader\only1texture_mirror_gl.ps
+[21:05:01.240] M Try to compile shader: shader\only1texture_gl.ps
+[21:05:01.244] M Try to compile shader: common\pipeline\copy_gl.vs
+[21:05:01.244] M Try to compile shader: common\pipeline\copy_gl.ps
+[21:05:01.245] M Try to compile shader: common\pipeline\bloom_gl.vs
+[21:05:01.246] M Try to compile shader: common\pipeline\bloom_gl.ps
+[21:05:01.246] M Try to compile shader: common\pipeline\bloom_gl.vs
+[21:05:01.246] M Try to compile shader: common\pipeline\bloom_gl.ps
+[21:05:01.247] M Try to compile shader: common\pipeline\bloom_gl.vs
+[21:05:01.247] M Try to compile shader: common\pipeline\bloom_gl.ps
+[21:05:01.248] M Try to compile shader: common\pipeline\gaussian_blur_gl.vs
+[21:05:01.249] M Try to compile shader: common\pipeline\gaussian_blur_gl.ps
+[21:05:01.249] M Try to compile shader: common\pipeline\gaussian_blur_gl.ps
+[21:05:01.250] M Try to compile shader: common\pipeline\bloom_gl.vs
+[21:05:01.250] M Try to compile shader: common\pipeline\gray_gl.ps
+[21:05:01.251] M Try to compile shader: common\pipeline\old_film_gl.vs
+[21:05:01.251] M Try to compile shader: common\pipeline\old_film_gl.ps
+[21:05:01.262] M create effect common\pipeline\old_film.fx:OldFilm *** time: 11.50 ms ***
+[21:05:01.263] M Try to compile shader: common\pipeline\lut_gl.ps
+[21:05:01.265] M Try to compile shader: common\pipeline\reverse_color_gl.ps
+[21:05:01.266] M Try to compile shader: common\pipeline\reverse_color_stencil_gl.ps
+[21:05:01.266] M Try to compile shader: common\pipeline\reverse_color_stencil_gl.ps
+[21:05:01.267] M Try to compile shader: common\pipeline\fow_gl.vs
+[21:05:01.267] M Try to compile shader: common\pipeline\fow_gl.ps
+[21:05:01.269] M Try to compile shader: common\pipeline\radial_blur_gl.vs
+[21:05:01.269] M Try to compile shader: common\pipeline\radial_blur_gl.ps
+[21:05:01.270] M Try to compile shader: common\pipeline\wave_gl.ps
+[21:05:01.272] M Try to compile shader: common\pipeline\dark_corner_gl.ps
+[21:05:01.275] M Try to compile shader: common\pipeline\mist_gl.ps
+[21:05:01.277] M Try to compile shader: common\pipeline\screen_filter_gl.ps
+[21:05:01.278] M Try to compile shader: common\pipeline\screen_filter_multiply_gl.ps
+[21:05:01.279] M Try to compile shader: common\pipeline\distortion_gl.vs
+[21:05:01.279] M Try to compile shader: common\pipeline\distortion_gl.ps
+[21:05:01.280] M Try to compile shader: common\pipeline\smooth_outline_gl.vs
+[21:05:01.280] M Try to compile shader: common\pipeline\smooth_outline_gl.ps
+[21:05:01.281] M Try to compile shader: common\pipeline\smooth_outline_gl.vs
+[21:05:01.281] M Try to compile shader: common\pipeline\smooth_outline_gl.ps
+[21:05:01.281] M Try to compile shader: common\pipeline\smooth_outline_gl.vs
+[21:05:01.281] M Try to compile shader: common\pipeline\smooth_outline_gl.ps
+[21:05:01.282] M Audio::Init - getDSPBufferSize: buffer_length = 1024, num_buffers = 4
+[21:05:01.282] M Audio::Init - FMOD_INITFLAGS: 0
+[21:05:01.299] M Init audio system, FMOD version 00044457.
+[21:05:01.300] M Try to compile shader: common\shader\common_gl.vs
+[21:05:01.300] M Try to compile shader: common\shader\common_gl.ps
+[21:05:01.302] M Try to compile shader: common\shader\blendadd_gl.vs
+[21:05:01.302] M Try to compile shader: common\shader\blendadd_gl.ps
+[21:05:01.303] M pixel decal enable: false
+[21:05:01.321] M Call script init.init().
+[21:05:01.389] M NewType world.track: 076EB598
+[21:05:01.389] M NewType world.space_object: 076EB4C8
+[21:05:01.389] M NewType world.visibleobject: 076EB668
+[21:05:01.389] M NewType world.sfx: 076EB738
+[21:05:01.389] M NewType world.model: 076EB808
+[21:05:01.389] M NewType world.primitives: 076EB8D8
+[21:05:01.390] M NewType world.textobject: 076EB9A8
+[21:05:01.390] M NewType world.simuiobject: 076EBA78
+[21:05:01.390] M NewType world.camera: 076EBB48
+[21:05:01.390] M NewType world.volumefog: 076EBC18
+[21:05:01.390] M NewType world.decal: 076EBCE8
+[21:05:01.390] M NewType world.light: 076EBDB8
+[21:05:01.391] M NewType world.anim_ctrl: 076EBE88
+[21:05:01.391] M NewType world.scene: 076EBF58
+[21:05:01.391] M NewType world.ikbone: 076EC028
+[21:05:01.395] M Set render mode: 1334 750 32 1 4
+[21:05:01.395] M Initialization completed successfully!
+[21:05:01.395] M 
+[21:05:01.395] M Call script init.start().
+[21:05:01.772] M   <SCRIPT> read_ui_file start fight.csb
+[21:05:01.862] M Try to compile shader: common\shader\cocosui\positiontexturecolor_gl.vs
+[21:05:01.862] M Try to compile shader: common\shader\cocosui\positiontexturecolor_gl.ps
+[21:05:01.863] M Try to compile shader: common\shader\cocosui\positiontexturecolor_nomvp_gl.vs
+[21:05:01.864] M Try to compile shader: common\shader\cocosui\positiontexturecolor_nomvp_gl.ps
+[21:05:01.865] M Try to compile shader: common\shader\cocosui\positiontexturecolorgray_nomvp_gl.ps
+[21:05:01.865] M Try to compile shader: common\shader\cocosui\positiontexturecoloralphatest_gl.ps
+[21:05:01.866] M Try to compile shader: common\shader\cocosui\positioncolor_gl.vs
+[21:05:01.867] M Try to compile shader: common\shader\cocosui\positioncolor_gl.ps
+[21:05:01.867] M Try to compile shader: common\shader\cocosui\positioncolortextureaspointsize_gl.vs
+[21:05:01.868] M Try to compile shader: common\shader\cocosui\positiontexture_gl.vs
+[21:05:01.869] M Try to compile shader: common\shader\cocosui\positiontexture_gl.ps
+[21:05:01.869] M Try to compile shader: common\shader\cocosui\positiontexture_ucolor_gl.vs
+[21:05:01.870] M Try to compile shader: common\shader\cocosui\positiontexture_ucolor_gl.ps
+[21:05:01.870] M Try to compile shader: common\shader\cocosui\positiontexturea8color_gl.vs
+[21:05:01.871] M Try to compile shader: common\shader\cocosui\positiontexturea8color_gl.ps
+[21:05:01.872] M Try to compile shader: common\shader\cocosui\position_ucolor_gl.vs
+[21:05:01.872] M Try to compile shader: common\shader\cocosui\position_ucolor_gl.ps
+[21:05:01.872] M Try to compile shader: common\shader\cocosui\positioncolorlengthtexture_gl.vs
+[21:05:01.873] M Try to compile shader: common\shader\cocosui\positioncolorlengthtexture_gl.ps
+[21:05:01.873] M Try to compile shader: common\shader\cocosui\labeldistancefieldnormal_gl.vs
+[21:05:01.874] M Try to compile shader: common\shader\cocosui\labeldistancefieldnormal_gl.ps
+[21:05:01.875] M Try to compile shader: common\shader\cocosui\labeldistancefieldglow_gl.vs
+[21:05:01.875] M Try to compile shader: common\shader\cocosui\labeldistancefieldglow_gl.ps
+[21:05:01.876] M Try to compile shader: common\shader\cocosui\labelnormal_gl.vs
+[21:05:01.876] M Try to compile shader: common\shader\cocosui\labelnormal_gl.ps
+[21:05:01.877] M Try to compile shader: common\shader\cocosui\labeloutline_gl.vs
+[21:05:01.877] M Try to compile shader: common\shader\cocosui\labeloutline_gl.ps
+[21:05:01.877] M Try to compile shader: common\shader\cocosui\positiontexturecolor_gl.vs
+[21:05:01.878] M Try to compile shader: common\shader\cocosui\positiontexturecolor_gl.ps
+[21:05:01.878] M Try to compile shader: common\shader\cocosui\positiontexturecolor_nomvp_gl.vs
+[21:05:01.878] M Try to compile shader: common\shader\cocosui\positiontexturecolor_nomvp_gl.ps
+[21:05:01.878] M Try to compile shader: common\shader\cocosui\labelnormal_gl.vs
+[21:05:01.878] M Try to compile shader: common\shader\cocosui\labelnormal_gl.ps
+[21:05:01.879] M Try to compile shader: common\shader\cocosui\labeloutline_gl.vs
+[21:05:01.879] M Try to compile shader: common\shader\cocosui\labeloutline_gl.ps
+[21:05:01.879] M Try to compile shader: common\shader\cocosui\labeldistancefieldnormal_gl.vs
+[21:05:01.880] M Try to compile shader: common\shader\cocosui\labeldistancefieldnormal_gl.ps
+[21:05:01.880] M Try to compile shader: common\shader\cocosui\labeldistancefieldglow_gl.vs
+[21:05:01.880] M Try to compile shader: common\shader\cocosui\labeldistancefieldglow_gl.ps
+[21:05:01.880] M Try to compile shader: common\shader\cocosui\positiontexturecolorgray_nomvp_gl.ps
+[21:05:01.881] M Try to compile shader: common\shader\cocosui\labelnormal_gl.vs
+[21:05:01.881] M Try to compile shader: common\shader\cocosui\labelnormal_gl.ps
+[21:05:01.881] M Try to compile shader: common\shader\cocosui\labelnormal_gl.vs
+[21:05:01.881] M Try to compile shader: common\shader\cocosui\labelnormal_gl.ps
+[21:05:01.881] M Try to compile shader: common\shader\cocosui\labeloutline_gl.vs
+[21:05:01.882] M Try to compile shader: common\shader\cocosui\labeloutline_gl.ps
+[21:05:01.882] M Try to compile shader: common\shader\cocosui\labeloutline_gl.vs
+[21:05:01.882] M Try to compile shader: common\shader\cocosui\labeloutline_gl.ps
+[21:05:01.882] M Try to compile shader: common\shader\cocosui\labeldistancefieldnormal_gl.vs
+[21:05:01.882] M Try to compile shader: common\shader\cocosui\labeldistancefieldnormal_gl.ps
+[21:05:01.883] M Try to compile shader: common\shader\cocosui\labeldistancefieldnormal_gl.vs
+[21:05:01.883] M Try to compile shader: common\shader\cocosui\labeldistancefieldnormal_gl.ps
+[21:05:01.883] M Try to compile shader: common\shader\cocosui\labeldistancefieldglow_gl.vs
+[21:05:01.883] M Try to compile shader: common\shader\cocosui\labeldistancefieldglow_gl.ps
+[21:05:01.884] M Try to compile shader: common\shader\cocosui\labeldistancefieldglow_gl.vs
+[21:05:01.884] M Try to compile shader: common\shader\cocosui\labeldistancefieldglow_gl.ps
+[21:05:01.890] M   <SCRIPT> read_ui_file end <cc.Node object at 0x07891810>
+[21:05:08.388] M Call script game.on_exit().
+[21:05:08.388] M Prerelease cocosui.dll (1144999243)
+[21:05:08.394] M Prerelease audio.dll (1092544220)
+[21:05:08.394] M Prerelease collision.dll (209534444)
+[21:05:08.394] M Prerelease detour.dll (3413454381)
+[21:05:08.394] M Prerelease world2d.dll (3593080187)
+[21:05:08.394] M Prerelease physics2d.dll (323376087)
+[21:05:08.394] M Prerelease social.dll (688878058)
+[21:05:08.394] M Prerelease python.dll (1335575602)
+[21:05:08.401] M Prerelease world.dll (2648298854)
+[21:05:08.402] M Prerelease terrain.dll (2572047601)
+[21:05:08.402] M Prerelease render.dll (2487404089)
+[21:05:08.402] M Prerelease utils.dll (1671665312)
+[21:05:08.402] M Release 209534444
+[21:05:08.402] M Release 323376087
+[21:05:08.402] M Release 688878058
+[21:05:08.402] M Release 1144999243
+[21:05:08.402] M Release 1335575602
+[21:05:08.657] M Release 1671665312
+[21:05:08.657] M Release 2487404089
+[21:05:08.660] M Release 2572047601
+[21:05:08.661] M Release 2648298854
+[21:05:08.661] M Release 3143862676
+[21:05:08.661] M Release 3193898900
+[21:05:08.661] M Release 3413454381
+[21:05:08.661] M Release 3593080187
