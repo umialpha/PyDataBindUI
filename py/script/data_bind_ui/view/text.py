@@ -11,7 +11,7 @@ class TextWrapper(object):
 
     @text.setter
     def text(self, t):
-        return self.ui_node.setString(t)
+        self.ui_node.setString(t)
     
     
 

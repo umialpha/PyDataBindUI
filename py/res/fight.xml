@@ -14,71 +14,35 @@
             </data-bind>
         </bind-type>
     </node>
-   <!--  <node>
-        <name>input</name>
+
+   <node name = '.main.input'  type = 'node'>
+        <bind-type>
+            <event-listener>
+               <view>
+                    <name>view.textfield.TextFieldWrapper</name>
+                    <attr>text</attr>
+                    <fktion>connect_detect</fktion>
+                </view>
+                <view-model>
+                    <attr>input</attr>
+                </view-model>
+            </event-listener>
+        </bind-type>
+    </node>
+
+    <node name = '.main.btn'  type = 'node'>
         <bind-type>
             <event-bind>
                <view>
-                    <name>TextFieldWrapper</name>
-                    <attr>text</attr>
+                    <name>view.button.ButtonWrapper</name>
+                    <fktion>connect_end</fktion>
                 </view>
                 <view-model>
-                    <name>FightContext</name>
-                    <fktion>field_end_event</fktion>
+                    <fktion>send_event</fktion>
                 </view-model>
             </event-bind>
         </bind-type>
-    </node> -->
+    </node>
 
 
-    <!-- <bind>
-        <data-bind>
-            <view>
-                <node>
-                    text
-                </node>
-                <attr>
-                    text
-                </attr>
-            </view>
-            <view-model>
-                <attr>
-                    output
-                </attr>
-            </view-model>
-        </data-bind>
-        <event-bind>
-            <view>
-                <node>
-                    input
-                </node>
-                <event>
-                    EVENT_ON_TEXT_CHANGED
-                </event>
-                <attr>
-                    text
-                </attr>
-            </view>
-            <view-model>
-                <funtion>
-                    field_end_event
-                </funtion>
-            </view-model>
-        </event-bind>
-        <event-bind>
-            <view>
-                <node>
-                    btn
-                </node>
-                <event>
-                    EVENT_UP
-                </event>
-            </view>
-            <view-model>
-                <funtion>
-                    send_event
-                </funtion>
-            </view-model>
-        </event-bind>
-    </bind> -->
 </context>

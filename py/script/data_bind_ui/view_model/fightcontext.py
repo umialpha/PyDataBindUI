@@ -39,6 +39,7 @@ class FightContext(Context):
         if _t == self._input:
             return
         self._input = _t
+        print 'input', self._input
         self.send(sender=self, prop=SignalArgs('input', self._input))
 
 
